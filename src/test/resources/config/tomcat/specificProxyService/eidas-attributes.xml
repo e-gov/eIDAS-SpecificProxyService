@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2019 by European Commission
+  ~
+  ~
+  ~ Licensed under the EUPL, Version 1.2 or - as soon they will be
+  ~ approved by the European Commission - subsequent versions of the
+  ~ EUPL (the "Licence");
+  ~ You may not use this work except in compliance with the Licence.
+  ~ You may obtain a copy of the Licence at:
+  ~ https://joinup.ec.europa.eu/page/eupl-text-11-12
+  ~
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the Licence is distributed on an "AS IS" basis,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+  ~ implied.
+  ~ See the Licence for the specific language governing permissions and
+  ~ limitations under the Licence.
+  -->
+
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+    <comment>Supported eIDAS attributes</comment>
+
+    <entry key="1.NameUri">http://eidas.europa.eu/attributes/naturalperson/PersonIdentifier</entry>
+    <entry key="1.FriendlyName">PersonIdentifier</entry>
+    <entry key="1.PersonType">NaturalPerson</entry>
+    <entry key="1.Required">true</entry>
+    <entry key="1.UniqueIdentifier">true</entry>
+    <entry key="1.XmlType.NamespaceUri">http://eidas.europa.eu/attributes/naturalperson</entry>
+    <entry key="1.XmlType.LocalPart">PersonIdentifierType</entry>
+    <entry key="1.XmlType.NamespacePrefix">eidas-natural</entry>
+    <entry key="1.AttributeValueMarshaller">eu.eidas.auth.commons.attribute.impl.LiteralStringAttributeValueMarshaller</entry>
+
+    <entry key="2.NameUri">http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName</entry>
+    <entry key="2.FriendlyName">FamilyName</entry>
+    <entry key="2.PersonType">NaturalPerson</entry>
+    <entry key="2.Required">true</entry>
+    <entry key="2.TransliterationMandatory">true</entry>
+    <entry key="2.XmlType.NamespaceUri">http://eidas.europa.eu/attributes/naturalperson</entry>
+    <entry key="2.XmlType.LocalPart">CurrentFamilyNameType</entry>
+    <entry key="2.XmlType.NamespacePrefix">eidas-natural</entry>
+    <entry key="2.AttributeValueMarshaller">eu.eidas.auth.commons.attribute.impl.LiteralStringAttributeValueMarshaller</entry>
+
+    <entry key="3.NameUri">http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName</entry>
+    <entry key="3.FriendlyName">FirstName</entry>
+    <entry key="3.PersonType">NaturalPerson</entry>
+    <entry key="3.Required">true</entry>
+    <entry key="3.TransliterationMandatory">true</entry>
+    <entry key="3.XmlType.NamespaceUri">http://eidas.europa.eu/attributes/naturalperson</entry>
+    <entry key="3.XmlType.LocalPart">CurrentGivenNameType</entry>
+    <entry key="3.XmlType.NamespacePrefix">eidas-natural</entry>
+    <entry key="3.AttributeValueMarshaller">eu.eidas.auth.commons.attribute.impl.LiteralStringAttributeValueMarshaller</entry>
+
+    <entry key="4.NameUri">http://eidas.europa.eu/attributes/naturalperson/DateOfBirth</entry>
+    <entry key="4.FriendlyName">DateOfBirth</entry>
+    <entry key="4.PersonType">NaturalPerson</entry>
+    <entry key="4.Required">true</entry>
+    <entry key="4.XmlType.NamespaceUri">http://eidas.europa.eu/attributes/naturalperson</entry>
+    <entry key="4.XmlType.LocalPart">DateOfBirthType</entry>
+    <entry key="4.XmlType.NamespacePrefix">eidas-natural</entry>
+    <entry key="4.AttributeValueMarshaller">eu.eidas.auth.commons.attribute.impl.DateTimeAttributeValueMarshaller</entry>
+
+</properties>

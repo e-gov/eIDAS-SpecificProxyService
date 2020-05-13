@@ -16,7 +16,11 @@
 package ee.ria.eidas.proxy.specific.util;
 
 import eu.eidas.auth.commons.light.ILightRequest;
+import eu.eidas.auth.commons.light.ILightResponse;
 import eu.eidas.auth.commons.light.impl.LightRequest;
+import eu.eidas.auth.commons.light.impl.LightResponse;
+import eu.eidas.auth.commons.light.impl.ResponseStatus;
+import eu.eidas.auth.commons.protocol.impl.SamlNameIdFormat;
 
 import java.util.UUID;
 
@@ -37,7 +41,26 @@ public class LightRequestTestHelper {
 
     }
 
+    public static ILightResponse createLightResponse(String subject, String issuerName, String relayState, String loa) {
+        final LightResponse.Builder builder = LightResponse.builder()
+                .id(UUID.randomUUID().toString())
+                .issuer(issuerName)
+                .inResponseToId("123456")
+                .status(ResponseStatus.builder().statusCode("urn:oasis:names:tc:SAML:2.0:status:Success").build())
+                .subject(subject)
+                .subjectNameIdFormat(SamlNameIdFormat.UNSPECIFIED.getNameIdFormat())
+                .subject(subject)
+                .relayState(relayState)
+                .levelOfAssurance(loa);
+
+        return builder.build();
+    }
+
     public static ILightRequest createDefaultLightRequest() {
         return createLightRequest("citizenCountry", "issuerName", "relayState", "loa");
+    }
+
+    public static ILightResponse createDefaultLightResponse() {
+        return createLightResponse("EE1010101010", "issuerName", "relayState", "loa");
     }
 }

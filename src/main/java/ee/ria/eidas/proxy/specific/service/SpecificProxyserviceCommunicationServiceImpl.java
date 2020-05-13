@@ -23,6 +23,7 @@ import eu.eidas.auth.commons.light.impl.LightRequest;
 import eu.eidas.auth.commons.light.impl.LightResponse;
 import eu.eidas.auth.commons.tx.BinaryLightToken;
 import eu.eidas.specificcommunication.BinaryLightTokenHelper;
+import eu.eidas.specificcommunication.CommunicationCache;
 import eu.eidas.specificcommunication.exception.SpecificCommunicationException;
 import eu.eidas.specificcommunication.protocol.SpecificCommunicationService;
 import lombok.RequiredArgsConstructor;
@@ -51,6 +52,8 @@ public class SpecificProxyserviceCommunicationServiceImpl implements SpecificCom
 
 	private final Cache<String, String> specificNodeProxyserviceRequestCommunicationCache;
 
+	private final Cache<String, String> specificNodeProxyserviceResponseCommunicationCache;
+
 	static {
 		try {
 			codec = new LightJAXBCodec(JAXBContext.newInstance(LightRequest.class, LightResponse.class,
@@ -68,6 +71,15 @@ public class SpecificProxyserviceCommunicationServiceImpl implements SpecificCom
 
 	@Value("${lightToken.proxyservice.request.algorithm}")
 	private String lightTokenRequestAlgorithm;
+
+	@Value("${lightToken.proxyservice.response.issuer.name}")
+	private String lightTokenResponseIssuerName;
+
+	@Value("${lightToken.proxyservice.response.secret}")
+	private String lightTokenResponseSecret;
+
+	@Value("${lightToken.proxyservice.response.algorithm}")
+	private String lightTokenResponseAlgorithm;
 
 	@PostConstruct
 	public void init() {
@@ -99,15 +111,17 @@ public class SpecificProxyserviceCommunicationServiceImpl implements SpecificCom
 
 	@Override
 	public BinaryLightToken putResponse(final ILightResponse iLightResponse) throws SpecificCommunicationException {
-
-		// TODO
-		return null;
+		final BinaryLightToken binaryLightToken = BinaryLightTokenHelper.createBinaryLightToken(
+				lightTokenResponseIssuerName, lightTokenResponseSecret, lightTokenResponseAlgorithm);
+		final String tokenId = binaryLightToken.getToken().getId();
+		specificNodeProxyserviceResponseCommunicationCache.put(tokenId, codec.marshall(iLightResponse));
+		return binaryLightToken;
 	}
 
 	@Override
 	public ILightResponse getAndRemoveResponse(final String tokenBase64,
 			final Collection<AttributeDefinition<?>> registry) throws SpecificCommunicationException {
-		// TODO
+		// TODO - connector specific
 		return null;
 	}
 

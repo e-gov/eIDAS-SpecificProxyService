@@ -9,11 +9,13 @@ import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata;
 import ee.ria.eidas.proxy.specific.service.SpecificProxyService;
 import ee.ria.eidas.proxy.specific.service.SpecificProxyserviceCommunicationServiceImpl;
 import ee.ria.eidas.proxy.specific.storage.StoredMSProxyServiceRequestCorrelationMap;
-import ee.ria.eidas.proxy.specific.storage.StoredNodeRequestCorrelationMap;
 import eu.eidas.auth.cache.ConcurrentCacheServiceIgniteSpecificCommunicationImpl;
 import eu.eidas.auth.cache.IgniteInstanceInitializerSpecificCommunication;
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.AttributeRegistries;
+import eu.eidas.auth.commons.attribute.AttributeRegistry;
+import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
+import eu.eidas.auth.commons.light.ILightResponse;
 import eu.eidas.specificcommunication.protocol.SpecificCommunicationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -26,10 +28,13 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.core.io.FileUrlResource;
 import org.springframework.util.Assert;
+import org.springframework.web.servlet.ViewResolver;
 import org.springframework.web.servlet.config.annotation.DefaultServletHandlerConfigurer;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.resource.PathResourceResolver;
+import org.springframework.web.servlet.view.InternalResourceViewResolver;
+import org.springframework.web.servlet.view.JstlView;
 
 import javax.cache.Cache;
 import java.io.File;
@@ -48,11 +53,27 @@ import java.util.HashSet;
 @EnableConfigurationProperties(SpecificProxyServiceProperties.class)
 public class SpecificProxyServiceConfiguration implements WebMvcConfigurer {
 
+    public static final String CACHE_NAME_RESPONSE = "specificNodeProxyserviceResponseCache";
+    public static final String CACHE_NAME_REQUEST = "nodeSpecificProxyserviceRequestCache";
+
+    public static final String CACHE_NAME_IDP_REQUEST_RESPONSE = "specificMSIdpRequestCorrelationMap";
+    public static final String CACHE_NAME_IDP_RESPONSE_CONSENT = "specificMSIdpConsentCorrelationMap";
+
+
     @Override
     public void configureDefaultServletHandling(DefaultServletHandlerConfigurer configurer) {
         configurer.enable();
     }
- 
+
+    @Bean
+    public ViewResolver internalResourceViewResolver() {
+        InternalResourceViewResolver bean = new InternalResourceViewResolver();
+        bean.setViewClass(JstlView.class);
+        bean.setPrefix("/WEB-INF/jsp/");
+        bean.setSuffix(".jsp");
+        return bean;
+    }
+
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/resources/**")
@@ -93,7 +114,7 @@ public class SpecificProxyServiceConfiguration implements WebMvcConfigurer {
     }
 
     @Bean
-    @Qualifier("attributeRegistry")
+    @Qualifier("attributeRegistry") // TODO remove this and replace with eidasAttributeRegistry
     public Collection<AttributeDefinition<?>> attributeRegistry(
             @Value("#{environment.SPECIFIC_PROXY_SERVICE_CONFIG_REPOSITORY}/eidas-attributes.xml")
             String eidasAttributesConfiguration) {
@@ -105,6 +126,15 @@ public class SpecificProxyServiceConfiguration implements WebMvcConfigurer {
         return ImmutableSortedSet.copyOf(registry);
     }
 
+    @Bean
+    @Qualifier("eidasAttributeRegistry")
+    public AttributeRegistry eidasAttributeRegistry(@Value("#{environment.SPECIFIC_PROXY_SERVICE_CONFIG_REPOSITORY}/eidas-attributes.xml")
+                                                                String eidasAttributesConfiguration) {
+
+        Assert.isTrue(new File(eidasAttributesConfiguration).exists(), "Required configuration file not found: " + eidasAttributesConfiguration);
+        return AttributeRegistries.fromFiles(eidasAttributesConfiguration, null);
+    }
+
     @Bean("eidasIgniteInstanceInitializerSpecificCommunication")
     @Lazy
     public IgniteInstanceInitializerSpecificCommunication igniteInstance(
@@ -114,6 +144,7 @@ public class SpecificProxyServiceConfiguration implements WebMvcConfigurer {
         Assert.isTrue(new File(igniteConfigurationFile).exists(), "Required configuration file not found: " + igniteConfigurationFile);
 
         IgniteInstanceInitializerSpecificCommunication igniteInstance = new IgniteInstanceInitializerSpecificCommunication();
+
         igniteInstance.setConfigFileName(igniteConfigurationFile);
         igniteInstance.initializeInstance();
         return igniteInstance;
@@ -122,12 +153,13 @@ public class SpecificProxyServiceConfiguration implements WebMvcConfigurer {
     @Bean("nodeSpecificProxyserviceRequestCache")
     public Cache<String, String> nodeSpecificProxyserviceRequestCache(@Qualifier("eidasIgniteInstanceInitializerSpecificCommunication")
                                                                               IgniteInstanceInitializerSpecificCommunication igniteInstance) {
-        ConcurrentCacheServiceIgniteSpecificCommunicationImpl igniteCache = new ConcurrentCacheServiceIgniteSpecificCommunicationImpl();
+        return initIgniteCache(igniteInstance, CACHE_NAME_REQUEST);
+    }
 
-        igniteCache.setCacheName("nodeSpecificProxyserviceRequestCache");
-        igniteCache.setIgniteInstanceInitializerSpecificCommunication(igniteInstance);
-
-        return new StoredNodeRequestCorrelationMap(igniteCache);
+    @Bean("nodeSpecificProxyserviceResponseCache")
+    public Cache<String, String> nodeSpecificProxyserviceResponseCache(@Qualifier("eidasIgniteInstanceInitializerSpecificCommunication")
+                                                                              IgniteInstanceInitializerSpecificCommunication igniteInstance) {
+        return initIgniteCache(igniteInstance, CACHE_NAME_RESPONSE);
     }
 
     @Bean
@@ -135,30 +167,50 @@ public class SpecificProxyServiceConfiguration implements WebMvcConfigurer {
             @Qualifier("eidasIgniteInstanceInitializerSpecificCommunication")
             IgniteInstanceInitializerSpecificCommunication igniteInstance) {
 
-        ConcurrentCacheServiceIgniteSpecificCommunicationImpl igniteCache = new ConcurrentCacheServiceIgniteSpecificCommunicationImpl();
+        return initIgniteCache(igniteInstance, CACHE_NAME_IDP_RESPONSE_CONSENT);
+    }
 
-        igniteCache.setCacheName("specificMSIdpRequestCorrelationMap");
-        igniteCache.setIgniteInstanceInitializerSpecificCommunication(igniteInstance);
+    @Bean
+    public Cache<String, ILightResponse> specificMSIdpConsentCorrelationMap(
+            @Qualifier("eidasIgniteInstanceInitializerSpecificCommunication")
+                    IgniteInstanceInitializerSpecificCommunication igniteInstance) {
 
-        return new StoredMSProxyServiceRequestCorrelationMap(igniteCache);
+        return initIgniteCache(igniteInstance, CACHE_NAME_IDP_REQUEST_RESPONSE);
     }
 
 
     @Bean("springManagedSpecificProxyserviceCommunicationService")
     public SpecificCommunicationService specificCommunicationService(SpecificProxyServiceProperties specificProxyServiceProperties,
         @Qualifier("nodeSpecificProxyserviceRequestCache")
-        Cache specificNodeProxyserviceRequestCommunicationCache) {
-        return new SpecificProxyserviceCommunicationServiceImpl(specificNodeProxyserviceRequestCommunicationCache);
+        Cache requestCommunicationCache,
+        @Qualifier("nodeSpecificProxyserviceResponseCache")
+        Cache responseCommunicationCache) {
+        return new SpecificProxyserviceCommunicationServiceImpl(requestCommunicationCache, responseCommunicationCache);
     }
 
     @Bean
     public SpecificProxyService specificProxyService(
             OIDCProviderMetadata oidcProviderMetadata,
             SpecificProxyServiceProperties specificProxyServiceProperties,
-            Cache specificMSIdpRequestCorrelationMap) {
+            Cache<String, StoredMSProxyServiceRequestCorrelationMap.CorrelatedRequestsHolder> specificMSIdpRequestCorrelationMap,
+            Cache<String, ILightResponse> specificMSIdpConsentCorrelationMap) {
 
         return new SpecificProxyService(
                 oidcProviderMetadata, specificProxyServiceProperties,
-                specificMSIdpRequestCorrelationMap);
+                specificMSIdpRequestCorrelationMap,
+                specificMSIdpConsentCorrelationMap);
+    }
+
+    private Cache initIgniteCache(@Qualifier("eidasIgniteInstanceInitializerSpecificCommunication") IgniteInstanceInitializerSpecificCommunication igniteInstance, String cacheName) {
+        ConcurrentCacheServiceIgniteSpecificCommunicationImpl igniteCache = new ConcurrentCacheServiceIgniteSpecificCommunicationImpl();
+
+        igniteCache.setCacheName(cacheName);
+        igniteCache.setIgniteInstanceInitializerSpecificCommunication(igniteInstance);
+
+        try {
+            return new StoredMSProxyServiceRequestCorrelationMap(igniteCache);
+        } catch (InvalidParameterEIDASException e) {
+            throw new IllegalStateException("Problem with your Ignite configuration! Failed to instantiate Ignite cache named '" + cacheName + "'. Please check your configuration!", e);
+        }
     }
 }

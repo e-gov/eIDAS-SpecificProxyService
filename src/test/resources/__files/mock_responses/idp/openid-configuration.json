@@ -1,5 +1,5 @@
 {
-  "issuer": "https://tara-mock",
+  "issuer": "https://localhost:9877",
   "scopes_supported": [
     "openid",
     "idcard",
@@ -70,8 +70,8 @@
     "en",
     "ru"
   ],
-  "token_endpoint": "https://tara-mock/oidc/token",
-  "userinfo_endpoint": "https://tara-mock/oidc/profile",
-  "jwks_uri": "https://tara-mock/oidc/jwks",
-  "authorization_endpoint": "https://tara-mock/oidc/authorize"
+  "token_endpoint": "https://localhost:9877/oidc/token",
+  "userinfo_endpoint": "https://localhost:9877/oidc/profile",
+  "jwks_uri": "https://localhost:9877/oidc/jwks",
+  "authorization_endpoint": "https://localhost:9877/oidc/authorize"
 }

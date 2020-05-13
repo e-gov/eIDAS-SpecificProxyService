@@ -85,6 +85,14 @@
                     <property name="expiryPolicyFactory" ref="7_minutes_duration"/>
                 </bean>
 
+                <!-- specificMSIdpConsentCorrelationMap -->
+                <bean class="org.apache.ignite.configuration.CacheConfiguration">
+                    <property name="name" value="specificMSIdpConsentCorrelationMap"/>
+                    <property name="atomicityMode" value="ATOMIC"/>
+                    <property name="backups" value="1"/>
+                    <property name="expiryPolicyFactory" ref="7_minutes_duration"/>
+                </bean>
+
             </list>
         </property>
 		

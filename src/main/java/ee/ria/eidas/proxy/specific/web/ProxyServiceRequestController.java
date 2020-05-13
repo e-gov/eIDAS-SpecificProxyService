@@ -11,9 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.servlet.http.HttpServletResponse;
@@ -42,16 +40,16 @@ public class ProxyServiceRequestController {
 	private Collection<AttributeDefinition<?>> attributeRegistry;
 
 
-	@RequestMapping(value = ENDPOINT_PROXY_SERVICE_REQUEST, method = RequestMethod.GET)
+	@GetMapping(value = ENDPOINT_PROXY_SERVICE_REQUEST)
 	public void doGet(
-			final @RequestParam(name = PARAMETER_NAME_TOKEN, required=true) String base64Token,
+			final @RequestParam(name = PARAMETER_NAME_TOKEN) String base64Token,
 			final HttpServletResponse httpServletResponse) throws IOException {
 		execute(base64Token, httpServletResponse);
 	}
 
-	@RequestMapping(value = ENDPOINT_PROXY_SERVICE_REQUEST, method = RequestMethod.POST)
+	@PostMapping(value = ENDPOINT_PROXY_SERVICE_REQUEST)
 	public void doPost(
-			final @RequestParam(name= PARAMETER_NAME_TOKEN, required=true) String base64Token,
+			final @RequestParam(name= PARAMETER_NAME_TOKEN) String base64Token,
 			final HttpServletResponse httpServletResponse) throws IOException {
 		execute(base64Token, httpServletResponse);
 	}

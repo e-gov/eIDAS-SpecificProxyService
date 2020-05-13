@@ -32,28 +32,7 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 
 @SpringBootTest( webEnvironment = RANDOM_PORT )
 @ContextConfiguration( classes = SpecificProxyServiceConfiguration.class, initializers = ProxyServiceRequestControllerTests.TestContextInitializer.class )
-class ProxyServiceRequestControllerTests {
-
-	@LocalServerPort
-	private int port;
-
-	@Autowired
-	@Qualifier("springManagedSpecificProxyserviceCommunicationService")
-	private SpecificCommunicationService specificCommunicationService;
-
-	private static WireMockServer wireMockServer = new WireMockServer(WireMockConfiguration.wireMockConfig().port(9877));
-
-	@BeforeAll
-	public static void setupAll() {
-		configureRestAssured();
-		configureMockOidcServer();
-	}
-
-	@Test
-	@Order(1)
-	void contextLoads() {
-		assertNotNull(specificCommunicationService, "Should not be null!");
-	}
+class ProxyServiceRequestControllerTests extends ControllerTest {
 
 	@Test
 	void invalidParameterName() {
@@ -90,7 +69,7 @@ class ProxyServiceRequestControllerTests {
 
 	@Test
 	void validLightToken() throws Exception {
-		BinaryLightToken mockBinaryLightToken = specificCommunicationService.putRequest(createDefaultLightRequest());
+		BinaryLightToken mockBinaryLightToken = getSpecificCommunicationService().putRequest(createDefaultLightRequest());
 
 		given()
 			.param(EidasParameterKeys.TOKEN.toString(), BinaryLightTokenHelper.encodeBinaryLightTokenBase64(mockBinaryLightToken))
@@ -100,42 +79,7 @@ class ProxyServiceRequestControllerTests {
 		.then()
 			.assertThat()
 			.statusCode(302)
-			.header(HttpHeaders.LOCATION, startsWith("https://tara-mock/oidc/authorize?scope=openid%20idcard%20mid&response_type=code&client_id=openIdDemo&redirect_uri=http://localhost:9877/redirect&state="));
-	}
-
-	public static class TestContextInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
-
-		@Override
-		public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
-			String currentDirectory = System.getProperty("user.dir");
-			System.setProperty("SPECIFIC_PROXY_SERVICE_CONFIG_REPOSITORY", currentDirectory + "/src/test/resources/config/tomcat/specificProxyService");
-			System.setProperty("EIDAS_CONFIG_REPOSITORY", currentDirectory + "/src/test/resources/config/tomcat");
-		}
-	}
-
-	private static void configureMockOidcServer() {
-		wireMockServer.start();
-
-		wireMockServer.stubFor(get(urlEqualTo("/.well-known/openid-configuration"))
-				.willReturn(aResponse()
-						.withStatus(200)
-						.withHeader("Content-Type", "application/json; charset=UTF-8")
-						.withBodyFile("mock_responses/idp/openid-configuration.json")));
-	}
-
-	private static void configureRestAssured() {
-		RestAssured.filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
-
-	}
-
-	@BeforeEach
-	public void start() {
-		RestAssured.port = port;
-	}
-
-	@AfterAll
-	public static void stop() {
-		wireMockServer.stop();
+			.header(HttpHeaders.LOCATION, startsWith("https://localhost:9877/oidc/authorize?scope=openid%20idcard%20mid&response_type=code&client_id=openIdDemo&redirect_uri=https://localhost:9877/redirect&state="));
 	}
 }
 

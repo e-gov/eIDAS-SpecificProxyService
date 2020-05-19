@@ -2,8 +2,9 @@ package ee.ria.eidas.proxy.specific.web;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceProperties;
 import ee.ria.eidas.proxy.specific.service.SpecificProxyService;
-import eu.eidas.specificcommunication.protocol.SpecificCommunicationService;
+import ee.ria.eidas.proxy.specific.storage.StoredMSProxyServiceRequestCorrelationMap;
 import io.restassured.RestAssured;
 import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
@@ -14,10 +15,16 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.test.context.ActiveProfiles;
+
+import javax.cache.Cache;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static io.restassured.config.RedirectConfig.redirectConfig;
+import static io.restassured.config.RestAssuredConfig.config;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+@ActiveProfiles("test")
 public abstract class ControllerTest {
 
     static {
@@ -36,14 +43,23 @@ public abstract class ControllerTest {
             .keystorePassword("changeit")
     );
 
+
     @Autowired
-    @Qualifier("springManagedSpecificProxyserviceCommunicationService")
+    @Qualifier("nodeSpecificProxyserviceResponseCache")
     @Getter
-    private SpecificCommunicationService specificCommunicationService;
+    private Cache<String, String> eidasNodeResponseCommunicationCache;
+
+    @Autowired
+    @Getter
+    private Cache<String, StoredMSProxyServiceRequestCorrelationMap.CorrelatedRequestsHolder> eidasNodeRequestCommunicationCache;
 
     @Autowired
     @Getter
     private SpecificProxyService specificProxyService;
+
+    @Autowired
+    @Getter
+    private SpecificProxyServiceProperties specificProxyServiceProperties;
 
     @BeforeAll
     public static void setupAll() {
@@ -54,7 +70,7 @@ public abstract class ControllerTest {
     @Test
     @Order(1)
     void contextLoads() {
-        assertNotNull(specificCommunicationService, "Should not be null!");
+        assertNotNull(specificProxyService, "Should not be null!");
     }
 
     public static class TestContextInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
@@ -91,12 +107,14 @@ public abstract class ControllerTest {
 
     private static void configureRestAssured() {
         RestAssured.filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
-
+        RestAssured.config = config().redirect(redirectConfig().followRedirects(false));
     }
 
     @BeforeEach
     public void start() {
         RestAssured.port = port;
+        eidasNodeRequestCommunicationCache.clear();
+        eidasNodeResponseCommunicationCache.clear();
     }
 
     @AfterAll

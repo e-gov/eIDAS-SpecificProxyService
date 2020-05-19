@@ -1,22 +1,18 @@
 package ee.ria.eidas.proxy.specific.config;
 
-import com.google.common.collect.ImmutableSortedSet;
 import com.nimbusds.oauth2.sdk.http.HTTPRequest;
 import com.nimbusds.oauth2.sdk.http.HTTPResponse;
 import com.nimbusds.oauth2.sdk.id.Issuer;
 import com.nimbusds.openid.connect.sdk.op.OIDCProviderConfigurationRequest;
 import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata;
 import ee.ria.eidas.proxy.specific.service.SpecificProxyService;
-import ee.ria.eidas.proxy.specific.service.SpecificProxyserviceCommunicationServiceImpl;
 import ee.ria.eidas.proxy.specific.storage.StoredMSProxyServiceRequestCorrelationMap;
 import eu.eidas.auth.cache.ConcurrentCacheServiceIgniteSpecificCommunicationImpl;
 import eu.eidas.auth.cache.IgniteInstanceInitializerSpecificCommunication;
-import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.AttributeRegistries;
 import eu.eidas.auth.commons.attribute.AttributeRegistry;
 import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
 import eu.eidas.auth.commons.light.ILightResponse;
-import eu.eidas.specificcommunication.protocol.SpecificCommunicationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,8 +36,6 @@ import javax.cache.Cache;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.net.MalformedURLException;
-import java.util.Collection;
-import java.util.HashSet;
 
 // TODO ignite instance client mode
 // TODO oidc metadata requires loading retry mechanism and update policy
@@ -86,7 +80,7 @@ public class SpecificProxyServiceConfiguration implements WebMvcConfigurer {
             @Value("#{environment.SPECIFIC_PROXY_SERVICE_CONFIG_REPOSITORY}/specificCommunicationDefinitionProxyservice.xml")
             String specificCommunicationDefinitionProperties) throws MalformedURLException {
 
-        Assert.isTrue(new File(specificCommunicationDefinitionProperties).exists(), "Required configuration file not found: " + specificCommunicationDefinitionProperties);
+        assertFileExists(specificCommunicationDefinitionProperties);
 
         PropertySourcesPlaceholderConfigurer ppc = new PropertySourcesPlaceholderConfigurer();
         ppc.setLocations(
@@ -97,7 +91,7 @@ public class SpecificProxyServiceConfiguration implements WebMvcConfigurer {
     }
 
     @Bean
-    OIDCProviderMetadata oidcProviderMetadata(SpecificProxyServiceProperties specificProxyServiceProperties) {
+    public OIDCProviderMetadata oidcProviderMetadata(SpecificProxyServiceProperties specificProxyServiceProperties) {
         try {
             Issuer issuer = new Issuer(specificProxyServiceProperties.getOidc().getIssuerUrl());
 
@@ -114,24 +108,11 @@ public class SpecificProxyServiceConfiguration implements WebMvcConfigurer {
     }
 
     @Bean
-    @Qualifier("attributeRegistry") // TODO remove this and replace with eidasAttributeRegistry
-    public Collection<AttributeDefinition<?>> attributeRegistry(
-            @Value("#{environment.SPECIFIC_PROXY_SERVICE_CONFIG_REPOSITORY}/eidas-attributes.xml")
-            String eidasAttributesConfiguration) {
-
-        Assert.isTrue(new File(eidasAttributesConfiguration).exists(), "Required configuration file not found: " + eidasAttributesConfiguration);
-
-        Collection<AttributeDefinition<?>> registry = new HashSet<>();
-        registry.addAll(AttributeRegistries.fromFiles(eidasAttributesConfiguration, null).getAttributes());
-        return ImmutableSortedSet.copyOf(registry);
-    }
-
-    @Bean
     @Qualifier("eidasAttributeRegistry")
     public AttributeRegistry eidasAttributeRegistry(@Value("#{environment.SPECIFIC_PROXY_SERVICE_CONFIG_REPOSITORY}/eidas-attributes.xml")
                                                                 String eidasAttributesConfiguration) {
 
-        Assert.isTrue(new File(eidasAttributesConfiguration).exists(), "Required configuration file not found: " + eidasAttributesConfiguration);
+        assertFileExists(eidasAttributesConfiguration);
         return AttributeRegistries.fromFiles(eidasAttributesConfiguration, null);
     }
 
@@ -141,7 +122,7 @@ public class SpecificProxyServiceConfiguration implements WebMvcConfigurer {
             @Value("#{environment.EIDAS_CONFIG_REPOSITORY}/igniteSpecificCommunication.xml") String igniteConfigurationFile,
             SpecificProxyServiceProperties specificProxyServiceProperties) throws FileNotFoundException {
 
-        Assert.isTrue(new File(igniteConfigurationFile).exists(), "Required configuration file not found: " + igniteConfigurationFile);
+        assertFileExists(igniteConfigurationFile);
 
         IgniteInstanceInitializerSpecificCommunication igniteInstance = new IgniteInstanceInitializerSpecificCommunication();
 
@@ -178,27 +159,27 @@ public class SpecificProxyServiceConfiguration implements WebMvcConfigurer {
         return initIgniteCache(igniteInstance, CACHE_NAME_IDP_REQUEST_RESPONSE);
     }
 
-
-    @Bean("springManagedSpecificProxyserviceCommunicationService")
-    public SpecificCommunicationService specificCommunicationService(SpecificProxyServiceProperties specificProxyServiceProperties,
-        @Qualifier("nodeSpecificProxyserviceRequestCache")
-        Cache requestCommunicationCache,
-        @Qualifier("nodeSpecificProxyserviceResponseCache")
-        Cache responseCommunicationCache) {
-        return new SpecificProxyserviceCommunicationServiceImpl(requestCommunicationCache, responseCommunicationCache);
-    }
-
     @Bean
     public SpecificProxyService specificProxyService(
             OIDCProviderMetadata oidcProviderMetadata,
             SpecificProxyServiceProperties specificProxyServiceProperties,
             Cache<String, StoredMSProxyServiceRequestCorrelationMap.CorrelatedRequestsHolder> specificMSIdpRequestCorrelationMap,
-            Cache<String, ILightResponse> specificMSIdpConsentCorrelationMap) {
+            Cache<String, ILightResponse> specificMSIdpConsentCorrelationMap,
+            AttributeRegistry eidasAttributeRegistry,
+            @Qualifier("nodeSpecificProxyserviceRequestCache")
+            Cache<String, String> specificNodeProxyserviceRequestCommunicationCache,
+            @Qualifier("nodeSpecificProxyserviceResponseCache")
+            Cache<String, String> specificNodeProxyserviceResponseCommunicationCache) {
 
         return new SpecificProxyService(
-                oidcProviderMetadata, specificProxyServiceProperties,
+                specificProxyServiceProperties,
+                eidasAttributeRegistry,
+                specificNodeProxyserviceRequestCommunicationCache,
+                specificNodeProxyserviceResponseCommunicationCache,
+                oidcProviderMetadata,
                 specificMSIdpRequestCorrelationMap,
-                specificMSIdpConsentCorrelationMap);
+                specificMSIdpConsentCorrelationMap
+                );
     }
 
     private Cache initIgniteCache(@Qualifier("eidasIgniteInstanceInitializerSpecificCommunication") IgniteInstanceInitializerSpecificCommunication igniteInstance, String cacheName) {
@@ -212,5 +193,9 @@ public class SpecificProxyServiceConfiguration implements WebMvcConfigurer {
         } catch (InvalidParameterEIDASException e) {
             throw new IllegalStateException("Problem with your Ignite configuration! Failed to instantiate Ignite cache named '" + cacheName + "'. Please check your configuration!", e);
         }
+    }
+
+    private static void assertFileExists(String configFile) {
+        Assert.isTrue(new File(configFile).exists(), "Required configuration file not found: " + configFile);
     }
 }

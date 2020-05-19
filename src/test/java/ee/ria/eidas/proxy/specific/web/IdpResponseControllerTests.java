@@ -1,25 +1,25 @@
 package ee.ria.eidas.proxy.specific.web;
 
-import com.nimbusds.oauth2.sdk.util.URLUtils;
-import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceConfiguration;
-import io.restassured.RestAssured;
-import io.restassured.response.Response;
+import ee.ria.eidas.proxy.specific.storage.StoredMSProxyServiceRequestCorrelationMap;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ContextConfiguration;
 
-import java.net.URL;
-import java.util.List;
-import java.util.Map;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Collections;
 
 import static ee.ria.eidas.proxy.specific.util.LightRequestTestHelper.createDefaultLightRequest;
 import static ee.ria.eidas.proxy.specific.web.IdpResponseController.ENDPOINT_IDP_RESPONSE;
 import static io.restassured.RestAssured.given;
-import static io.restassured.config.RedirectConfig.redirectConfig;
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
 abstract class IdpResponseControllerTests extends ControllerTest {
+
+
+	String addMockRequestToCommunicationCache() throws URISyntaxException {
+		String stateParemeterValue = "state";
+		getEidasNodeRequestCommunicationCache().put(stateParemeterValue, new StoredMSProxyServiceRequestCorrelationMap.CorrelatedRequestsHolder(createDefaultLightRequest(), Collections.singletonMap(stateParemeterValue, new URI("http://oidAuthenticationRequest"))));
+		return stateParemeterValue;
+	}
 
 	@Test
 	void missingRequiredParam() {

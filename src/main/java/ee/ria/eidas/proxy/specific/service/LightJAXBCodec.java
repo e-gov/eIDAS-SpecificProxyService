@@ -1,12 +1,7 @@
 package ee.ria.eidas.proxy.specific.service;
 
 import com.google.common.collect.ImmutableSet;
-import eu.eidas.auth.commons.attribute.AttributeDefinition;
-import eu.eidas.auth.commons.attribute.AttributeRegistry;
-import eu.eidas.auth.commons.attribute.AttributeValue;
-import eu.eidas.auth.commons.attribute.AttributeValueMarshaller;
-import eu.eidas.auth.commons.attribute.AttributeValueMarshallingException;
-import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
+import eu.eidas.auth.commons.attribute.*;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap.ImmutableAttributeEntry;
 import eu.eidas.auth.commons.light.ILightRequest;
 import eu.eidas.auth.commons.light.ILightResponse;

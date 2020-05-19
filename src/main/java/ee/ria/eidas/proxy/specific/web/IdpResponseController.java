@@ -34,11 +34,9 @@ import eu.eidas.auth.commons.protocol.eidas.LevelOfAssurance;
 import eu.eidas.auth.commons.protocol.impl.SamlNameIdFormat;
 import eu.eidas.auth.commons.tx.BinaryLightToken;
 import eu.eidas.specificcommunication.BinaryLightTokenHelper;
-import eu.eidas.specificcommunication.protocol.SpecificCommunicationService;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -46,7 +44,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import javax.annotation.Nonnull;
 import javax.cache.Cache;
 import javax.servlet.ServletException;
 import java.net.*;
@@ -80,10 +77,6 @@ public class IdpResponseController {
 	private Cache<String, StoredMSProxyServiceRequestCorrelationMap.CorrelatedRequestsHolder> specificMSIdpRequestCorrelationMap;
 
 	@Autowired
-	@Qualifier("springManagedSpecificProxyserviceCommunicationService")
-	private SpecificCommunicationService specificCommunicationService;
-
-	@Autowired
 	private AttributeRegistry eidasAttributeRegistry;
 
 
@@ -114,7 +107,7 @@ public class IdpResponseController {
 			return new ModelAndView("citizenConsentResponse");
 		} else {
 
-			final BinaryLightToken binaryLightToken = specificCommunicationService.putResponse(lightResponse);
+			final BinaryLightToken binaryLightToken = specificProxyService.putResponse(lightResponse);
 			final String token = BinaryLightTokenHelper.encodeBinaryLightTokenBase64(binaryLightToken);
 
 			URI redirectUrl = UriComponentsBuilder
@@ -208,8 +201,7 @@ public class IdpResponseController {
 			putAttribute(attrBuilder, "PersonIdentifier", subject);
 			LevelOfAssurance loa = LevelOfAssurance.valueOf(claimSet.getStringClaim("acr").toUpperCase());
 
-			final String inResponseToId = state;
-			ILightRequest iLightRequest =  getRemoveCorrelatediLightRequest(inResponseToId).get();
+			ILightRequest iLightRequest =  getRemoveCorrelatediLightRequest(state).get();
 
 			final LightResponse.Builder builder = LightResponse.builder()
 					.id(claimSet.getStringClaim("jti"))
@@ -240,12 +232,15 @@ public class IdpResponseController {
 		return InetAddress.getByName(new URL(issuerUrl).getHost()).getHostAddress();
 	}
 
-	private Optional<ILightRequest> getRemoveCorrelatediLightRequest(@Nonnull final String inResponseToId) {
+	private Optional<ILightRequest> getRemoveCorrelatediLightRequest(final String inResponseToId) {
 		Optional<ILightRequest> iLightRequest = Optional.ofNullable(specificMSIdpRequestCorrelationMap.get(inResponseToId))
 				.map( StoredMSProxyServiceRequestCorrelationMap.CorrelatedRequestsHolder::getILightRequest);
 		if (iLightRequest.isPresent()) {
 			specificMSIdpRequestCorrelationMap.remove(inResponseToId);
+			return iLightRequest;
+		} else {
+			throw new IllegalArgumentException("Failed to find the original LightRequest for id: " + inResponseToId);
 		}
-		return iLightRequest;
+
 	}
 }

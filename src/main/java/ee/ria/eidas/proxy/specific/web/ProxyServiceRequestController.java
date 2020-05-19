@@ -1,27 +1,22 @@
 package ee.ria.eidas.proxy.specific.web;
 
 import ee.ria.eidas.proxy.specific.service.SpecificProxyService;
-import eu.eidas.auth.commons.attribute.AttributeDefinition;
-import eu.eidas.auth.commons.exceptions.SecurityEIDASException;
-import eu.eidas.auth.commons.light.ILightRequest;
-import eu.eidas.specificcommunication.exception.SpecificCommunicationException;
-import eu.eidas.specificcommunication.protocol.SpecificCommunicationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.http.HttpServletResponse;
-import javax.xml.bind.JAXBException;
-import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Collection;
+import java.util.List;
 
 @Slf4j
+@Validated
 @Controller
 public class ProxyServiceRequestController {
 
@@ -31,59 +26,35 @@ public class ProxyServiceRequestController {
 	@Autowired
 	private SpecificProxyService specificProxyService;
 
-	@Autowired
-	@Qualifier("springManagedSpecificProxyserviceCommunicationService")
-	private SpecificCommunicationService specificCommunicationService;
-
-	@Autowired
-	@Qualifier("attributeRegistry")
-	private Collection<AttributeDefinition<?>> attributeRegistry;
-
-
 	@GetMapping(value = ENDPOINT_PROXY_SERVICE_REQUEST)
-	public void doGet(
-			final @RequestParam(name = PARAMETER_NAME_TOKEN) String base64Token,
-			final HttpServletResponse httpServletResponse) throws IOException {
-		execute(base64Token, httpServletResponse);
+	public ModelAndView get(
+			final @RequestParam(name = PARAMETER_NAME_TOKEN) List<String> base64Token) {
+		return execute( base64Token );
 	}
 
 	@PostMapping(value = ENDPOINT_PROXY_SERVICE_REQUEST)
-	public void doPost(
-			final @RequestParam(name= PARAMETER_NAME_TOKEN) String base64Token,
-			final HttpServletResponse httpServletResponse) throws IOException {
-		execute(base64Token, httpServletResponse);
+	public ModelAndView post(
+			final @RequestParam(name= PARAMETER_NAME_TOKEN) List<String> base64Token) {
+		return execute( base64Token );
 	}
 
-	private void execute(
-			final String tokenBase64,
-						 final HttpServletResponse httpServletResponse) throws IOException {
+	private ModelAndView execute(final List<String> base64Tokens) {
 
-		if (!tokenBase64.matches("^[A-Za-z0-9+/=]{1,1000}$"))
+		String base64Token = validateRequestParams(base64Tokens);
+
+		URL redirectURL = specificProxyService.createIdpRedirect(base64Token);
+
+		return new ModelAndView("redirect:" + redirectURL.toString());
+	}
+
+	private String validateRequestParams(List<String> base64Tokens) {
+		if (base64Tokens.size() > 1)
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Multiple token parameters not allowed");
+
+		String base64Token = base64Tokens.get(0);
+		if (!base64Token.matches("^[A-Za-z0-9+/=]{1,1000}$"))
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid token");
 
-		httpServletResponse.sendRedirect(prepareSpecificRequest(tokenBase64).toString());
-	}
-
-	private URL prepareSpecificRequest(final String tokenBase64) {
-
-		final ILightRequest originalIlightRequest = getIncomingiLightRequest(tokenBase64, attributeRegistry);
-
-		return createSpecificRequest(originalIlightRequest, null);
-	}
-
-	private ILightRequest getIncomingiLightRequest(String tokenBase64, final Collection<AttributeDefinition<?>> registry) {
-		try {
-			return specificCommunicationService.getAndRemoveRequest(tokenBase64, registry);
-		} catch (SpecificCommunicationException | SecurityEIDASException e) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error retrieving the corresponding lightRequest", e);
-		}
-	}
-
-	private URL createSpecificRequest(ILightRequest originalIlightRequest, ILightRequest consentedIlightRequest) {
-		try {
-			return specificProxyService.translateNodeRequest(originalIlightRequest, consentedIlightRequest);
-		} catch (JAXBException | MalformedURLException e) {
-			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error converting the lightRequest instance to OIDC authentication request", e);
-		}
+		return base64Token;
 	}
 }

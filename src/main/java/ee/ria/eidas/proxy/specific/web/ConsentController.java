@@ -9,6 +9,7 @@ import eu.eidas.specificcommunication.BinaryLightTokenHelper;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -19,6 +20,7 @@ import java.net.URI;
 
 @Slf4j
 @Controller
+@ConditionalOnProperty("eidas.proxy.ask-consent")
 public class ConsentController {
 
 	public static final String ENDPOINT_USER_CONSENT = "/Consent";
@@ -39,7 +41,7 @@ public class ConsentController {
 		final ILightResponse lightResponse;
 
 		if (cancel) {
-			lightResponse = specificProxyService.prepareILightResponseFailure(lightToken, "Citizen consent not given.");
+			lightResponse = specificProxyService.prepareILightResponseFailure(lightToken, "User canceled the authentication process");
 		} else {
 			lightResponse = specificProxyService.getIlightResponse(lightToken);
 		}

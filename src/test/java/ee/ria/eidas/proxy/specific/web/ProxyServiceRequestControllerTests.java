@@ -17,6 +17,7 @@ import eu.eidas.auth.commons.tx.BinaryLightToken;
 import eu.eidas.specificcommunication.BinaryLightTokenHelper;
 import io.restassured.response.Response;
 import org.apache.http.HttpHeaders;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,7 +35,9 @@ import static ee.ria.eidas.proxy.specific.util.LightRequestTestHelper.*;
 import static ee.ria.eidas.proxy.specific.web.ProxyServiceRequestController.ENDPOINT_PROXY_SERVICE_REQUEST;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.core.StringStartsWith.startsWith;
 import static org.hamcrest.text.MatchesPattern.matchesPattern;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -56,6 +59,11 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 	private String lightTokenResponseIssuerName;
 
 	@Test
+	void methodNotAllowedWhenInvalidHttpMethod() {
+		assertHttpMethodsNotAllowed(ENDPOINT_PROXY_SERVICE_REQUEST, "PUT", "DELETE", "CONNECT", "OPTIONS", "PATCH", "CUSTOM", "HEAD", "TRACE");
+	}
+
+	@Test
 	void badRequestWhenMissingRequiredParameters_token() {
 		given()
 			.param("invalidParameter", "invalidParameterValue")
@@ -64,8 +72,9 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(400)
-			.body("error", equalTo("Bad Request"))
-			.body("message", equalTo("Required List parameter 'token' is not present"));
+			.body("message", equalTo("Bad request"))
+			.body("errors", hasSize(1))
+			.body("errors", hasItem("Parameter token: must not be null"));
 
 		assertResponseCommunicationCacheIsEmpty();
 	}
@@ -79,8 +88,9 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(400)
-			.body("error", equalTo("Bad Request"))
-			.body("message", equalTo("Invalid token"));
+			.body("message", equalTo("Bad request"))
+			.body("errors", hasSize(1))
+			.body("errors", hasItem("Parameter token[0]: only base64 characters allowed"));
 
 		assertResponseCommunicationCacheIsEmpty();
 	}
@@ -94,8 +104,9 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(400)
-			.body("error", equalTo("Bad Request"))
-			.body("message", equalTo("Invalid token"));
+			.body("message", equalTo("Bad request"))
+			.body("errors", hasSize(1))
+			.body("errors", hasItem("Invalid token"));
 
 		assertResponseCommunicationCacheIsEmpty();
 	}
@@ -115,9 +126,9 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(400)
-			.body("error", equalTo("Bad Request"))
-			.body("message", equalTo("Multiple token parameters not allowed"));
-
+			.body("message", equalTo("Bad request"))
+			.body("errors", hasSize(1))
+			.body("errors", hasItem("Parameter token: using multiple instances of parameter is not allowed"));
 
 		assertResponseCommunicationCacheIsEmpty();
 	}
@@ -136,8 +147,9 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(400)
-			.body("error", equalTo("Bad Request"))
-			.body("message", equalTo("Invalid token"));
+			.body("message", equalTo("Bad request"))
+			.body("errors", hasSize(1))
+			.body("errors", hasItem("Invalid token"));
 
 		assertResponseCommunicationCacheIsEmpty();
 	}
@@ -157,8 +169,9 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(500)
-			.body("error", equalTo("Internal Server Error"))
-			.body("message", equalTo("Something went wrong internally. Please consult server logs for further details."));
+			.body("message", equalTo("Internal server error"))
+			.body("errors", hasSize(1))
+			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
 
 		assertResponseCommunicationCacheIsEmpty();
 	}
@@ -187,7 +200,7 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 				"eidas:attribute:date_of_birth");
 
 		// assert request communication cache
-		assertCommunicationCache(mockLightRequest);
+		assertRequestInCommunicationCache(mockLightRequest);
 	}
 
 	@Test
@@ -222,7 +235,7 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 				"eidas:attribute:current_address");
 
 		// assert request communication cache
-		assertCommunicationCache(mockLightRequest);
+		assertRequestInCommunicationCache(mockLightRequest);
 	}
 
 	@Test
@@ -247,7 +260,7 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 				"eidas:attribute:legal_person_identifier");
 
 		// assert request communication cache
-		assertCommunicationCache(mockLightRequest);
+		assertRequestInCommunicationCache(mockLightRequest);
 	}
 
 	@Test
@@ -281,7 +294,7 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 				"eidas:attribute:sic");
 
 		// assert request communication cache
-		assertCommunicationCache(mockLightRequest);
+		assertRequestInCommunicationCache(mockLightRequest);
 	}
 
 	private void assertValidOidcAuthenticationRequest(Response response) throws MalformedURLException {
@@ -301,7 +314,7 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 		assertEquals(openid_idcard_mid, urlParameters.get("scope").get(0));
 	}
 
-	private void assertCommunicationCache(ILightRequest mockLightRequest) {
+	private void assertRequestInCommunicationCache(ILightRequest mockLightRequest) {
 		List<Cache.Entry<String, StoredMSProxyServiceRequestCorrelationMap.CorrelatedRequestsHolder>> list = getListFromIterator(getEidasNodeRequestCommunicationCache().iterator());
 		assertEquals(1, list.size());
 		assertThat(list.get(0).getKey(), matchesPattern(UUID_REGEX));
@@ -323,11 +336,6 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 
 	private List<String> getFriendlyNamesList(ImmutableAttributeMap attributes) {
 		return attributes.getDefinitions().stream().map(AttributeDefinition::getFriendlyName).collect(Collectors.toList());
-	}
-
-	private void assertResponseCommunicationCacheIsEmpty() {
-		List<Cache.Entry<String, String>> list = getListFromIterator(getEidasNodeResponseCommunicationCache().iterator());
-		assertEquals(0, list.size());
 	}
 
 	private AttributeDefinition<String> getCustomAttributeDefinition(String friendlyName) {

@@ -15,9 +15,26 @@
 
 package ee.ria.eidas.proxy.specific.service;
 
+import com.google.common.collect.ImmutableSortedSet;
+import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.proc.BadJOSEException;
+import com.nimbusds.jwt.JWT;
+import com.nimbusds.oauth2.sdk.*;
+import com.nimbusds.oauth2.sdk.auth.ClientAuthentication;
+import com.nimbusds.oauth2.sdk.auth.ClientSecretBasic;
+import com.nimbusds.oauth2.sdk.auth.Secret;
+import com.nimbusds.oauth2.sdk.id.ClientID;
+import com.nimbusds.oauth2.sdk.id.Issuer;
+import com.nimbusds.openid.connect.sdk.OIDCTokenResponse;
+import com.nimbusds.openid.connect.sdk.OIDCTokenResponseParser;
+import com.nimbusds.openid.connect.sdk.claims.ClaimsSet;
 import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata;
+import com.nimbusds.openid.connect.sdk.validators.IDTokenValidator;
 import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceProperties;
-import ee.ria.eidas.proxy.specific.error.AuthenticationRequestDeniedException;
+import ee.ria.eidas.proxy.specific.error.RequestDeniedException;
+import ee.ria.eidas.proxy.specific.error.BadRequestException;
+import ee.ria.eidas.proxy.specific.storage.StoredMSProxyServiceRequestCorrelationMap;
 import ee.ria.eidas.proxy.specific.storage.StoredMSProxyServiceRequestCorrelationMap.CorrelatedRequestsHolder;
 import eu.eidas.auth.commons.EIDASStatusCode;
 import eu.eidas.auth.commons.EIDASSubStatusCode;
@@ -32,6 +49,7 @@ import eu.eidas.auth.commons.light.impl.LightRequest;
 import eu.eidas.auth.commons.light.impl.LightResponse;
 import eu.eidas.auth.commons.light.impl.ResponseStatus;
 import eu.eidas.auth.commons.protocol.eidas.LevelOfAssurance;
+import eu.eidas.auth.commons.protocol.impl.SamlNameIdFormat;
 import eu.eidas.auth.commons.tx.BinaryLightToken;
 import eu.eidas.specificcommunication.BinaryLightTokenHelper;
 import eu.eidas.specificcommunication.exception.SpecificCommunicationException;
@@ -46,11 +64,10 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.annotation.PostConstruct;
 import javax.cache.Cache;
+import javax.servlet.ServletException;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URL;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -120,7 +137,7 @@ public class SpecificProxyService {
         return createOidcAuthenticationRequest(incomingLightRequest);
     }
 
-    public URL createRequestDeniedRedirect(AuthenticationRequestDeniedException ex) throws MalformedURLException, SpecificCommunicationException {
+    public URL createRequestDeniedRedirect(RequestDeniedException ex) throws MalformedURLException, SpecificCommunicationException {
 
         ILightResponse lightResponse = createILightResponseFailure(ex.getInResponseTo(),
                 EIDASStatusCode.REQUESTER_URI, EIDASSubStatusCode.REQUEST_DENIED_URI, ex.getMessage(), lightTokenResponseIssuerName);
@@ -178,16 +195,22 @@ public class SpecificProxyService {
             throw new SpecificCommunicationException("The original request has expired or invalid ID was specified");
 
         if (!specificProxyServiceProperties.getSupportedSpTypes().contains(request.getSpType()))
-            throw new AuthenticationRequestDeniedException("Service provider type not supported. Allowed types: " + specificProxyServiceProperties.getSupportedSpTypes(), request.getId());
+            throw new RequestDeniedException("Service provider type not supported. Allowed types: " + specificProxyServiceProperties.getSupportedSpTypes(), request.getId());
 
         log.info("Lightrequest found from cache for ID: '{}'. Cache: '{}'. Lightrequest: '{}'", binaryLightTokenId, eidasRequestCommunicationCache.getName(),  request.toString());
         return request;
     }
 
+    public ILightResponse prepareFailureResponse(ILightRequest iLightRequest, String statusMessage) {
+
+        return createILightResponseFailure(iLightRequest.getId(),
+                EIDASStatusCode.RESPONDER_URI, EIDASSubStatusCode.REQUEST_DENIED_URI, statusMessage, lightTokenResponseIssuerName );
+    }
+
     public ILightResponse prepareILightResponseFailure(final String lightToken, String statusMessage) throws SpecificCommunicationException {
         final ILightResponse iLightResponse = getIlightResponse(lightToken);
         if (iLightResponse == null)
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error retrieving the corresponding lightResponse");
+            throw new BadRequestException("Error retrieving the corresponding lightResponse");
 
         return createILightResponseFailure(iLightResponse.getInResponseToId(),
                 EIDASStatusCode.RESPONDER_URI, EIDASSubStatusCode.REQUEST_DENIED_URI, statusMessage, specificProxyServiceProperties.getConsentBinaryLightToken().getIssuer());
@@ -263,7 +286,7 @@ public class SpecificProxyService {
         try {
             return getAndRemoveRequest(tokenBase64, registry);
         } catch (SpecificCommunicationException | SecurityEIDASException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid token", e);
+            throw new BadRequestException("Invalid token", e);
         }
     }
 
@@ -303,4 +326,145 @@ public class SpecificProxyService {
         return loa.name().toLowerCase();
     }
 
+    private ILightRequest getRemoveCorrelatediLightRequest(final String inResponseToId) {
+        Optional<ILightRequest> iLightRequest = Optional.ofNullable(idpRequestCommunicationCache.get(inResponseToId))
+                .map( StoredMSProxyServiceRequestCorrelationMap.CorrelatedRequestsHolder::getILightRequest);
+        if (iLightRequest.isPresent()) {
+            log.debug("Found and removed LightRequest for id: '{}'", inResponseToId);
+            idpRequestCommunicationCache.remove(inResponseToId);
+            return iLightRequest.get();
+        } else {
+            log.warn("Failed to find the original LightRequest for id: '{}' ", inResponseToId);
+            return null;
+        }
+    }
+
+    public URL createIdpAuthenticationFailedRedirectURL(String state, String errorCode, String errorDescription) throws MalformedURLException, SpecificCommunicationException {
+
+        ILightRequest originalLightRequest =  getRemoveCorrelatediLightRequest(state);
+        if (originalLightRequest == null) {
+            throw new BadRequestException("Invalid state");
+        }
+
+        if (isAuthenticationCancelled(errorCode)) {
+            final ILightResponse lightResponse = prepareFailureResponse(originalLightRequest, "User canceled the authentication process");
+            final BinaryLightToken binaryLightToken = putResponse(lightResponse);
+            final String token = BinaryLightTokenHelper.encodeBinaryLightTokenBase64(binaryLightToken);
+            URI redirectUrl = UriComponentsBuilder.fromUri(URI.create(specificProxyServiceProperties.getNodeSpecificResponseUrl()))
+                    .queryParam(EidasParameterKeys.TOKEN.getValue() , token)
+                    .build().toUri();
+
+            return redirectUrl.toURL();
+        } else {
+            throw new IllegalStateException(String.format("IDP has returned an error (code = '%s', description = '%s')", errorCode, errorDescription));
+        }
+
+    }
+
+    public ILightResponse doDelegatedAuthentication(String oAuthCode, String state) throws ServletException {
+
+        ILightRequest originalLightRequest =  getRemoveCorrelatediLightRequest(state);
+        if (originalLightRequest == null) {
+            throw new BadRequestException("Invalid state");
+        }
+
+        final ILightResponse lightResponse;
+
+        try {
+            ClientID clientID = new ClientID(specificProxyServiceProperties.getOidc().getClientId());
+            ClientAuthentication clientAuth = new ClientSecretBasic(
+                    clientID,
+                    new Secret(specificProxyServiceProperties.getOidc().getClientSecret())
+            );
+
+            AuthorizationCode authorizationCode = new AuthorizationCode(oAuthCode);
+            URI callback = new URI(specificProxyServiceProperties.getOidc().getRedirectUri());
+            AuthorizationGrant codeGrant = new AuthorizationCodeGrant(authorizationCode, callback);
+
+            URI tokenEndpoint = oidcProviderMetadata.getTokenEndpointURI();
+            TokenRequest request = new TokenRequest(tokenEndpoint, clientAuth, codeGrant, null, null, Collections.singletonMap("state", Collections.singletonList(state)));
+            log.info("Request id-token from {} ", request.getEndpointURI());
+            TokenResponse tokenResponse = OIDCTokenResponseParser.parse(request.toHTTPRequest().send());
+
+            if (!tokenResponse.indicatesSuccess()) {
+                TokenErrorResponse errorResponse = tokenResponse.toErrorResponse();
+                log.error("Token endpoint " + tokenEndpoint + " returned an error: " + errorResponse.getErrorObject());
+                throw new IllegalStateException("OIDC token request returned an error!");
+            }
+
+            OIDCTokenResponse successResponse = (OIDCTokenResponse)tokenResponse.toSuccessResponse();
+
+            // Get the ID and access token, the server may also return a refresh token
+            JWT idToken = successResponse.getOIDCTokens().getIDToken();
+            log.info("ID-TOKEN: " + idToken.getParsedString());
+
+            // Verify the ID-token
+            Issuer iss = new Issuer(oidcProviderMetadata.getIssuer());
+            JWSAlgorithm jwsAlg = JWSAlgorithm.RS256;
+            URL jwkSetURL = oidcProviderMetadata.getJWKSetURI().toURL();
+
+            // Create validator for signed ID tokens
+            IDTokenValidator validator = new IDTokenValidator(iss, clientID, jwsAlg, jwkSetURL);
+            try {
+                ClaimsSet claims = validator.validate(idToken, null);
+                log.info("OIDC response successfully verified!");
+                lightResponse = translateToLightResponse(state, claims, originalLightRequest);
+                log.info("LightResponse for eIDAS-Proxy service: " + lightResponse.toString());
+            } catch (BadJOSEException | JOSEException e) {
+                throw new IllegalStateException("Error when validating id_token!", e);
+            }
+
+        } catch (Exception e) {
+            log.error("Error unmarshalling MS Specific Request"+e);
+            throw new ServletException(e);
+        }
+
+        return lightResponse;
+    }
+
+    public ILightResponse translateToLightResponse(String state, ClaimsSet claimSet, ILightRequest iLightRequest) {
+        try {
+            log.info("JWT (claims): " + claimSet.toJSONString());
+
+            ImmutableAttributeMap.Builder attrBuilder = ImmutableAttributeMap.builder();
+            Map profileAttributes = claimSet.getClaim("profile_attributes", Map.class);
+            String subject = claimSet.getStringClaim("sub");
+            putAttribute(attrBuilder, "FamilyName", String.valueOf(profileAttributes.get("family_name")) );
+            putAttribute(attrBuilder, "FirstName", String.valueOf(profileAttributes.get("given_name")) );
+            putAttribute(attrBuilder, "DateOfBirth", String.valueOf(profileAttributes.get("date_of_birth")) );
+            putAttribute(attrBuilder, "PersonIdentifier", subject);
+            LevelOfAssurance loa = LevelOfAssurance.valueOf(claimSet.getStringClaim("acr").toUpperCase());
+
+            final LightResponse.Builder builder = LightResponse.builder()
+                    .id(claimSet.getStringClaim("jti"))
+                    .ipAddress(getIssuerIp(specificProxyServiceProperties.getOidc().getIssuerUrl()))
+                    .inResponseToId(iLightRequest.getId())
+                    .issuer(claimSet.getIssuer().getValue())
+                    .levelOfAssurance(loa.stringValue())
+                    .relayState(iLightRequest.getRelayState())
+                    .status(ResponseStatus.builder().statusCode("urn:oasis:names:tc:SAML:2.0:status:Success").build())
+                    .subject(subject)
+                    .subjectNameIdFormat(SamlNameIdFormat.UNSPECIFIED.getNameIdFormat())
+                    .attributes(attrBuilder.build());
+
+            return builder.build();
+
+        } catch (Exception e) {
+            throw new IllegalStateException("Error :" + e, e);
+        }
+    }
+
+    private void putAttribute(ImmutableAttributeMap.Builder builder, String familyName, String value) {
+        final ImmutableSortedSet<AttributeDefinition<?>> byFriendlyName = eidasAttributeRegistry.getByFriendlyName(familyName);
+        final AttributeDefinition<?> attributeDefinition = byFriendlyName.first();
+        builder.put(attributeDefinition, value);
+    }
+
+    private static String getIssuerIp(String issuerUrl) throws UnknownHostException, MalformedURLException {
+        return InetAddress.getByName(new URL(issuerUrl).getHost()).getHostAddress();
+    }
+
+    private boolean isAuthenticationCancelled(String errorCode) {
+        return errorCode.equals(specificProxyServiceProperties.getOidc().getErrorCodeUserCancel());
+    }
 }

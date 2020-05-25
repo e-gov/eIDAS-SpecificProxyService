@@ -119,6 +119,9 @@ TBD - heartbeat endpoint
 | `eidas.proxy.oidc.redirect-uri` | Yes | OpenID Connect client redirect URI. |
 | `eidas.proxy.oidc.issuer-url` | Yes | OpenID Connect issuer URL. |
 | `eidas.proxy.oidc.scope` | No | Comma separated list of additional scopes. Sets the value of `scope` parameter in the OpenID Connect authentication request. Defaults to `openid idcard mid` if not specified. |
+| `eidas.proxy.oidc.error-code-user-cancel` | No | <p>The expected error code returned in the OpenID Connect authentication [error response](https://openid.net/specs/openid-connect-core-1_0.html#AuthError) when user cancel's the authentication process at the IDP. </p> <p>Defaults to `user_cancel` when not specified.</p>    |
+
+
 
 <a name="configuration_parameters_eidas"></a> 
 ### Integration with the `EidasNode` webapp

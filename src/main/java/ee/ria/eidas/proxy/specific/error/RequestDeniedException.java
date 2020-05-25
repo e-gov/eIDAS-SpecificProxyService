@@ -2,12 +2,12 @@ package ee.ria.eidas.proxy.specific.error;
 
 import lombok.Getter;
 
-public class AuthenticationRequestDeniedException extends RuntimeException {
+public class RequestDeniedException extends RuntimeException {
 
     @Getter
     private final String inResponseTo;
 
-    public AuthenticationRequestDeniedException(String message, String inResponseTo) {
+    public RequestDeniedException(String message, String inResponseTo) {
         super(message);
         this.inResponseTo = inResponseTo;
     }

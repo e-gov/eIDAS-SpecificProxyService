@@ -15,8 +15,8 @@ import static org.hamcrest.core.StringStartsWith.startsWith;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
 @SpringBootTest( webEnvironment = RANDOM_PORT )
-@ContextConfiguration( classes = SpecificProxyServiceConfiguration.class, initializers = ConsentControllerTests.TestContextInitializer.class )
-class ConsentControllerTests extends ControllerTest {
+@ContextConfiguration( classes = SpecificProxyServiceConfiguration.class, initializers = ConsentControllerEnabledTests.TestContextInitializer.class )
+class ConsentControllerEnabledTests extends ControllerTest {
 
 	@Test
 	void validLightTokenAndCancel() throws Exception {
@@ -25,7 +25,6 @@ class ConsentControllerTests extends ControllerTest {
 		given()
 			.param("binaryLightToken", mockBinaryLightToken)
 			.param("cancel", "true")
-			.config(RestAssured.config().redirect(redirectConfig().followRedirects(false)))
 		.when()
 			.get(ENDPOINT_USER_CONSENT)
 		.then()
@@ -44,7 +43,6 @@ class ConsentControllerTests extends ControllerTest {
 
 		given()
 			.param("binaryLightToken", mockBinaryLightToken)
-			.config(RestAssured.config().redirect(redirectConfig().followRedirects(false)))
 		.when()
 			.get(ENDPOINT_USER_CONSENT)
 		.then()

@@ -8,6 +8,7 @@ import ee.ria.eidas.proxy.specific.storage.StoredMSProxyServiceRequestCorrelatio
 import io.restassured.RestAssured;
 import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
+import io.restassured.response.ValidatableResponse;
 import lombok.Getter;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,9 +20,14 @@ import org.springframework.test.context.ActiveProfiles;
 
 import javax.cache.Cache;
 
+import java.util.List;
+
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static ee.ria.eidas.proxy.specific.util.LightRequestTestHelper.getListFromIterator;
+import static io.restassured.RestAssured.given;
 import static io.restassured.config.RedirectConfig.redirectConfig;
 import static io.restassured.config.RestAssuredConfig.config;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ActiveProfiles("test")
@@ -73,6 +79,22 @@ public abstract class ControllerTest {
         assertNotNull(specificProxyService, "Should not be null!");
     }
 
+    void assertResponseCommunicationCacheIsEmpty() {
+        List<Cache.Entry<String, String>> list = getListFromIterator(getEidasNodeResponseCommunicationCache().iterator());
+        assertEquals(0, list.size());
+    }
+
+    void assertHttpMethodsNotAllowed(String path, String... restrictedMethods) {
+        for (String method : restrictedMethods) {
+            given()
+            .when().
+                request(method, path).
+            then()
+                .assertThat()
+                .statusCode(405);
+        }
+    }
+
     public static class TestContextInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
 
         @Override
@@ -106,6 +128,7 @@ public abstract class ControllerTest {
     }
 
     private static void configureRestAssured() {
+
         RestAssured.filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
         RestAssured.config = config().redirect(redirectConfig().followRedirects(false));
     }

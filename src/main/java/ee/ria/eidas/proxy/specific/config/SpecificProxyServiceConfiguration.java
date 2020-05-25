@@ -7,6 +7,7 @@ import com.nimbusds.openid.connect.sdk.op.OIDCProviderConfigurationRequest;
 import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata;
 import ee.ria.eidas.proxy.specific.service.SpecificProxyService;
 import ee.ria.eidas.proxy.specific.storage.StoredMSProxyServiceRequestCorrelationMap;
+import ee.ria.eidas.proxy.specific.web.filter.DisabledHttpMethodsFilter;
 import eu.eidas.auth.cache.ConcurrentCacheServiceIgniteSpecificCommunicationImpl;
 import eu.eidas.auth.cache.IgniteInstanceInitializerSpecificCommunication;
 import eu.eidas.auth.commons.attribute.AttributeRegistries;
@@ -16,16 +17,20 @@ import eu.eidas.auth.commons.light.ILightResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
+import org.springframework.core.Ordered;
 import org.springframework.core.io.FileUrlResource;
 import org.springframework.util.Assert;
 import org.springframework.web.servlet.ViewResolver;
 import org.springframework.web.servlet.config.annotation.DefaultServletHandlerConfigurer;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.resource.PathResourceResolver;
@@ -36,6 +41,9 @@ import javax.cache.Cache;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.net.MalformedURLException;
+import java.util.HashMap;
+
+import static org.springframework.util.StringUtils.tokenizeToStringArray;
 
 // TODO ignite instance client mode
 // TODO oidc metadata requires loading retry mechanism and update policy
@@ -65,6 +73,15 @@ public class SpecificProxyServiceConfiguration implements WebMvcConfigurer {
         bean.setViewClass(JstlView.class);
         bean.setPrefix("/WEB-INF/jsp/");
         bean.setSuffix(".jsp");
+        return bean;
+    }
+
+    @Bean
+    public FilterRegistrationBean authenticationPortFilter(SpecificProxyServiceProperties specificProxyServiceProperties) {
+        final FilterRegistrationBean bean = new FilterRegistrationBean();
+        bean.setFilter(new DisabledHttpMethodsFilter(specificProxyServiceProperties.getWebapp().getDisabledHttpMethods()));
+        bean.setInitParameters(new HashMap<>());
+        bean.setOrder(Ordered.HIGHEST_PRECEDENCE);
         return bean;
     }
 

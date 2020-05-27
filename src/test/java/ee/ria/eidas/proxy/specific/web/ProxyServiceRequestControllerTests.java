@@ -2,10 +2,9 @@ package ee.ria.eidas.proxy.specific.web;
 
 import com.nimbusds.oauth2.sdk.util.URLUtils;
 import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceConfiguration;
-import ee.ria.eidas.proxy.specific.storage.StoredMSProxyServiceRequestCorrelationMap;
+import ee.ria.eidas.proxy.specific.storage.SpecificProxyServiceCommunication;
 import eu.eidas.auth.commons.EidasParameterKeys;
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
-import eu.eidas.auth.commons.attribute.AttributeRegistry;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.attribute.PersonType;
 import eu.eidas.auth.commons.attribute.impl.LiteralStringAttributeValueMarshaller;
@@ -17,10 +16,7 @@ import eu.eidas.auth.commons.tx.BinaryLightToken;
 import eu.eidas.specificcommunication.BinaryLightTokenHelper;
 import io.restassured.response.Response;
 import org.apache.http.HttpHeaders;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ContextConfiguration;
 
@@ -44,19 +40,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
-
-
-// TODO handle POST method
-
 @SpringBootTest( webEnvironment = RANDOM_PORT )
 @ContextConfiguration( classes = SpecificProxyServiceConfiguration.class, initializers = ProxyServiceRequestControllerTests.TestContextInitializer.class )
 class ProxyServiceRequestControllerTests extends ControllerTest {
-
-	@Autowired
-	private AttributeRegistry attributeRegistry;
-
-	@Value("${lightToken.proxyservice.response.issuer.name}")
-	private String lightTokenResponseIssuerName;
 
 	@Test
 	void methodNotAllowedWhenInvalidHttpMethod() {
@@ -113,10 +99,8 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 
 	@Test
 	void badRequestWhenInvalidParameterValue_multipleParameterValuesNotSupported() throws Exception {
-		BinaryLightToken mockBinaryLightToken = getSpecificProxyService().putRequest(createDefaultLightRequest());
-
+		BinaryLightToken mockBinaryLightToken = putRequest(createDefaultLightRequest());
 		String tokenBase64 = BinaryLightTokenHelper.encodeBinaryLightTokenBase64(mockBinaryLightToken);
-		getSpecificProxyService().getAndRemoveRequest(tokenBase64, attributeRegistry.getAttributes());
 
 		given()
 			.param(EidasParameterKeys.TOKEN.toString(), tokenBase64)
@@ -135,10 +119,10 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 
 	@Test
 	void badRequestWhenInvalidLightToken_invalidValueOrExpired() throws Exception {
-		BinaryLightToken mockBinaryLightToken = getSpecificProxyService().putRequest(createDefaultLightRequest());
-
+		ILightRequest defaultLightRequest = createDefaultLightRequest();
+		BinaryLightToken mockBinaryLightToken = putRequest(defaultLightRequest);
 		String tokenBase64 = BinaryLightTokenHelper.encodeBinaryLightTokenBase64(mockBinaryLightToken);
-		getSpecificProxyService().getAndRemoveRequest(tokenBase64, attributeRegistry.getAttributes());
+		getEidasNodeRequestCommunicationCache().getAndRemove(mockBinaryLightToken.getToken().getId());
 
 		given()
 			.param(EidasParameterKeys.TOKEN.toString(), tokenBase64)
@@ -155,12 +139,52 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 	}
 
 	@Test
+	void badRequestWhenReplay() throws Exception {
+		ILightRequest mockLightRequest = createLightRequest(NATURAL_PERSON_MANDATORY_ATTRIBUTES);
+		BinaryLightToken mockBinaryLightToken = putRequest(mockLightRequest);
+		
+		Response response = given()
+			.param(EidasParameterKeys.TOKEN.toString(), BinaryLightTokenHelper.encodeBinaryLightTokenBase64(mockBinaryLightToken))
+		.when()
+			.get(ENDPOINT_PROXY_SERVICE_REQUEST)
+		.then()
+			.assertThat()
+			.statusCode(302)
+			.header(HttpHeaders.LOCATION, startsWith("https://localhost:9877/oidc/authorize"))
+			.extract().response();
+
+		// assert redirect parameters
+		assertValidOidcAuthenticationRequest(response);
+		assertScopeParameter(response, "openid idcard mid " +
+				"eidas:attribute:person_identifier " +
+				"eidas:attribute:family_name " +
+				"eidas:attribute:first_name " +
+				"eidas:attribute:date_of_birth");
+
+		// assert request communication cache
+		assertRequestInIdpCommunicationCache(mockLightRequest);
+		assertResponseCommunicationCacheIsEmpty();
+
+		// try to replay
+		given()
+			.param(EidasParameterKeys.TOKEN.toString(), BinaryLightTokenHelper.encodeBinaryLightTokenBase64(mockBinaryLightToken))
+		.when()
+			.get(ENDPOINT_PROXY_SERVICE_REQUEST)
+		.then()
+			.assertThat()
+			.statusCode(400)
+			.body("message", equalTo("Bad request"))
+			.body("errors", hasSize(1))
+			.body("errors", hasItem("Invalid token"));
+	}
+
+	@Test
 	void internalServerErrorWhenRequestedAttributesNotSupported() throws Exception {
 		ImmutableAttributeMap customAttributes = new ImmutableAttributeMap.Builder()
 				.putAll(NATURAL_PERSON_MANDATORY_ATTRIBUTES)
 				.put(getCustomAttributeDefinition("UnknownAttribute"), new StringAttributeValue("")).build();
 
-		BinaryLightToken mockBinaryLightToken = getSpecificProxyService().putRequest(createLightRequest(customAttributes));
+		BinaryLightToken mockBinaryLightToken = putRequest(createLightRequest(customAttributes));
 
 		given()
 			.param(EidasParameterKeys.TOKEN.toString(), BinaryLightTokenHelper.encodeBinaryLightTokenBase64(mockBinaryLightToken))
@@ -173,13 +197,14 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 			.body("errors", hasSize(1))
 			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
 
+		assertErrorIsLogged("Server encountered an unexpected error: Failed to unmarshal incoming request! Attribute http://eidas.europa.eu/attributes/naturalperson/UnknownAttribute not present in the registry");
 		assertResponseCommunicationCacheIsEmpty();
 	}
 
 	@Test
-	void redirectToIdpWhenValidRequest_NaturalPersonMandatoryAttributesOnly() throws Exception {
+	void redirectToIdpWhenValidRequest_NaturalPersonMandatoryAttributesOnly_GET() throws Exception {
 		ILightRequest mockLightRequest = createLightRequest(NATURAL_PERSON_MANDATORY_ATTRIBUTES);
-		BinaryLightToken mockBinaryLightToken = getSpecificProxyService().putRequest(mockLightRequest);
+		BinaryLightToken mockBinaryLightToken = putRequest(mockLightRequest);
 
 		Response response = given()
 			.param(EidasParameterKeys.TOKEN.toString(), BinaryLightTokenHelper.encodeBinaryLightTokenBase64(mockBinaryLightToken))
@@ -200,7 +225,36 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 				"eidas:attribute:date_of_birth");
 
 		// assert request communication cache
-		assertRequestInCommunicationCache(mockLightRequest);
+		assertRequestInIdpCommunicationCache(mockLightRequest);
+		assertResponseCommunicationCacheIsEmpty();
+	}
+
+	@Test
+	void redirectToIdpWhenValidRequest_NaturalPersonMandatoryAttributesOnly_POST() throws Exception {
+		ILightRequest mockLightRequest = createLightRequest(NATURAL_PERSON_MANDATORY_ATTRIBUTES);
+		BinaryLightToken mockBinaryLightToken = putRequest(mockLightRequest);
+
+		Response response = given()
+			.formParams(EidasParameterKeys.TOKEN.toString(), BinaryLightTokenHelper.encodeBinaryLightTokenBase64(mockBinaryLightToken))
+		.when()
+			.post(ENDPOINT_PROXY_SERVICE_REQUEST)
+		.then()
+			.assertThat()
+			.statusCode(302)
+			.header(HttpHeaders.LOCATION, startsWith("https://localhost:9877/oidc/authorize"))
+			.extract().response();
+
+		// assert redirect parameters
+		assertValidOidcAuthenticationRequest(response);
+		assertScopeParameter(response, "openid idcard mid " +
+				"eidas:attribute:person_identifier " +
+				"eidas:attribute:family_name " +
+				"eidas:attribute:first_name " +
+				"eidas:attribute:date_of_birth");
+
+		// assert request communication cache
+		assertRequestInIdpCommunicationCache(mockLightRequest);
+		assertResponseCommunicationCacheIsEmpty();
 	}
 
 	@Test
@@ -210,7 +264,7 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 				.putAll(NATURAL_PERSON_OPTIONAL_ATTRIBUTES)
 				.put(EidasSpec.Definitions.REPV_PERSON_IDENTIFIER, new StringAttributeValue("")) // should be ignored
 				.build());
-		BinaryLightToken mockBinaryLightToken = getSpecificProxyService().putRequest(mockLightRequest);
+		BinaryLightToken mockBinaryLightToken = putRequest(mockLightRequest);
 
 		Response response = given()
 			.param(EidasParameterKeys.TOKEN.toString(), BinaryLightTokenHelper.encodeBinaryLightTokenBase64(mockBinaryLightToken))
@@ -235,13 +289,13 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 				"eidas:attribute:current_address");
 
 		// assert request communication cache
-		assertRequestInCommunicationCache(mockLightRequest);
+		assertRequestInIdpCommunicationCache(mockLightRequest);
 	}
 
 	@Test
 	void redirectToIdpWhenValidRequest_LegalPersonMandatoryAttributesOnly() throws Exception {
 		ILightRequest mockLightRequest = createLightRequest(LEGAL_PERSON_MANDATORY_ATTRIBUTES);
-		BinaryLightToken mockBinaryLightToken = getSpecificProxyService().putRequest(mockLightRequest);
+		BinaryLightToken mockBinaryLightToken = putRequest(mockLightRequest);
 
 		Response response = given()
 			.param(EidasParameterKeys.TOKEN.toString(), BinaryLightTokenHelper.encodeBinaryLightTokenBase64(mockBinaryLightToken))
@@ -260,14 +314,14 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 				"eidas:attribute:legal_person_identifier");
 
 		// assert request communication cache
-		assertRequestInCommunicationCache(mockLightRequest);
+		assertRequestInIdpCommunicationCache(mockLightRequest);
 	}
 
 	@Test
 	void redirectToIdpWhenValidRequest_LegalPersonAllAttributes() throws Exception {
 		ILightRequest mockLightRequest = createLightRequest(new ImmutableAttributeMap.Builder()
 				.putAll(LEGAL_PERSON_MANDATORY_ATTRIBUTES).putAll(LEGAL_PERSON_OPTIONAL_ATTRIBUTES).build());
-		BinaryLightToken mockBinaryLightToken = getSpecificProxyService().putRequest(mockLightRequest);
+		BinaryLightToken mockBinaryLightToken = putRequest(mockLightRequest);
 
 		Response response = given()
 				.param(EidasParameterKeys.TOKEN.toString(), BinaryLightTokenHelper.encodeBinaryLightTokenBase64(mockBinaryLightToken))
@@ -294,7 +348,7 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 				"eidas:attribute:sic");
 
 		// assert request communication cache
-		assertRequestInCommunicationCache(mockLightRequest);
+		assertRequestInIdpCommunicationCache(mockLightRequest);
 	}
 
 	private void assertValidOidcAuthenticationRequest(Response response) throws MalformedURLException {
@@ -314,8 +368,8 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 		assertEquals(openid_idcard_mid, urlParameters.get("scope").get(0));
 	}
 
-	private void assertRequestInCommunicationCache(ILightRequest mockLightRequest) {
-		List<Cache.Entry<String, StoredMSProxyServiceRequestCorrelationMap.CorrelatedRequestsHolder>> list = getListFromIterator(getEidasNodeRequestCommunicationCache().iterator());
+	private void assertRequestInIdpCommunicationCache(ILightRequest mockLightRequest) {
+		List<Cache.Entry<String, SpecificProxyServiceCommunication.CorrelatedRequestsHolder>> list = getListFromIterator(getIdpRequestCommunicationCache().iterator());
 		assertEquals(1, list.size());
 		assertThat(list.get(0).getKey(), matchesPattern(UUID_REGEX));
 

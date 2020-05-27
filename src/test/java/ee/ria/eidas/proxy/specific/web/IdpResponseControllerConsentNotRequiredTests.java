@@ -1,12 +1,12 @@
 package ee.ria.eidas.proxy.specific.web;
 
 import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceConfiguration;
-import ee.ria.eidas.proxy.specific.storage.StoredMSProxyServiceRequestCorrelationMap;
-import ee.ria.eidas.proxy.specific.storage.StoredMSProxyServiceRequestCorrelationMap.CorrelatedRequestsHolder;
+import ee.ria.eidas.proxy.specific.storage.SpecificProxyServiceCommunication;
+import ee.ria.eidas.proxy.specific.storage.SpecificProxyServiceCommunication.CorrelatedRequestsHolder;
+import eu.eidas.auth.commons.light.ILightRequest;
 import io.restassured.RestAssured;
 import org.apache.http.HttpHeaders;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ContextConfiguration;
 import org.w3c.dom.Element;
@@ -17,13 +17,14 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static ee.ria.eidas.proxy.specific.util.LightRequestTestHelper.*;
 import static ee.ria.eidas.proxy.specific.util.LightRequestTestHelper.UUID_REGEX;
 import static ee.ria.eidas.proxy.specific.web.IdpResponseController.ENDPOINT_IDP_RESPONSE;
 import static io.restassured.RestAssured.given;
 import static io.restassured.config.RedirectConfig.redirectConfig;
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.core.StringStartsWith.startsWith;
@@ -42,10 +43,12 @@ class IdpResponseControllerConsentNotRequiredTests extends IdpResponseController
 	@Test
 	void redirectToEidasnodeWhenValidResponseAndConsentNotRequired() throws Exception {
 
-		Map.Entry<String, CorrelatedRequestsHolder> mapEntry = addMockRequestToCommunicationCache();
+		String code = UUID.randomUUID().toString();
+		createMockOidcServerResponse_successfulAuthentication(code);
+		Map.Entry<String, CorrelatedRequestsHolder> mapEntry = addMockRequestToPendingIdpRequestCommunicationCache();
 
 		given()
-			.param("code", "123...")
+			.param("code", code)
 			.param("state", mapEntry.getKey())
 			.param("unknown-parameter-that-should-be-ignored", " * ? / \\ | < > , . ( ) [ ] { } ; : ‘ @ # $ % ^ &´`?0àáâãäåçèéêëìíîðñòôõöö")
 			.config(RestAssured.config().redirect(redirectConfig().followRedirects(false)))
@@ -56,6 +59,33 @@ class IdpResponseControllerConsentNotRequiredTests extends IdpResponseController
 			.statusCode(302)
 			.header(HttpHeaders.LOCATION, startsWith("https://ee-eidas-proxy:8083/EidasNode/SpecificProxyServiceResponse" +
 					"?token=c3BlY2lmaWNDb21t"));
+
+		assertPendingIdpRequestCommunicationCacheIsEmpty();
+		assertResponse(mapEntry);
+	}
+
+	private void assertResponse(Map.Entry<String, CorrelatedRequestsHolder> mapEntry) throws SAXException, IOException, ParserConfigurationException {
+		List<Cache.Entry<String, String>> list = getListFromIterator(getEidasNodeResponseCommunicationCache().iterator());
+		assertEquals(1, list.size());
+		assertThat(list.get(0).getKey(), matchesPattern(UUID_REGEX));
+
+		Element responseXml = getXmlDocument(list.get(0).getValue());
+		assertThat(responseXml, hasXPath("/lightResponse/id", equalTo("7d02cecd-6a63-4124-97fa-74999817fb08"))); // jti claim value in id-token - token-response-ok.json
+		ILightRequest originalLightRequest = mapEntry.getValue().getILightRequest();
+		assertThat(responseXml, hasXPath("/lightResponse/inResponseToId", equalTo(originalLightRequest.getId())));
+		assertThat(responseXml, hasXPath("/lightResponse/relayState", equalTo(originalLightRequest.getRelayState())));
+		assertThat(responseXml, hasXPath("/lightResponse/levelOfAssurance", equalTo(originalLightRequest.getLevelOfAssurance().toString())));
+		assertThat(responseXml, hasXPath("/lightResponse/issuer", equalTo("https://localhost:9877"))); // iss claim value in id-token - token-response-ok.json
+		assertThat(responseXml, hasXPath("/lightResponse/subject", equalTo("EE60001019906"))); // sub claim value in id-token - token-response-ok.json
+		assertThat(responseXml, hasXPath("/lightResponse/subjectNameIdFormat", equalTo("urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified")));
+		assertThat(responseXml, hasXPath("/lightResponse/ipAddress", matchesPattern(IP_REGEX)));
+		assertThat(responseXml, hasXPath("/lightResponse/status/statusCode", equalTo("urn:oasis:names:tc:SAML:2.0:status:Success")));
+		assertThat(responseXml, hasXPath("/lightResponse/status/failure", equalTo("false")));
+		assertThat(responseXml, hasXPath("count(/lightResponse/attributes/attribute)", equalTo("4")));
+		assertThat(responseXml, hasXPath("/lightResponse/attributes/attribute[definition = 'http://eidas.europa.eu/attributes/naturalperson/PersonIdentifier']/value", equalTo("EE60001019906"))); // sub claim value in id-token - token-response-ok.json
+		assertThat(responseXml, hasXPath("/lightResponse/attributes/attribute[definition = 'http://eidas.europa.eu/attributes/naturalperson/DateOfBirth']/value", equalTo("2000-01-01"))); // profile_attributes.date_of_birth claim value in id-token - token-response-ok.json
+		assertThat(responseXml, hasXPath("/lightResponse/attributes/attribute[definition = 'http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName']/value", equalTo("MARY ÄNN"))); // profile_attributes.given_name claim value in id-token - token-response-ok.json
+		assertThat(responseXml, hasXPath("/lightResponse/attributes/attribute[definition = 'http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName']/value", equalTo("O’CONNEŽ-ŠUSLIK TESTNUMBER"))); // profile_attributes.family_name claim value in id-token - token-response-ok.json
 	}
 }
 

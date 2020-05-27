@@ -30,6 +30,8 @@ import eu.eidas.auth.commons.protocol.eidas.impl.PostalAddressAttributeValue;
 import eu.eidas.auth.commons.protocol.eidas.spec.EidasSpec;
 import eu.eidas.auth.commons.protocol.impl.SamlNameIdFormat;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.joda.time.format.DateTimeFormat;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
@@ -37,6 +39,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
@@ -46,8 +49,19 @@ import java.util.stream.StreamSupport;
 public class LightRequestTestHelper {
 
     public static final String UUID_REGEX = "[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}";
+    public static final String IP_REGEX = "^(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})$";
+    public static final String MOCK_SUBJECT_IDENTIFIER = "EE1010101010";
+    public static final String MOCK_ISSUER_NAME = "issuerName";
+    public static final String MOCK_RELAY_STATE = "relayState";
+    public static final String MOCK_LOA_HIGH = "http://eidas.europa.eu/LoA/high";
+    public static final String MOCK_CITIZEN_COUNTRY = "citizenCountry";
+    public static final String MOCK_SP_TYPE = "public";
 
     private LightRequestTestHelper() {}
+
+    static {
+        DateTimeZone.setDefault(DateTimeZone.UTC);
+    }
 
     private static final PostalAddress pa = new PostalAddress.Builder()
             .adminUnitFirstLine("adminUnitFirstLine").adminUnitSecondLine("adminUnitSecondLine")
@@ -57,10 +71,11 @@ public class LightRequestTestHelper {
             .build();
 
     public static final ImmutableAttributeMap NATURAL_PERSON_MANDATORY_ATTRIBUTES = new ImmutableAttributeMap.Builder()
-            .put(EidasSpec.Definitions.PERSON_IDENTIFIER, new StringAttributeValue("Juncker-987654321"))
-            .put(EidasSpec.Definitions.CURRENT_FAMILY_NAME, new StringAttributeValue("Juncker"))
-            .put(EidasSpec.Definitions.CURRENT_GIVEN_NAME, new StringAttributeValue("Jean-Claude"), new StringAttributeValue("Jean" ), new StringAttributeValue("Claude"))
-            .put(EidasSpec.Definitions.DATE_OF_BIRTH, new DateTimeAttributeValue(new DateTime()))
+            .put(EidasSpec.Definitions.PERSON_IDENTIFIER, new StringAttributeValue("EE60001019906"))
+            .put(EidasSpec.Definitions.CURRENT_FAMILY_NAME, new StringAttributeValue("O’CONNEŽ-ŠUSLIK TESTNUMBER"))
+            .put(EidasSpec.Definitions.CURRENT_GIVEN_NAME, new StringAttributeValue("MARY ÄNN"))
+            .put(EidasSpec.Definitions.DATE_OF_BIRTH, new DateTimeAttributeValue(DateTime.parse("2000-01-01",
+                    DateTimeFormat.forPattern("yyyy-MM-dd"))))
             .build();
 
     public static final ImmutableAttributeMap NATURAL_PERSON_OPTIONAL_ATTRIBUTES = new ImmutableAttributeMap.Builder()
@@ -110,27 +125,29 @@ public class LightRequestTestHelper {
         final LightResponse.Builder builder = LightResponse.builder()
                 .id(UUID.randomUUID().toString())
                 .issuer(issuerName)
+                .ipAddress("123.123.123.321")
                 .inResponseToId("123456")
                 .status(ResponseStatus.builder().statusCode("urn:oasis:names:tc:SAML:2.0:status:Success").build())
                 .subject(subject)
                 .subjectNameIdFormat(SamlNameIdFormat.UNSPECIFIED.getNameIdFormat())
                 .subject(subject)
                 .relayState(relayState)
-                .levelOfAssurance(loa);
+                .levelOfAssurance(loa)
+                .attributes(NATURAL_PERSON_MANDATORY_ATTRIBUTES);
 
         return builder.build();
     }
 
     public static ILightRequest createLightRequest(ImmutableAttributeMap requestedAttributes) {
-        return createLightRequest("citizenCountry", "issuerName", "relayState", "http://eidas.europa.eu/LoA/high", "public", requestedAttributes);
+        return createLightRequest("citizenCountry", MOCK_ISSUER_NAME, MOCK_RELAY_STATE, MOCK_LOA_HIGH, MOCK_SP_TYPE, requestedAttributes);
     }
 
     public static ILightRequest createDefaultLightRequest() {
-        return createLightRequest("citizenCountry", "issuerName", "relayState", "http://eidas.europa.eu/LoA/high", "public", NATURAL_PERSON_ALL_ATTRIBUTES);
+        return createLightRequest(MOCK_CITIZEN_COUNTRY, MOCK_ISSUER_NAME, MOCK_RELAY_STATE, MOCK_LOA_HIGH, MOCK_SP_TYPE, NATURAL_PERSON_ALL_ATTRIBUTES);
     }
 
     public static ILightResponse createDefaultLightResponse() {
-        return createLightResponse("EE1010101010", "issuerName", "relayState", "http://eidas.europa.eu/LoA/high");
+        return createLightResponse(MOCK_SUBJECT_IDENTIFIER, MOCK_ISSUER_NAME, MOCK_RELAY_STATE, MOCK_LOA_HIGH);
     }
 
     public static <T> List<T> getListFromIterator(Iterator<T> iterator) {
@@ -143,7 +160,7 @@ public class LightRequestTestHelper {
         return DocumentBuilderFactory
                 .newInstance()
                 .newDocumentBuilder()
-                .parse(new ByteArrayInputStream(xml.getBytes()))
+                .parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)))
                 .getDocumentElement();
     }
 }

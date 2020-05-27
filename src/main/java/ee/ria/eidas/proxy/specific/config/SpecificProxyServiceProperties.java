@@ -1,10 +1,8 @@
 package ee.ria.eidas.proxy.specific.config;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.http.HttpMethod;
 import org.springframework.util.Assert;
@@ -13,12 +11,14 @@ import org.springframework.validation.annotation.Validated;
 import javax.annotation.PostConstruct;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static java.util.Arrays.asList;
-import static org.springframework.http.HttpMethod.*;
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.POST;
 
 // TODO eidas-attributes should be included in war with sensible defaults allowing overriding when necessary
 // TODO enums
@@ -36,6 +36,7 @@ public class SpecificProxyServiceProperties {
         }
         // TODO assert oidc scope map
         // TODO oidc scope mappings from separate config file (embedded into war)
+        // TODO verify that claim mappings exist for mandatory attribute set
     }
 
     private void assertConsentCommunicationDefinitionsPresent() {
@@ -65,12 +66,10 @@ public class SpecificProxyServiceProperties {
     public static class WebappProperties {
 
         private List<HttpMethod> disabledHttpMethods = Arrays.asList(GET, POST);
-
     }
 
     @Data
     @NoArgsConstructor
-    @AllArgsConstructor
     public static class OidcProviderProperties {
 
         private List<String> scope = asList("idcard", "mid");
@@ -89,11 +88,18 @@ public class SpecificProxyServiceProperties {
 
         private String defaultUiLanguage = "et";
 
+        private Integer maxClockSkewInSeconds = 30;
+
+        private Integer readTimeoutInMilliseconds = 5000;
+
+        private Integer connectTimeoutInMilliseconds = 5000;
+
         private Map<String, String> attributeScopeMapping = new HashMap<>();
+
+        private SpecificProxyServiceProperties.IdTokenClaimMappingProperties responseClaimMapping = new SpecificProxyServiceProperties.IdTokenClaimMappingProperties();
 
         private String errorCodeUserCancel = "user_cancel";
 
-        private String errorCodeAccessDenied = "access_denied";
     }
 
     @Data
@@ -104,5 +110,17 @@ public class SpecificProxyServiceProperties {
         private String secret;
 
         private String algorithm;
+    }
+
+    @Data
+    public static class IdTokenClaimMappingProperties {
+
+        private String id = "$.jti";
+
+        private String issuer = "$.iss";
+
+        private String acr = "$.acr";
+
+        private Map<String, String> attributes = new HashMap<>();
     }
 }

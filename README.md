@@ -16,7 +16,8 @@
   * [7.2 Integration with the EidasNode webapp](#configuration_parameters_eidas)
   * [7.3 User consent](#configuration_parameters_consent)
   * [7.4 Supported service provider types](#configuration_parameters_sptype)
-  * [7.5 Mapping eIDAS attributes to OpenID Connect scopes and claims](#configuration_parameters_oidc)
+  * [7.5 Mapping eIDAS attributes to OpenID Connect authentication request scopes](#configuration_parameters_oidc)
+  * [7.6 Mapping eIDAS attributes to OpenID Connect ID-token claims](#configuration_claims_oidc)
 
 
 <a name="build"></a>
@@ -78,14 +79,15 @@ The IDP integration requires the following OpenID Connect protocol features:
 * The IDP must support the required OpenID Provider configuration as described in the [OpenID Connect Discovery])(https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderMetadata) specification.
 
 <a name="idp_request"></a>
-### 3.2 Requesting eIDAS attributes using OpenID Connect scopes
+### 3.2 Request eIDAS attributes using OpenID Connect scopes
 
 `SpecificProxyService` webapp allows to map the eIDAS attributes in the incoming authentication request to custom OpenID Connect scopes (see [configruation reference](#configuration_parameters_oidc) for more details). These custom scopes are automatically appended to the list of requested scopes in the OpenID Connect authentication request. 
 
 <a name="idp_response"></a>
-### 3.3 Fetching eIDAS attributes from OpenID Connect ID Token
+### 3.3 Find eIDAS attribute values from the OpenID Connect ID Token
 
-TBD - describe fetching eIDAS attributes from id-token claims
+Information about the authenticated person is retrieved from ID-token issued by the IDP (retuned in the response of [OIDC token request](https://openid.net/specs/openid-connect-core-1_0.html#TokenRequest)).
+Claims in the ID-token are mapped to their respective eIDAS attributes (see configuration reference for further details).
 
 <a name="logging"></a>
 ## 4. Logging
@@ -119,8 +121,11 @@ TBD - heartbeat endpoint
 | `eidas.proxy.oidc.redirect-uri` | Yes | OpenID Connect client redirect URI. |
 | `eidas.proxy.oidc.issuer-url` | Yes | OpenID Connect issuer URL. |
 | `eidas.proxy.oidc.scope` | No | Comma separated list of additional scopes. Sets the value of `scope` parameter in the OpenID Connect authentication request. Defaults to `openid idcard mid` if not specified. |
+| `eidas.proxy.oidc.default-ui-language` | No | Sets the `ui_locales` parameter value in OpenID Connect authentication request. Defaults to `et` if not specified. |
+| `eidas.proxy.oidc.connect-timeout-in-milliseconds` | No | Maximum period in milliseconds to establish a connection to the OpenID Connect token endpoint. Defaults to 5000 milliseconds if not specified. |
+| `eidas.proxy.oidc.read-timeout-in-milliseconds` | No | Maximum period in milliseconds to wait for the OpenID Connect token endpoint response. Defaults to 5000 milliseconds if not specified. |
+| `eidas.proxy.oidc.max-clock-skew-in-seconds` | No | Sets the maximum allowed clock differences when validating the time ID-token was issued. Defaults to 30 seconds if not specified. |
 | `eidas.proxy.oidc.error-code-user-cancel` | No | <p>The expected error code returned in the OpenID Connect authentication [error response](https://openid.net/specs/openid-connect-core-1_0.html#AuthError) when user cancel's the authentication process at the IDP. </p> <p>Defaults to `user_cancel` when not specified.</p>    |
-
 
 
 <a name="configuration_parameters_eidas"></a> 
@@ -150,7 +155,7 @@ TBD - heartbeat endpoint
 | `eidas.proxy.supported-sp-types` | No | <p>A comma separated list of supported service provider types. Defaults to `public, private` when not specified.</p><p> An error response (AccessDenied) is sent to the EidasNode Connector service when the service provider type in the authentication request is not listed as one of the configuration parameter values.</p> |
 
 <a name="configuration_parameters_oidc"></a> 
-### Mapping eIDAS attributes to OpenID Connect scopes and claims
+### Mapping eIDAS attributes to OpenID Connect authentication request scopes
 
 Configuring the requested scopes for OIDC authentication request
 
@@ -167,6 +172,20 @@ eidas.proxy.oidc.attribute-scope-mapping.DateOfBirth=eidas:attribute:date_of_bir
 eidas.proxy.oidc.attribute-scope-mapping.PersonIdentifier=eidas:attribute:person_identifier
 ````
 
+<a name="configuration_claims_oidc"></a> 
+### Mapping eIDAS attributes to OpenID Connect ID-token claims
+
 Configuring claims extraction from the OIDC id_token
 
-**TBD** 
+| Parameter        | Mandatory | Description, example |
+| :---------------- | :---------- | :----------------|
+| `eidas.proxy.oidc.response-claim-mapping.attributes.<eidas attribute>=<jsonpath to claim>` | No | Where `<eidas attribute>` is the (Friendly) Name of the attribute passed from EidasNode webapp and `<jsonpath to claim>` is a [jsonpath expression](https://goessner.net/articles/JsonPath/) to extract the corresponding OpenID Connect claim value from the IDP returned ID-token.  |
+
+Example: The following configuration maps four natural person eIDAS attributes to OIDC id_token claims:
+
+````
+eidas.proxy.oidc.response-claim-mapping.attributes.FirstName=$.profile_attributes.given_name
+eidas.proxy.oidc.response-claim-mapping.attributes.FamilyName=$.profile_attributes.family_name
+eidas.proxy.oidc.response-claim-mapping.attributes.DateOfBirth=$.profile_attributes.date_of_birth
+eidas.proxy.oidc.response-claim-mapping.attributes.PersonIdentifier=$.sub
+````

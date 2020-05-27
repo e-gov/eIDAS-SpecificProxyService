@@ -1,34 +1,30 @@
 package ee.ria.eidas.proxy.specific.web;
 
-import ee.ria.eidas.proxy.specific.storage.StoredMSProxyServiceRequestCorrelationMap;
-import ee.ria.eidas.proxy.specific.storage.StoredMSProxyServiceRequestCorrelationMap.CorrelatedRequestsHolder;
+import ee.ria.eidas.proxy.specific.storage.SpecificProxyServiceCommunication.CorrelatedRequestsHolder;
 import io.restassured.RestAssured;
 import org.apache.http.HttpHeaders;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
-import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
 
-import javax.cache.Cache;
-import javax.xml.parsers.ParserConfigurationException;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.*;
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.AbstractMap;
+import java.util.Collections;
+import java.util.Map;
+import java.util.UUID;
 
-import static ee.ria.eidas.proxy.specific.util.LightRequestTestHelper.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static ee.ria.eidas.proxy.specific.util.LightRequestTestHelper.createDefaultLightRequest;
 import static ee.ria.eidas.proxy.specific.web.IdpResponseController.ENDPOINT_IDP_RESPONSE;
-import static ee.ria.eidas.proxy.specific.web.ProxyServiceRequestController.ENDPOINT_PROXY_SERVICE_REQUEST;
 import static io.restassured.RestAssured.given;
 import static io.restassured.config.RedirectConfig.redirectConfig;
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.core.StringStartsWith.startsWith;
-import static org.hamcrest.text.MatchesPattern.matchesPattern;
-import static org.hamcrest.xml.HasXPath.hasXPath;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 abstract class IdpResponseControllerTests extends ControllerTest {
 
@@ -132,9 +128,9 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 	}
 
 	@Test
-	void internalServerErrorWhenIdpError_InvalidRequest() throws Exception {
+	void internalServerErrorWhenIdpError_InvalidAuthenticationRequest() throws Exception {
 
-		Map.Entry<String, CorrelatedRequestsHolder> mapEntry = addMockRequestToCommunicationCache();
+		Map.Entry<String, CorrelatedRequestsHolder> mapEntry = addMockRequestToPendingIdpRequestCommunicationCache();
 
 		given()
 			.param("error", "invalid_request")
@@ -149,13 +145,300 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 			.body("errors", hasSize(1))
 			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
 
+		assertErrorIsLogged("Server encountered an unexpected error: OIDC authentication request has returned an error (code = 'invalid_request', description = 'null')");
+		assertPendingIdpRequestCommunicationCacheIsEmpty();
+		assertResponseCommunicationCacheIsEmpty();
+	}
+
+	@Test
+	void internalServerErrorWhenIdpError_TokenErrorResponse_UnexpectedContent() throws Exception {
+
+		wireMockServer.stubFor(post(urlEqualTo("/oidc/token"))
+				.willReturn(aResponse()
+						.withStatus(200)
+						.withHeader("Content-Type", "application/json; charset=UTF-8")
+						.withBody("<xml/>")));
+
+		Map.Entry<String, CorrelatedRequestsHolder> mapEntry = addMockRequestToPendingIdpRequestCommunicationCache();
+
+		given()
+			.param("code", "123...")
+			.param("state", mapEntry.getKey())
+		.when()
+			.get(ENDPOINT_IDP_RESPONSE)
+		.then()
+			.assertThat()
+			.statusCode(500)
+			.body("message", equalTo("Internal server error"))
+			.body("errors", hasSize(1))
+			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
+
+		assertErrorIsLogged("Server encountered an unexpected error: Invalid OIDC token endpoint response! Invalid JSON: Unexpected token <xml/> at position 8.");
+		assertPendingIdpRequestCommunicationCacheIsEmpty();
+		assertResponseCommunicationCacheIsEmpty();
+	}
+
+	@Test
+	void internalServerErrorWhenIdpError_TokenErrorResponse_InvalidTokenType() throws Exception {
+
+		wireMockServer.stubFor(post(urlEqualTo("/oidc/token"))
+				.willReturn(aResponse()
+						.withStatus(200)
+						.withHeader("Content-Type", "application/json; charset=UTF-8")
+						.withBodyFile("mock_responses/idp/token-response-nok_invalid-token-type.json")));
+
+		Map.Entry<String, CorrelatedRequestsHolder> mapEntry = addMockRequestToPendingIdpRequestCommunicationCache();
+
+		given()
+			.param("code", "123...")
+			.param("state", mapEntry.getKey())
+		.when()
+			.get(ENDPOINT_IDP_RESPONSE)
+		.then()
+			.assertThat()
+			.statusCode(500)
+			.body("message", equalTo("Internal server error"))
+			.body("errors", hasSize(1))
+			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
+
+		assertErrorIsLogged("Server encountered an unexpected error: Invalid OIDC token endpoint response! Token type must be Bearer");
+		assertPendingIdpRequestCommunicationCacheIsEmpty();
+		assertResponseCommunicationCacheIsEmpty();
+	}
+
+	@Test
+	void internalServerErrorWhenIdpError_TokenErrorResponse_IdTokenHasExpired() throws Exception {
+
+		wireMockServer.stubFor(post(urlEqualTo("/oidc/token"))
+				.willReturn(aResponse()
+						.withStatus(200)
+						.withHeader("Content-Type", "application/json; charset=UTF-8")
+						.withBodyFile("mock_responses/idp/token-response-nok_id-token-expired.json")));
+
+		Map.Entry<String, CorrelatedRequestsHolder> mapEntry = addMockRequestToPendingIdpRequestCommunicationCache();
+
+		given()
+			.param("code", "123...")
+			.param("state", mapEntry.getKey())
+		.when()
+			.get(ENDPOINT_IDP_RESPONSE)
+		.then()
+			.assertThat()
+			.statusCode(500)
+			.body("message", equalTo("Internal server error"))
+			.body("errors", hasSize(1))
+			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
+
+		assertErrorIsLogged("Server encountered an unexpected error: Error when validating id_token! Expired JWT");
+		assertPendingIdpRequestCommunicationCacheIsEmpty();
+		assertResponseCommunicationCacheIsEmpty();
+	}
+
+	@Test
+	void internalServerErrorWhenIdpError_TokenErrorResponse_IdTokenNotYetValid() throws Exception {
+
+		wireMockServer.stubFor(post(urlEqualTo("/oidc/token"))
+				.willReturn(aResponse()
+						.withStatus(200)
+						.withHeader("Content-Type", "application/json; charset=UTF-8")
+						.withBodyFile("mock_responses/idp/token-response-nok_id-token-not-yet-valid.json")));
+
+		Map.Entry<String, CorrelatedRequestsHolder> mapEntry = addMockRequestToPendingIdpRequestCommunicationCache();
+
+		given()
+			.param("code", "123...")
+			.param("state", mapEntry.getKey())
+		.when()
+			.get(ENDPOINT_IDP_RESPONSE)
+		.then()
+			.assertThat()
+			.statusCode(500)
+			.body("message", equalTo("Internal server error"))
+			.body("errors", hasSize(1))
+			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
+
+		assertErrorIsLogged("Server encountered an unexpected error: Error when validating id_token! JWT issue time ahead of current time");
+		assertPendingIdpRequestCommunicationCacheIsEmpty();
+		assertResponseCommunicationCacheIsEmpty();
+	}
+
+	@Test
+	void internalServerErrorWhenIdpError_TokenErrorResponse_InvalidLoa() throws Exception {
+
+		wireMockServer.stubFor(post(urlEqualTo("/oidc/token"))
+				.willReturn(aResponse()
+						.withStatus(200)
+						.withHeader("Content-Type", "application/json; charset=UTF-8")
+						.withBodyFile("mock_responses/idp/token-response-nok_invalid-id-token-acr.json")));
+
+		Map.Entry<String, CorrelatedRequestsHolder> mapEntry = addMockRequestToPendingIdpRequestCommunicationCache();
+
+		given()
+			.param("code", "123...")
+			.param("state", mapEntry.getKey())
+		.when()
+			.get(ENDPOINT_IDP_RESPONSE)
+		.then()
+			.assertThat()
+			.statusCode(500)
+			.body("message", equalTo("Internal server error"))
+			.body("errors", hasSize(1))
+			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
+
+		assertErrorIsLogged("Server encountered an unexpected error: Invalid level of assurance in IDP response. Authentication was requested with level 'http://eidas.europa.eu/LoA/high', but id-token contains level 'http://eidas.europa.eu/LoA/low'.");
+		assertPendingIdpRequestCommunicationCacheIsEmpty();
+		assertResponseCommunicationCacheIsEmpty();
+	}
+
+	@Test
+	void internalServerErrorWhenIdpError_TokenErrorResponse_InvalidIssuer() throws Exception {
+
+		wireMockServer.stubFor(post(urlEqualTo("/oidc/token"))
+				.withBasicAuth(getSpecificProxyServiceProperties().getOidc().getClientId(), getSpecificProxyServiceProperties().getOidc().getClientSecret())
+				.withHeader("Content-Type", containing("application/x-www-form-urlencoded"))
+				.willReturn(aResponse()
+						.withStatus(200)
+						.withHeader("Content-Type", "application/json; charset=UTF-8")
+						.withBodyFile("mock_responses/idp/token-response-nok_invalid-id-token-issuer.json")));
+
+		Map.Entry<String, CorrelatedRequestsHolder> mapEntry = addMockRequestToPendingIdpRequestCommunicationCache();
+
+		given()
+			.param("code", "123...")
+			.param("state", mapEntry.getKey())
+		.when()
+			.get(ENDPOINT_IDP_RESPONSE)
+		.then()
+			.assertThat()
+			.statusCode(500)
+			.body("message", equalTo("Internal server error"))
+			.body("errors", hasSize(1))
+			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
+
+		assertErrorIsLogged("Server encountered an unexpected error: Error when validating id_token! Unexpected JWT issuer: https://invalid-issuer:9877");
+		assertPendingIdpRequestCommunicationCacheIsEmpty();
+		assertResponseCommunicationCacheIsEmpty();
+	}
+
+	@Test
+	void internalServerErrorWhenIdpError_TokenErrorResponse_InvalidAudience() throws Exception {
+
+		wireMockServer.stubFor(post(urlEqualTo("/oidc/token"))
+				.withBasicAuth(getSpecificProxyServiceProperties().getOidc().getClientId(), getSpecificProxyServiceProperties().getOidc().getClientSecret())
+				.withHeader("Content-Type", containing("application/x-www-form-urlencoded"))
+				.willReturn(aResponse()
+						.withStatus(200)
+						.withHeader("Content-Type", "application/json; charset=UTF-8")
+						.withBodyFile("mock_responses/idp/token-response-nok_invalid-id-token-audience.json")));
+
+		Map.Entry<String, CorrelatedRequestsHolder> mapEntry = addMockRequestToPendingIdpRequestCommunicationCache();
+
+		given()
+			.param("code", "123...")
+			.param("state", mapEntry.getKey())
+		.when()
+			.get(ENDPOINT_IDP_RESPONSE)
+		.then()
+			.assertThat()
+			.statusCode(500)
+			.body("message", equalTo("Internal server error"))
+			.body("errors", hasSize(1))
+			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
+
+		assertErrorIsLogged("Server encountered an unexpected error: Error when validating id_token! Unexpected JWT audience: [invalidClientId]");
+		assertPendingIdpRequestCommunicationCacheIsEmpty();
+		assertResponseCommunicationCacheIsEmpty();
+	}
+
+	@Test
+	void internalServerErrorWhenIdpError_TokenErrorResponse_InvalidIdTokenSignature() throws Exception {
+
+		wireMockServer.stubFor(post(urlEqualTo("/oidc/token"))
+				.willReturn(aResponse()
+						.withStatus(200)
+						.withHeader("Content-Type", "application/json; charset=UTF-8")
+						.withBodyFile("mock_responses/idp/token-response-nok_invalid-id-token-signature.json")));
+
+		Map.Entry<String, CorrelatedRequestsHolder> mapEntry = addMockRequestToPendingIdpRequestCommunicationCache();
+
+		given()
+			.param("code", "123...")
+			.param("state", mapEntry.getKey())
+		.when()
+			.get(ENDPOINT_IDP_RESPONSE)
+		.then()
+			.assertThat()
+			.statusCode(500)
+			.body("message", equalTo("Internal server error"))
+			.body("errors", hasSize(1))
+			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
+
+		assertErrorIsLogged("Server encountered an unexpected error: Error when validating id_token! Signed JWT rejected: Invalid signature");
+		assertPendingIdpRequestCommunicationCacheIsEmpty();
+		assertResponseCommunicationCacheIsEmpty();
+	}
+
+	@Test
+	void internalServerErrorWhenIdpError_ConnectionTimesOut() throws Exception {
+
+		wireMockServer.stubFor(post(urlEqualTo("/oidc/token"))
+				.willReturn(aResponse()
+						.withStatus(200)
+						.withFixedDelay(1500)));
+
+		Map.Entry<String, CorrelatedRequestsHolder> mapEntry = addMockRequestToPendingIdpRequestCommunicationCache();
+
+		given()
+			.param("code", "123...")
+			.param("state", mapEntry.getKey())
+		.when()
+			.get(ENDPOINT_IDP_RESPONSE)
+		.then()
+			.assertThat()
+			.statusCode(500)
+			.body("message", equalTo("Internal server error"))
+			.body("errors", hasSize(1))
+			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
+
+		assertErrorIsLogged("Server encountered an unexpected error: IO error while accessing OIDC token endpoint! Read timed out");
+		assertPendingIdpRequestCommunicationCacheIsEmpty();
+		assertResponseCommunicationCacheIsEmpty();
+	}
+
+	@Test
+	void internalServerErrorWhenIdpError_TokenErrorResponse_InvalidRequest() throws Exception {
+
+		wireMockServer.stubFor(post(urlEqualTo("/oidc/token"))
+				.withBasicAuth(getSpecificProxyServiceProperties().getOidc().getClientId(), getSpecificProxyServiceProperties().getOidc().getClientSecret())
+				.withHeader("Content-Type", containing("application/x-www-form-urlencoded"))
+				.willReturn(aResponse()
+						.withStatus(400)
+						.withHeader("Content-Type", "application/json; charset=UTF-8")
+						.withBodyFile("mock_responses/idp/token-response-nok_invalid-request.json")));
+
+		Map.Entry<String, CorrelatedRequestsHolder> mapEntry = addMockRequestToPendingIdpRequestCommunicationCache();
+
+		given()
+			.param("code", "123...")
+			.param("state", mapEntry.getKey())
+		.when()
+			.get(ENDPOINT_IDP_RESPONSE)
+		.then()
+			.assertThat()
+			.statusCode(500)
+			.body("message", equalTo("Internal server error"))
+			.body("errors", hasSize(1))
+			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
+
+		assertErrorIsLogged("Server encountered an unexpected error: OIDC token request returned an error! invalid_request");
+		assertPendingIdpRequestCommunicationCacheIsEmpty();
 		assertResponseCommunicationCacheIsEmpty();
 	}
 
 	@Test
 	void redirectToEidasnodeWithErrorWhenIdpReturnsError_UserCancel() throws Exception {
 
-		Map.Entry<String, CorrelatedRequestsHolder> mapEntry = addMockRequestToCommunicationCache();
+		Map.Entry<String, CorrelatedRequestsHolder> mapEntry = addMockRequestToPendingIdpRequestCommunicationCache();
 
 		given()
 			.param("error", "user_cancel")
@@ -169,31 +452,32 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 			.header(HttpHeaders.LOCATION, startsWith("https://ee-eidas-proxy:8083/EidasNode/SpecificProxyServiceResponse" +
 					"?token=c3BlY2lmaWNDb21t"));
 
-		assertResponseCommunicationCacheContainsUserCancelResponse(mapEntry);
+		assertPendingIdpRequestCommunicationCacheIsEmpty();
+		assertResponseCommunicationCacheContainsUserCancelResponse("User canceled the authentication process", mapEntry.getValue().getILightRequest().getId());
 	}
 
-	private void assertResponseCommunicationCacheContainsUserCancelResponse(Map.Entry<String, CorrelatedRequestsHolder> mapEntry) throws SAXException, IOException, ParserConfigurationException {
-
-		// verify expected Lightresponse in communication cache
-		List<Cache.Entry<String, String>> list = getListFromIterator(getEidasNodeResponseCommunicationCache().iterator());
-		assertEquals(1, list.size());
-		assertThat(list.get(0).getKey(), matchesPattern(UUID_REGEX));
-
-		Element responseXml = getXmlDocument(list.get(0).getValue());
-		assertThat(responseXml, hasXPath("/lightResponse/id", matchesPattern(UUID_REGEX)));
-		assertThat(responseXml, hasXPath("/lightResponse/inResponseToId", equalTo(mapEntry.getValue().getILightRequest().getId())));
-		assertThat(responseXml, hasXPath("/lightResponse/issuer", equalTo(lightTokenResponseIssuerName)));
-		assertThat(responseXml, hasXPath("/lightResponse/status/failure", equalTo("true")));
-		assertThat(responseXml, hasXPath("/lightResponse/status/statusMessage", equalTo("User canceled the authentication process")));
-		assertThat(responseXml, hasXPath("/lightResponse/status/subStatusCode", equalTo("urn:oasis:names:tc:SAML:2.0:status:RequestDenied")));
-	}
-
-	Map.Entry<String, CorrelatedRequestsHolder> addMockRequestToCommunicationCache() throws URISyntaxException {
+	Map.Entry<String, CorrelatedRequestsHolder> addMockRequestToPendingIdpRequestCommunicationCache() throws MalformedURLException {
 		String stateParameterValue = UUID.randomUUID().toString();
-		CorrelatedRequestsHolder requestsHolder = new CorrelatedRequestsHolder(createDefaultLightRequest(), Collections.singletonMap(stateParameterValue, new URI("http://oidAuthenticationRequest")));
+		CorrelatedRequestsHolder requestsHolder = new CorrelatedRequestsHolder(createDefaultLightRequest(), Collections.singletonMap(stateParameterValue, new URL("http://oidAuthenticationRequest")));
 		Map.Entry<String, CorrelatedRequestsHolder> mapEntry = new AbstractMap.SimpleEntry<String, CorrelatedRequestsHolder>(stateParameterValue, requestsHolder);
-		getEidasNodeRequestCommunicationCache().put(stateParameterValue, requestsHolder);
+		getIdpRequestCommunicationCache().put(stateParameterValue, requestsHolder);
 		return mapEntry;
+	}
+
+
+	void createMockOidcServerResponse_successfulAuthentication(String code) throws UnsupportedEncodingException {
+		wireMockServer.stubFor(post(urlEqualTo("/oidc/token"))
+				.withBasicAuth(
+						getSpecificProxyServiceProperties().getOidc().getClientId(),
+						getSpecificProxyServiceProperties().getOidc().getClientSecret())
+				.withHeader("Content-Type", containing("application/x-www-form-urlencoded"))
+				.withRequestBody(containing("code=" + code
+						+ "&redirect_uri=" + URLEncoder.encode(getSpecificProxyServiceProperties().getOidc().getRedirectUri(), StandardCharsets.UTF_8.name())
+						+ "&grant_type=authorization_code"))
+				.willReturn(aResponse()
+						.withStatus(200)
+						.withHeader("Content-Type", "application/json; charset=UTF-8")
+						.withBodyFile("mock_responses/idp/token-response-ok.json")));
 	}
 }
 

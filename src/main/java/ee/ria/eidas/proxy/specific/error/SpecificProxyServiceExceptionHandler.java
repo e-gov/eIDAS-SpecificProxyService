@@ -1,8 +1,12 @@
 package ee.ria.eidas.proxy.specific.error;
 
-import ee.ria.eidas.proxy.specific.service.SpecificProxyService;
+import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceProperties;
+import ee.ria.eidas.proxy.specific.storage.EidasNodeCommunication;
+import eu.eidas.auth.commons.EidasParameterKeys;
+import eu.eidas.auth.commons.tx.BinaryLightToken;
+import eu.eidas.specificcommunication.BinaryLightTokenHelper;
 import eu.eidas.specificcommunication.exception.SpecificCommunicationException;
-import lombok.Data;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -16,10 +20,12 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import org.springframework.web.servlet.view.RedirectView;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,7 +37,10 @@ public class SpecificProxyServiceExceptionHandler extends ResponseEntityExceptio
     public static final String MULTIPLE_INSTANCES_OF_PARAMETER_IS_NOT_ALLOWED = "using multiple instances of parameter is not allowed";
 
     @Autowired
-    private SpecificProxyService specificProxyService;
+    private SpecificProxyServiceProperties specificProxyServiceProperties;
+
+    @Autowired
+    private EidasNodeCommunication eidasNodeCommunication;
 
     public SpecificProxyServiceExceptionHandler() {
         super();
@@ -43,7 +52,7 @@ public class SpecificProxyServiceExceptionHandler extends ResponseEntityExceptio
             HttpHeaders headers,
             HttpStatus status,
             WebRequest request) {
-        List<String> errors = new ArrayList<String>();
+        List<String> errors = new ArrayList<>();
         for (FieldError error : ex.getBindingResult().getFieldErrors()) {
             errors.add("Parameter " + error.getField() + ": " + error.getDefaultMessage());
         }
@@ -59,7 +68,7 @@ public class SpecificProxyServiceExceptionHandler extends ResponseEntityExceptio
 
     @Override
     protected ResponseEntity<Object> handleBindException(BindException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
-        List<String> errors = new ArrayList<String>();
+        List<String> errors = new ArrayList<>();
         for (FieldError error : ex.getBindingResult().getFieldErrors()) {
             errors.add("Parameter " + error.getField() + ": " + error.getDefaultMessage());
         }
@@ -88,20 +97,23 @@ public class SpecificProxyServiceExceptionHandler extends ResponseEntityExceptio
                                                           HttpServletResponse response) throws MalformedURLException, SpecificCommunicationException {
 
         logger.warn(ex.getMessage(), ex);
-        URL redirectUrl = specificProxyService.createRequestDeniedRedirect((RequestDeniedException)ex);
-
+        BinaryLightToken binaryLightToken = eidasNodeCommunication.putErrorResponse((RequestDeniedException)ex);
+        String token = BinaryLightTokenHelper.encodeBinaryLightTokenBase64(binaryLightToken);
+        URL redirectUrl = UriComponentsBuilder.fromUri(URI.create(specificProxyServiceProperties.getNodeSpecificResponseUrl()))
+                .queryParam(EidasParameterKeys.TOKEN.getValue() , token)
+                .build().toUri().toURL();
         return new RedirectView(redirectUrl.toString());
     }
 
     @ExceptionHandler({ Exception.class })
     public ResponseEntity<Object> handleAll(Exception ex, WebRequest request) {
-        logger.error("Server error encountered: " + ex.getMessage(), ex);
+        logger.error("Server encountered an unexpected error: " + ex.getMessage(), ex);
         ErrorResponse apiError = new ErrorResponse("Internal server error", "Something went wrong internally. Please consult server logs for further details.");
-        return new ResponseEntity<Object>(
+        return new ResponseEntity<>(
                 apiError, new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    @Data
+    @Getter
     public static class ErrorResponse {
 
         private String message;

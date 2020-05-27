@@ -1,4 +1,4 @@
-package ee.ria.eidas.proxy.specific.service;
+package ee.ria.eidas.proxy.specific.storage;
 
 import com.google.common.collect.ImmutableSet;
 import eu.eidas.auth.commons.attribute.*;
@@ -27,12 +27,12 @@ import java.util.Collection;
 import java.util.Iterator;
 
 // TODO consider alternative methods to serialize/deserialize xml
-class LightJAXBCodec {
+public class LightJAXBCodec {
 	private static final Logger LOG = LoggerFactory.getLogger(AttributeRegistry.class);
 
 	JAXBContext jaxbCtx;
 
-	LightJAXBCodec(JAXBContext jaxbCtx) {
+	public LightJAXBCodec(JAXBContext jaxbCtx) {
 		this.jaxbCtx = jaxbCtx;
 	}
 

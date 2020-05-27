@@ -1,8 +1,7 @@
 package ee.ria.eidas.proxy.specific.web;
 
 import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceConfiguration;
-import io.restassured.RestAssured;
-import org.apache.http.HttpHeaders;
+import eu.eidas.specificcommunication.BinaryLightTokenHelper;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ContextConfiguration;
@@ -10,8 +9,6 @@ import org.springframework.test.context.ContextConfiguration;
 import static ee.ria.eidas.proxy.specific.util.LightRequestTestHelper.createDefaultLightResponse;
 import static ee.ria.eidas.proxy.specific.web.ConsentController.ENDPOINT_USER_CONSENT;
 import static io.restassured.RestAssured.given;
-import static io.restassured.config.RedirectConfig.redirectConfig;
-import static org.hamcrest.core.StringStartsWith.startsWith;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
 @SpringBootTest(
@@ -22,7 +19,7 @@ class ConsentControllerDisabledTests extends ControllerTest {
 
 	@Test
 	void consentEndpointNotAccessible() throws Exception {
-		String mockBinaryLightToken = getSpecificProxyService().createStoreBinaryLightTokenResponseBase64(createDefaultLightResponse());
+		String mockBinaryLightToken = BinaryLightTokenHelper.encodeBinaryLightTokenBase64(getSpecificProxyServiceCommunication().putPendingLightResponse(createDefaultLightResponse()));
 
 		given()
 			.param("binaryLightToken", mockBinaryLightToken)

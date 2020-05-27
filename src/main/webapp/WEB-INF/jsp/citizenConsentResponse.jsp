@@ -45,10 +45,6 @@
                     <form id="consentSelector" name="consentSelector" method="${e:forHtml(binding)}"
                           action="${e:forHtml(redirectUrl)}">
                         <jsp:include page="include/proxyServiceTitleWithAssurance.jsp"/>
-                        <p id="stepstatusjs" name="stepstatusjs" class="step-status">
-                            <fmt:message key="common.step" bundle="${i18n_eng}"/>
-                            <span>3</span> | 3
-                        </p>
                         <h2 class="sub-title"><fmt:message key="citizenConsent.resume" bundle="${i18n_eng}"/></h2>
                         <div class="row"><% /** Mandatory attributes are here */ %>
                             <div class="col-sm-6"><% /** Natural person */ %>
@@ -67,7 +63,7 @@
                                     </c:if>
                                     <li>
                                         <fmt:message key="${friendlyName}" bundle="${i18n_eng}"/>
-                                        <strong>
+                                        <strong id="${friendlyName}">
                                             <c:forEach items="${attrValue}" var="aVal">
                                                 ${e:forHtml(aVal)}
                                             </c:forEach>
@@ -134,8 +130,8 @@
                                 </c:if>
                             </div>
                         </div>
-                        <input type="hidden" id="binaryLightToken" name="binaryLightToken"
-                               value="<c:out value='${e:forHtml(binaryLightToken)}'/>"/>
+                        <input type="hidden" id="token" name="token"
+                               value="<c:out value='${e:forHtml(token)}'/>"/>
                         <noscript>
                             <p class="step-status"><fmt:message key="common.step" bundle="${i18n_eng}"/> <span>3</span>
                                 | 3</p>
@@ -148,8 +144,8 @@
                     <form id="cancelForm" name="cancelForm" method="${e:forHtml(binding)}"
                           action="${e:forHtml(redirectUrl)}">
                         <input type="hidden" name="cancel" value="true"/>
-                        <input type="hidden" name="binaryLightToken"
-                               value="<c:out value='${e:forHtml(binaryLightToken)}'/>"/>
+                        <input type="hidden" name="token"
+                               value="<c:out value='${e:forHtml(token)}'/>"/>
                         <noscript>
                             <p class="box-btn">
                                 <button type="submit" id="buttonCancelNoScript" class="btn btn-cancel">

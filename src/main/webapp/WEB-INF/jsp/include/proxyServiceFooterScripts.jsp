@@ -13,7 +13,7 @@
 #    See the Licence for the specific language governing permissions and limitations under the Licence.
  --%>
 
-<script src="resource/skin0/js/jquery-1.11.3.min.js"></script>
+<script src="resource/skin0/js/jquery-3.5.1.min.js"></script>
 <script src="resource/skin0/js/bootstrap.min.js"></script>
 <script src="resource/skin0/js/switchery.min.js"></script>
 <script src="resource/skin0/js/function.js"></script>

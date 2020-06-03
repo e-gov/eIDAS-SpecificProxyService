@@ -79,7 +79,6 @@ public class SpecificProxyServiceConfiguration implements WebMvcConfigurer {
         final FilterRegistrationBean bean = new FilterRegistrationBean();
         bean.setFilter(new DisabledHttpMethodsFilter(specificProxyServiceProperties.getWebapp().getDisabledHttpMethods()));
         bean.setInitParameters(new HashMap<>());
-        bean.setOrder(Ordered.HIGHEST_PRECEDENCE);
         return bean;
     }
 

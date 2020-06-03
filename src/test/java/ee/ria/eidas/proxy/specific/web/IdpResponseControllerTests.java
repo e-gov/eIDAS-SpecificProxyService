@@ -173,7 +173,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 			.body("errors", hasSize(1))
 			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
 
-		assertErrorIsLogged("Server encountered an unexpected error: Invalid OIDC token endpoint response! Invalid JSON: Unexpected token <xml/> at position 8.");
+		assertErrorIsLogged("Server encountered an unexpected error: Invalid OIDC token endpoint response! Invalid JSON: Unexpected token <xml/>");
 		assertPendingIdpRequestCommunicationCacheIsEmpty();
 		assertResponseCommunicationCacheIsEmpty();
 	}

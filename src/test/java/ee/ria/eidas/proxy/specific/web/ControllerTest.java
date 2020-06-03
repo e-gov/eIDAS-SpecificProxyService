@@ -55,6 +55,7 @@ import static io.restassured.RestAssured.given;
 import static io.restassured.config.RedirectConfig.redirectConfig;
 import static io.restassured.config.RestAssuredConfig.config;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.text.MatchesPattern.matchesPattern;
 import static org.hamcrest.xml.HasXPath.hasXPath;
@@ -214,7 +215,7 @@ public abstract class ControllerTest {
 
         LoggingEvent lastLoggingEvent = getCaptorLoggingEvent().getValue();
         assertThat(lastLoggingEvent.getLevel(), equalTo(Level.ERROR));
-        assertThat(lastLoggingEvent.getMessage(), equalTo(errorMessage));
+        assertThat(lastLoggingEvent.getMessage(), startsWith(errorMessage));
     }
 
     void assertHttpMethodsNotAllowed(String path, String... restrictedMethods) {

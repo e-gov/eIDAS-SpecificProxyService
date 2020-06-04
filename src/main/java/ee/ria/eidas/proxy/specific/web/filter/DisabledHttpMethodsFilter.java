@@ -23,7 +23,8 @@ public class DisabledHttpMethodsFilter extends OncePerRequestFilter {
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException {
-		if (disabledMethods.contains(HttpMethod.resolve(request.getMethod()))) {
+
+		if (disabledMethods != null && disabledMethods.contains(HttpMethod.resolve(request.getMethod()))) {
 			response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, String.format("Request method '%s' not supported", request.getMethod()));
 		} else {
 			filterChain.doFilter(request, response);

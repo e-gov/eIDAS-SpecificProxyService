@@ -8,13 +8,12 @@ import ch.qos.logback.core.Appender;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceProperties;
-import ee.ria.eidas.proxy.specific.storage.LightJAXBCodec;
 import ee.ria.eidas.proxy.specific.service.SpecificProxyService;
+import ee.ria.eidas.proxy.specific.storage.LightJAXBCodec;
 import ee.ria.eidas.proxy.specific.storage.SpecificProxyServiceCommunication;
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.light.ILightRequest;
-import eu.eidas.auth.commons.light.ILightResponse;
 import eu.eidas.auth.commons.light.impl.LightRequest;
 import eu.eidas.auth.commons.light.impl.LightResponse;
 import eu.eidas.auth.commons.tx.BinaryLightToken;
@@ -44,13 +43,11 @@ import javax.cache.Cache;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.parsers.ParserConfigurationException;
-
 import java.io.IOException;
 import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static ee.ria.eidas.proxy.specific.util.LightRequestTestHelper.*;
-import static ee.ria.eidas.proxy.specific.util.LightRequestTestHelper.UUID_REGEX;
 import static io.restassured.RestAssured.given;
 import static io.restassured.config.RedirectConfig.redirectConfig;
 import static io.restassured.config.RestAssuredConfig.config;

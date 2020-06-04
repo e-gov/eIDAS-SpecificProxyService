@@ -3,7 +3,7 @@
 - [1. Building the SpecifcProxyService webapp](#build)
 - [2. Integration with EidasNode webapp](#integrate_with_eidasnode)
   * [2.1. Configuring communication with EidasNode](#integrate_eidasnode)
-  * [2.2. Supported eIDAS attributes](#eidas_attributes)
+  * [2.2. Ignite configuration](#ignite_conf)
 - [3. Integration with the IDP (OpenID Connect server)](#integrate_with_idp)
   * [3.1. Requirements for IDP](#idp_requirements)
   * [3.2. Requesting eIDAS attributes using OpenID Connect scopes](#idp_request)
@@ -18,6 +18,7 @@
   * [7.4 Supported service provider types](#configuration_parameters_sptype)
   * [7.5 Mapping eIDAS attributes to OpenID Connect authentication request scopes](#configuration_parameters_oidc)
   * [7.6 Mapping eIDAS attributes to OpenID Connect ID-token claims](#configuration_claims_oidc)
+  * [7.8 Postprocessing OpenID Connect ID-token claim values](#configuration_claims_postprocessing)
 
 
 <a name="build"></a>
@@ -30,17 +31,20 @@
 <a name="integrate_with_eidasnode"></a>
 ## 2. Integration with EidasNode webapp
 
+In order to enable communication between `EidasNode` and `SpecificProxyService` webapps, both must be able to access the same `Ignite` cluster and have the same communication configuration (shared secret, etc).
+
 **NB!** It is assumed that the `SpecificProxyService` webapp is installed in the same web server instance as `EidasNode` and that both have access to the same configuration files.
 
 <a name="integrate_eidasnode"></a>  
 ### 2.1 Configuring communication with EidasNode
 
-In order to enable communication between `EidasNode` and `SpecificProxyService` webapps, both must be able to access the same `Ignite` cluster and have the same communication configuration (shared secret, etc).
-
-* To set the same communication definitions, it is required that the `SpecificProxyService` has access to communication definitions provided in the following file `EidasNode` configuration file:  
+To set the same communication definitions, it is required that the `SpecificProxyService` has access to communication definitions provided in the following file `EidasNode` configuration file:  
 `$SPECIFIC_PROXY_SERVICE_CONFIG_REPOSITORY/specificCommunicationDefinitionProxyservice.xml`
 
-* To access the same Ignite cluster, it is required that the `SpecificProxyService` has access to Ignite configuration settings in the following `EidasNode` configuration file: `$EIDAS_CONFIG_REPOSITORY/igniteSpecificCommunication.xml` (a Spring configuration file that specifies the Ignite cache configuration details. Needed for shared request/response communication configuration).
+<a name="eidas_attributes"></a> 
+### 2.2 Ignite configuration    
+
+To access the same Ignite cluster, it is required that the `SpecificProxyService` has access to Ignite configuration settings in the following `EidasNode` configuration file: `$EIDAS_CONFIG_REPOSITORY/igniteSpecificCommunication.xml` (a Spring configuration file that specifies the Ignite cache configuration details. Needed for shared request/response communication configuration).
 
 Note that new map definitions are necessary for `SpecificProxyService` webapp
     
@@ -60,23 +64,22 @@ Note that new map definitions are necessary for `SpecificProxyService` webapp
 </bean>    
 ````
 
-<a name="eidas_attributes"></a> 
-### 2.2 Supported eIDAS attributes     
-
-Supported eIDAS attributes list is loaded from
-`$SPECIFIC_PROXY_SERVICE_CONFIG_REPOSITORY/eidas-attributes.xml` - defines a set of eIDAS attributes supported by the ProxyService
-
 <a name="integrate_with_idp"></a>
 ## 3. Integration with the IDP (OpenID Connect server)
 
 <a name="idp_requirements"></a>  
 ### 3.1 Requirements for IDP
 
-The `SpecifciProxyService` webapp delegates the eIDAS authentication request to a OIDC server.
+The `SpecificProxyService` webapp delegates the eIDAS authentication request to a OIDC server.
 
 The IDP integration requires the following OpenID Connect protocol features:
 * The IDP must support the authrozation code flow from the [OpenID Connect Core](https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowSteps) specification.
 * The IDP must support the required OpenID Provider configuration as described in the [OpenID Connect Discovery])(https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderMetadata) specification.
+
+The following optional claims are mandatory in the ID token (in addition to other required claims listed in the [OpenID Connect Core](https://openid.net/specs/openid-connect-core-1_0.html#IDToken) specification): 
+* `jti` - A unique identifier for the token
+* `amr` - Authentication Method References
+* `acr` - Authentication Context Class Reference
 
 <a name="idp_request"></a>
 ### 3.2 Request eIDAS attributes using OpenID Connect scopes
@@ -88,6 +91,8 @@ The IDP integration requires the following OpenID Connect protocol features:
 
 Information about the authenticated person is retrieved from ID-token issued by the IDP (retuned in the response of [OIDC token request](https://openid.net/specs/openid-connect-core-1_0.html#TokenRequest)).
 Claims in the ID-token are mapped to their respective eIDAS attributes (see configuration reference for further details).
+
+In some cases, ID-token claim values might need further processing to extract the attributed value. 
 
 <a name="logging"></a>
 ## 4. Logging
@@ -121,6 +126,7 @@ TBD - heartbeat endpoint
 | `eidas.proxy.oidc.redirect-uri` | Yes | OpenID Connect client redirect URI. |
 | `eidas.proxy.oidc.issuer-url` | Yes | OpenID Connect issuer URL. |
 | `eidas.proxy.oidc.scope` | No | Comma separated list of additional scopes. Sets the value of `scope` parameter in the OpenID Connect authentication request. Defaults to `openid idcard mid` if not specified. |
+| `eidas.proxy.oidc.accepted-amr-values` | No | Comma separated list of allowed values for the `amr` claim in the OpenID Connect ID-Token (Authentication Method Reference). Defaults to `idcard mID` if not specified. |
 | `eidas.proxy.oidc.default-ui-language` | No | Sets the `ui_locales` parameter value in OpenID Connect authentication request. Defaults to `et` if not specified. |
 | `eidas.proxy.oidc.connect-timeout-in-milliseconds` | No | Maximum period in milliseconds to establish a connection to the OpenID Connect token endpoint. Defaults to 5000 milliseconds if not specified. |
 | `eidas.proxy.oidc.read-timeout-in-milliseconds` | No | Maximum period in milliseconds to wait for the OpenID Connect token endpoint response. Defaults to 5000 milliseconds if not specified. |
@@ -188,4 +194,18 @@ eidas.proxy.oidc.response-claim-mapping.attributes.FirstName=$.profile_attribute
 eidas.proxy.oidc.response-claim-mapping.attributes.FamilyName=$.profile_attributes.family_name
 eidas.proxy.oidc.response-claim-mapping.attributes.DateOfBirth=$.profile_attributes.date_of_birth
 eidas.proxy.oidc.response-claim-mapping.attributes.PersonIdentifier=$.sub
+````
+
+### Postprocessing OpenID Connect ID-token claim values
+
+Configuring attribute value extraction from the OIDC id_token claim value
+
+| Parameter        | Mandatory | Description, example |
+| :---------------- | :---------- | :----------------|
+| `eidas.proxy.oidc.response-claim-mapping.attributes-post-processing.<eidas attribute>=<regexp>` | No | <p>Allows further processing of the claim value associated with the eIDAS attribute.</p> <p>`<eidas attribute>` is the (Friendly) Name of the attribute passed from EidasNode webapp.</p><p>`<regexp>` is the regular expression that defines the rules to extract the attribute value from the claim. Note that a [named regex group](https://www.regular-expressions.info/refext.html) with the name `attributeValue` must be used to mark the valid extractable value.</p>  | 
+
+
+Example: The following configuration extracts the Estonian ID code `60001019906` from the claim value `EE60001019906`
+````
+eidas.proxy.oidc.response-claim-mapping.attributes-post-processing.PersonIdentifier=^EE(?<value>[\\d]{11,11})$
 ````

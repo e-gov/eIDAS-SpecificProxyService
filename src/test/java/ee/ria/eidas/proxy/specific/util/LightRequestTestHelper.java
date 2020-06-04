@@ -71,7 +71,7 @@ public class LightRequestTestHelper {
             .build();
 
     public static final ImmutableAttributeMap NATURAL_PERSON_MANDATORY_ATTRIBUTES = new ImmutableAttributeMap.Builder()
-            .put(EidasSpec.Definitions.PERSON_IDENTIFIER, new StringAttributeValue("EE60001019906"))
+            .put(EidasSpec.Definitions.PERSON_IDENTIFIER, new StringAttributeValue("60001019906"))
             .put(EidasSpec.Definitions.CURRENT_FAMILY_NAME, new StringAttributeValue("O’CONNEŽ-ŠUSLIK TESTNUMBER"))
             .put(EidasSpec.Definitions.CURRENT_GIVEN_NAME, new StringAttributeValue("MARY ÄNN"))
             .put(EidasSpec.Definitions.DATE_OF_BIRTH, new DateTimeAttributeValue(DateTime.parse("2000-01-01",

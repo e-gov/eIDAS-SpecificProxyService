@@ -16,6 +16,10 @@ import eu.eidas.auth.commons.attribute.AttributeRegistries;
 import eu.eidas.auth.commons.attribute.AttributeRegistry;
 import eu.eidas.auth.commons.exceptions.InvalidParameterEIDASException;
 import eu.eidas.auth.commons.light.ILightResponse;
+import eu.eidas.auth.commons.protocol.eidas.spec.LegalPersonSpec;
+import eu.eidas.auth.commons.protocol.eidas.spec.NaturalPersonSpec;
+import eu.eidas.auth.commons.protocol.eidas.spec.RepresentativeLegalPersonSpec;
+import eu.eidas.auth.commons.protocol.eidas.spec.RepresentativeNaturalPersonSpec;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,7 +30,6 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
-import org.springframework.core.Ordered;
 import org.springframework.core.io.FileUrlResource;
 import org.springframework.util.Assert;
 import org.springframework.web.servlet.ViewResolver;
@@ -132,11 +135,9 @@ public class SpecificProxyServiceConfiguration implements WebMvcConfigurer {
 
     @Bean
     @Qualifier("eidasAttributeRegistry")
-    public AttributeRegistry eidasAttributeRegistry(@Value("#{environment.SPECIFIC_PROXY_SERVICE_CONFIG_REPOSITORY}/eidas-attributes.xml")
-                                                                String eidasAttributesConfiguration) {
-
-        assertFileExists(eidasAttributesConfiguration);
-        return AttributeRegistries.fromFiles(eidasAttributesConfiguration, null);
+    public AttributeRegistry eidasAttributeRegistry() {
+        return AttributeRegistries.copyOf(NaturalPersonSpec.REGISTRY, RepresentativeNaturalPersonSpec.REGISTRY,
+                LegalPersonSpec.REGISTRY, RepresentativeLegalPersonSpec.REGISTRY);
     }
 
     @Bean("eidasIgniteInstanceInitializerSpecificCommunication")

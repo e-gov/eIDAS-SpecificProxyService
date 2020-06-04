@@ -41,10 +41,10 @@ class IdpResponseControllerConsentRequiredTests extends IdpResponseControllerTes
 			.extract().response();
 
 		assertThat( response.body().htmlPath().getString("html.head.title")).contains("Consent");
-		assertThat( response.body().htmlPath().getString("**.findAll { it.strong.@id == 'FirstName'}").trim()).contains("MARY ÄNN");
-		assertThat( response.body().htmlPath().getString("**.findAll { it.strong.@id == 'FamilyName'}").trim()).contains("O’CONNEŽ-ŠUSLIK TESTNUMBER");
-		assertThat( response.body().htmlPath().getString("**.findAll { it.strong.@id == 'DateOfBirth'}").trim()).contains("2000-01-01");
-		assertThat( response.body().htmlPath().getString("**.findAll { it.strong.@id == 'PersonIdentifier'}").trim()).contains("60001019906");
+		assertThat( response.body().htmlPath().getString("**.findAll { it.strong.@id == 'FirstName'}").trim()).isEqualTo("MARY ÄNN");
+		assertThat( response.body().htmlPath().getString("**.findAll { it.strong.@id == 'FamilyName'}").trim()).isEqualTo("O’CONNEŽ-ŠUSLIK TESTNUMBER");
+		assertThat( response.body().htmlPath().getString("**.findAll { it.strong.@id == 'DateOfBirth'}").trim()).isEqualTo("2000-01-01");
+		assertThat( response.body().htmlPath().getString("**.findAll { it.strong.@id == 'PersonIdentifier'}").trim()).isEqualTo("60001019906");
 
 		assertPendingIdpRequestCommunicationCacheIsEmpty();
 	}

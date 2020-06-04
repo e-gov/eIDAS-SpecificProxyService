@@ -17,6 +17,7 @@ package ee.ria.eidas.proxy.specific.service;
 
 import com.google.common.collect.ImmutableSortedSet;
 import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.PathNotFoundException;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.proc.BadJOSEException;
 import com.nimbusds.jwt.JWT;
@@ -42,14 +43,12 @@ import eu.eidas.auth.commons.light.ILightResponse;
 import eu.eidas.auth.commons.light.impl.LightResponse;
 import eu.eidas.auth.commons.light.impl.ResponseStatus;
 import eu.eidas.auth.commons.protocol.eidas.LevelOfAssurance;
-import eu.eidas.auth.commons.protocol.eidas.spec.EidasSpec;
 import eu.eidas.auth.commons.protocol.impl.SamlNameIdFormat;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import net.minidev.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.util.Assert;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -57,6 +56,8 @@ import java.io.IOException;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -101,13 +102,34 @@ public class SpecificProxyService {
         log.info("ID-TOKEN: " + idToken.getParsedString());
 
         try {
+
             ClaimsSet claims = idTokenValidator.validate(idToken, null);
+            validateAuthenticationMethodReference(claims);
+
             log.debug("OIDC response successfully verified!");
             ILightResponse lightResponse = translateToLightResponse(claims, originalLightRequest, specificProxyServiceProperties.getOidc().getResponseClaimMapping());
+
             log.debug("LightResponse for eIDAS-Proxy service: " + lightResponse.toString());
+
+            if (LevelOfAssurance.fromString(lightResponse.getLevelOfAssurance()).numericValue() < LevelOfAssurance.fromString(originalLightRequest.getLevelOfAssurance()).numericValue()) {
+                throw new IllegalStateException(String.format("Invalid level of assurance in IDP response. Authentication was requested with level '%s', but IDP response level is '%s'.", originalLightRequest.getLevelOfAssurance(), lightResponse.getLevelOfAssurance()));
+            }
+
             return lightResponse;
         } catch (BadJOSEException | JOSEException e) {
             throw new IllegalStateException(String.format("Error when validating id_token! %s", e.getMessage()), e);
+        }
+    }
+
+    private void validateAuthenticationMethodReference(ClaimsSet claims) {
+        List<String> amr = claims.getStringListClaim("amr");
+        if (amr == null) {
+            throw new IllegalStateException("Missing required claim 'amr' in OIDC ID-token");
+        }
+
+        List<String> allowedAmr = specificProxyServiceProperties.getOidc().getAcceptedAmrValues();
+        if (!allowedAmr.containsAll(amr)) {
+            throw new IllegalStateException(String.format("The amr claim returned in the OIDC ID-token response is not allowed by the configuration. amr = '%s', allowed amr values by the configuration = '%s'", amr, allowedAmr));
         }
     }
 
@@ -176,14 +198,11 @@ public class SpecificProxyService {
         log.info("JWT (claims): " + claimSet.toJSONString());
 
         JSONObject claims = claimSet.toJSONObject();
-        String responseId = JsonPath.read(claims, mappingProperties.getId());
-        LevelOfAssurance loa = LevelOfAssurance.valueOf(StringUtils.upperCase(JsonPath.read(claims, mappingProperties.getAcr())));
-        String issuer = JsonPath.read(claims, mappingProperties.getIssuer());
-        ImmutableAttributeMap attributes = getAttributes(claims, mappingProperties);
-
-        if (loa.numericValue() < LevelOfAssurance.fromString(originalLightRequest.getLevelOfAssurance()).numericValue()) {
-            throw new IllegalStateException(String.format("Invalid level of assurance in IDP response. Authentication was requested with level '%s', but id-token contains level '%s'.", originalLightRequest.getLevelOfAssurance(), loa));
-        }
+        String subject = getAttributeValueFromClaims(claims, "subject", mappingProperties.getSubject());
+        String responseId = getAttributeValueFromClaims(claims, "responseId", mappingProperties.getId());
+        LevelOfAssurance loa = LevelOfAssurance.valueOf(StringUtils.upperCase(getAttributeValueFromClaims(claims, "loa", mappingProperties.getAcr())));
+        String issuer = getAttributeValueFromClaims(claims, "issuer", mappingProperties.getIssuer());
+        ImmutableAttributeMap attributes = getAttributes(originalLightRequest, claims, mappingProperties);
 
         final LightResponse.Builder builder = LightResponse.builder()
                 .id(responseId)
@@ -193,24 +212,71 @@ public class SpecificProxyService {
                 .levelOfAssurance(loa.stringValue())
                 .relayState(originalLightRequest.getRelayState())
                 .status(ResponseStatus.builder().statusCode("urn:oasis:names:tc:SAML:2.0:status:Success").build())
-                .subject(attributes.getFirstAttributeValue(EidasSpec.Definitions.PERSON_IDENTIFIER).toString())
+                .subject(subject)
                 .subjectNameIdFormat(SamlNameIdFormat.UNSPECIFIED.getNameIdFormat())
                 .attributes(attributes);
 
         return builder.build();
     }
 
-    @NotNull
-    private ImmutableAttributeMap getAttributes(JSONObject claims, IdTokenClaimMappingProperties mappingProperties) {
+    private ImmutableAttributeMap getAttributes(ILightRequest lightRequest, JSONObject claims, IdTokenClaimMappingProperties mappingProperties) {
         ImmutableAttributeMap.Builder attrBuilder = ImmutableAttributeMap.builder();
-        for ( Map.Entry<String, String> entry : mappingProperties.getAttributes().entrySet()) {
-            putAttribute(attrBuilder, entry.getKey(), JsonPath.read(claims, entry.getValue()));
+
+        for ( ImmutableAttributeMap.ImmutableAttributeEntry entry : lightRequest.getRequestedAttributes().entrySet()) {
+            String friendlyName = entry.getKey().getFriendlyName();
+            String claimValue = getClaimValueFromIdToken(claims, entry, mappingProperties);
+            if (claimValue != null) {
+                String attributeValue = getAttributeValue(mappingProperties, friendlyName, claimValue);
+                putAttribute(attrBuilder, friendlyName, attributeValue);
+            }
         }
+
         return attrBuilder.build();
     }
 
-    private void putAttribute(ImmutableAttributeMap.Builder builder, String familyName, String value) {
-        final ImmutableSortedSet<AttributeDefinition<?>> byFriendlyName = eidasAttributeRegistry.getByFriendlyName(familyName);
+    private String getAttributeValue(IdTokenClaimMappingProperties mappingProperties, String friendlyName, String value) {
+        if (mappingProperties.getAttributesPostProcessing().containsKey(friendlyName)) {
+            String regexp = mappingProperties.getAttributesPostProcessing().get(friendlyName);
+            Pattern pattern = Pattern.compile(regexp);
+            Matcher matcher = pattern.matcher(value);
+            if (matcher.find()) {
+                return matcher.group("attributeValue");
+            } else {
+                throw new IllegalStateException(String.format("Attribute '%s' with value '%s' does not match the expected format %s", friendlyName, value, regexp));
+            }
+        } else {
+            return value;
+        }
+    }
+
+    private String getClaimValueFromIdToken(JSONObject claims, ImmutableAttributeMap.ImmutableAttributeEntry entry, IdTokenClaimMappingProperties mappingProperties) {
+
+        String attributeFriendlyName = entry.getKey().getFriendlyName();
+        String jsonPath = mappingProperties.getAttributes().get(attributeFriendlyName);
+
+        if (entry.getKey().isRequired()) {
+            Assert.notNull(jsonPath, "Required attribute " + attributeFriendlyName + " has no jsonpath configured to extract claim from id-token");
+        } else {
+            // not required + no mapping configured = ignored
+            if (jsonPath == null) {
+                log.debug("No mapping to extract requested attribute from id-token {}", attributeFriendlyName);
+                return null;
+            }
+        }
+
+        return getAttributeValueFromClaims(claims, attributeFriendlyName, jsonPath);
+    }
+
+    private String getAttributeValueFromClaims(JSONObject claims, String responseAttributeName, String jsonPath) {
+        try {
+            return JsonPath.read(claims, jsonPath);
+        } catch (PathNotFoundException e) {
+            throw new IllegalStateException(String.format("Failed to read attribute (%s) value from ID-token with jsonpath (%s). Please check your configuration", responseAttributeName, jsonPath));
+        }
+    }
+
+    private void putAttribute(ImmutableAttributeMap.Builder builder, String friendlyName, String value) {
+        final ImmutableSortedSet<AttributeDefinition<?>> byFriendlyName = eidasAttributeRegistry.getByFriendlyName(friendlyName);
         final AttributeDefinition<?> attributeDefinition = byFriendlyName.first();
         builder.put(attributeDefinition, value);
     }

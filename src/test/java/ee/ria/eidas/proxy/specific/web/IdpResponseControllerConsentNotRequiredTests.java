@@ -1,7 +1,6 @@
 package ee.ria.eidas.proxy.specific.web;
 
 import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceConfiguration;
-import ee.ria.eidas.proxy.specific.storage.SpecificProxyServiceCommunication;
 import ee.ria.eidas.proxy.specific.storage.SpecificProxyServiceCommunication.CorrelatedRequestsHolder;
 import eu.eidas.auth.commons.light.ILightRequest;
 import io.restassured.RestAssured;
@@ -20,13 +19,11 @@ import java.util.Map;
 import java.util.UUID;
 
 import static ee.ria.eidas.proxy.specific.util.LightRequestTestHelper.*;
-import static ee.ria.eidas.proxy.specific.util.LightRequestTestHelper.UUID_REGEX;
 import static ee.ria.eidas.proxy.specific.web.IdpResponseController.ENDPOINT_IDP_RESPONSE;
 import static io.restassured.RestAssured.given;
 import static io.restassured.config.RedirectConfig.redirectConfig;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.core.StringStartsWith.startsWith;
 import static org.hamcrest.text.MatchesPattern.matchesPattern;
 import static org.hamcrest.xml.HasXPath.hasXPath;
@@ -82,7 +79,7 @@ class IdpResponseControllerConsentNotRequiredTests extends IdpResponseController
 		assertThat(responseXml, hasXPath("/lightResponse/status/statusCode", equalTo("urn:oasis:names:tc:SAML:2.0:status:Success")));
 		assertThat(responseXml, hasXPath("/lightResponse/status/failure", equalTo("false")));
 		assertThat(responseXml, hasXPath("count(/lightResponse/attributes/attribute)", equalTo("4")));
-		assertThat(responseXml, hasXPath("/lightResponse/attributes/attribute[definition = 'http://eidas.europa.eu/attributes/naturalperson/PersonIdentifier']/value", equalTo("EE60001019906"))); // sub claim value in id-token - token-response-ok.json
+		assertThat(responseXml, hasXPath("/lightResponse/attributes/attribute[definition = 'http://eidas.europa.eu/attributes/naturalperson/PersonIdentifier']/value", equalTo("60001019906"))); // id code from sub claim value in id-token - token-response-ok.json
 		assertThat(responseXml, hasXPath("/lightResponse/attributes/attribute[definition = 'http://eidas.europa.eu/attributes/naturalperson/DateOfBirth']/value", equalTo("2000-01-01"))); // profile_attributes.date_of_birth claim value in id-token - token-response-ok.json
 		assertThat(responseXml, hasXPath("/lightResponse/attributes/attribute[definition = 'http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName']/value", equalTo("MARY ÄNN"))); // profile_attributes.given_name claim value in id-token - token-response-ok.json
 		assertThat(responseXml, hasXPath("/lightResponse/attributes/attribute[definition = 'http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName']/value", equalTo("O’CONNEŽ-ŠUSLIK TESTNUMBER"))); // profile_attributes.family_name claim value in id-token - token-response-ok.json

@@ -285,7 +285,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 			.body("errors", hasSize(1))
 			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
 
-		assertErrorIsLogged("Server encountered an unexpected error: Invalid level of assurance in IDP response. Authentication was requested with level 'http://eidas.europa.eu/LoA/high', but id-token contains level 'http://eidas.europa.eu/LoA/low'.");
+		assertErrorIsLogged("Server encountered an unexpected error: Invalid level of assurance in IDP response. Authentication was requested with level 'http://eidas.europa.eu/LoA/high', but IDP response level is 'http://eidas.europa.eu/LoA/low'.");
 		assertPendingIdpRequestCommunicationCacheIsEmpty();
 		assertResponseCommunicationCacheIsEmpty();
 	}
@@ -431,6 +431,126 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
 
 		assertErrorIsLogged("Server encountered an unexpected error: OIDC token request returned an error! invalid_request");
+		assertPendingIdpRequestCommunicationCacheIsEmpty();
+		assertResponseCommunicationCacheIsEmpty();
+	}
+
+	@Test
+	void internalServerErrorWhenIdpError_TokenErrorResponse_MissingRequiredClaim_AttributeDateOfBirth() throws Exception {
+
+		wireMockServer.stubFor(post(urlEqualTo("/oidc/token"))
+				.withBasicAuth(getSpecificProxyServiceProperties().getOidc().getClientId(), getSpecificProxyServiceProperties().getOidc().getClientSecret())
+				.withHeader("Content-Type", containing("application/x-www-form-urlencoded"))
+				.willReturn(aResponse()
+						.withStatus(200)
+						.withHeader("Content-Type", "application/json; charset=UTF-8")
+						.withBodyFile("mock_responses/idp/token-response-nok_missing_required_claim.json")));
+
+		Map.Entry<String, CorrelatedRequestsHolder> mapEntry = addMockRequestToPendingIdpRequestCommunicationCache();
+
+		given()
+			.param("code", "123...")
+			.param("state", mapEntry.getKey())
+		.when()
+			.get(ENDPOINT_IDP_RESPONSE)
+		.then()
+			.assertThat()
+			.statusCode(500)
+			.body("message", equalTo("Internal server error"))
+			.body("errors", hasSize(1))
+			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
+
+		assertErrorIsLogged("Server encountered an unexpected error: Failed to read attribute (DateOfBirth) value from ID-token with jsonpath ($.profile_attributes.date_of_birth). Please check your configuration");
+		assertPendingIdpRequestCommunicationCacheIsEmpty();
+		assertResponseCommunicationCacheIsEmpty();
+	}
+
+	@Test
+	void internalServerErrorWhenIdpError_TokenErrorResponse_MissingRequiredClaim_Amr() throws Exception {
+
+		wireMockServer.stubFor(post(urlEqualTo("/oidc/token"))
+				.withBasicAuth(getSpecificProxyServiceProperties().getOidc().getClientId(), getSpecificProxyServiceProperties().getOidc().getClientSecret())
+				.withHeader("Content-Type", containing("application/x-www-form-urlencoded"))
+				.willReturn(aResponse()
+						.withStatus(200)
+						.withHeader("Content-Type", "application/json; charset=UTF-8")
+						.withBodyFile("mock_responses/idp/token-response-nok_missing_required_claim_amr.json")));
+
+		Map.Entry<String, CorrelatedRequestsHolder> mapEntry = addMockRequestToPendingIdpRequestCommunicationCache();
+
+		given()
+			.param("code", "123...")
+			.param("state", mapEntry.getKey())
+		.when()
+			.get(ENDPOINT_IDP_RESPONSE)
+		.then()
+			.assertThat()
+			.statusCode(500)
+			.body("message", equalTo("Internal server error"))
+			.body("errors", hasSize(1))
+			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
+
+		assertErrorIsLogged("Server encountered an unexpected error: Missing required claim 'amr' in OIDC ID-token");
+		assertPendingIdpRequestCommunicationCacheIsEmpty();
+		assertResponseCommunicationCacheIsEmpty();
+	}
+
+	@Test
+	void internalServerErrorWhenIdpError_TokenErrorResponse_InvalidAmr() throws Exception {
+
+		wireMockServer.stubFor(post(urlEqualTo("/oidc/token"))
+				.withBasicAuth(getSpecificProxyServiceProperties().getOidc().getClientId(), getSpecificProxyServiceProperties().getOidc().getClientSecret())
+				.withHeader("Content-Type", containing("application/x-www-form-urlencoded"))
+				.willReturn(aResponse()
+						.withStatus(200)
+						.withHeader("Content-Type", "application/json; charset=UTF-8")
+						.withBodyFile("mock_responses/idp/token-response-nok_invalid_id-token_claim_value_amr.json")));
+
+		Map.Entry<String, CorrelatedRequestsHolder> mapEntry = addMockRequestToPendingIdpRequestCommunicationCache();
+
+		given()
+			.param("code", "123...")
+			.param("state", mapEntry.getKey())
+		.when()
+			.get(ENDPOINT_IDP_RESPONSE)
+		.then()
+			.assertThat()
+			.statusCode(500)
+			.body("message", equalTo("Internal server error"))
+			.body("errors", hasSize(1))
+			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
+
+		assertErrorIsLogged("Server encountered an unexpected error: The amr claim returned in the OIDC ID-token response is not allowed by the configuration. amr = '[banklink]', allowed amr values by the configuration = '[idcard, mID]'");
+		assertPendingIdpRequestCommunicationCacheIsEmpty();
+		assertResponseCommunicationCacheIsEmpty();
+	}
+
+	@Test
+	void internalServerErrorWhenIdpError_TokenErrorResponse_InvalidClaimValueSub() throws Exception {
+
+		wireMockServer.stubFor(post(urlEqualTo("/oidc/token"))
+				.withBasicAuth(getSpecificProxyServiceProperties().getOidc().getClientId(), getSpecificProxyServiceProperties().getOidc().getClientSecret())
+				.withHeader("Content-Type", containing("application/x-www-form-urlencoded"))
+				.willReturn(aResponse()
+						.withStatus(200)
+						.withHeader("Content-Type", "application/json; charset=UTF-8")
+						.withBodyFile("mock_responses/idp/token-response-nok_invalid_id-token_claim_value_sub.json")));
+
+		Map.Entry<String, CorrelatedRequestsHolder> mapEntry = addMockRequestToPendingIdpRequestCommunicationCache();
+
+		given()
+			.param("code", "123...")
+			.param("state", mapEntry.getKey())
+		.when()
+			.get(ENDPOINT_IDP_RESPONSE)
+		.then()
+			.assertThat()
+			.statusCode(500)
+			.body("message", equalTo("Internal server error"))
+			.body("errors", hasSize(1))
+			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
+
+		assertErrorIsLogged("Server encountered an unexpected error: Attribute 'PersonIdentifier' with value 'XX60001019906' does not match the expected format ^EE(?<attributeValue>[\\d]{11,11})$");
 		assertPendingIdpRequestCommunicationCacheIsEmpty();
 		assertResponseCommunicationCacheIsEmpty();
 	}

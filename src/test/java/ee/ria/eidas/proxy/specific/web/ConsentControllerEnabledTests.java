@@ -2,7 +2,6 @@ package ee.ria.eidas.proxy.specific.web;
 
 import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceConfiguration;
 import eu.eidas.auth.commons.EidasParameterKeys;
-import eu.eidas.auth.commons.light.ILightRequest;
 import eu.eidas.auth.commons.light.ILightResponse;
 import eu.eidas.specificcommunication.BinaryLightTokenHelper;
 import org.apache.http.HttpHeaders;
@@ -139,7 +138,7 @@ class ConsentControllerEnabledTests extends ControllerTest {
 		assertThat(responseXml, hasXPath("/lightResponse/status/statusCode", equalTo("urn:oasis:names:tc:SAML:2.0:status:Success")));
 		assertThat(responseXml, hasXPath("/lightResponse/status/failure", equalTo("false")));
 		assertThat(responseXml, hasXPath("count(/lightResponse/attributes/attribute)", equalTo("4")));
-		assertThat(responseXml, hasXPath("/lightResponse/attributes/attribute[definition = 'http://eidas.europa.eu/attributes/naturalperson/PersonIdentifier']/value", equalTo("EE60001019906")));
+		assertThat(responseXml, hasXPath("/lightResponse/attributes/attribute[definition = 'http://eidas.europa.eu/attributes/naturalperson/PersonIdentifier']/value", equalTo("60001019906")));
 		assertThat(responseXml, hasXPath("/lightResponse/attributes/attribute[definition = 'http://eidas.europa.eu/attributes/naturalperson/DateOfBirth']/value", equalTo("2000-01-01")));
 		assertThat(responseXml, hasXPath("/lightResponse/attributes/attribute[definition = 'http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName']/value", equalTo("MARY ÄNN")));
 		assertThat(responseXml, hasXPath("/lightResponse/attributes/attribute[definition = 'http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName']/value", equalTo("O’CONNEŽ-ŠUSLIK TESTNUMBER")));

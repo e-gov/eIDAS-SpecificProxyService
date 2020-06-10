@@ -21,6 +21,7 @@
 		<rest-assured.version>4.2.0</rest-assured.version>
 		<wiremock.version>2.26.3</wiremock.version>
 		<oauth2-oidc-sdk.version>7.2</oauth2-oidc-sdk.version>
+		<sonar.jacoco.reportPath>target/jacoco.exec</sonar.jacoco.reportPath>
 	</properties>
 
 	<dependencies>

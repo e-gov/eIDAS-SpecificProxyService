@@ -67,7 +67,7 @@ public class IdpResponseController {
 	@GetMapping(value = ENDPOINT_IDP_RESPONSE)
 	public ModelAndView processIdpResponse (
 				@Validated IdpCallbackRequest idpCallbackRequest,
-				Model model) throws SpecificCommunicationException, ServletException, MalformedURLException {
+				Model model) throws SpecificCommunicationException, MalformedURLException {
 
 		String state = getStringParameterValue(idpCallbackRequest.getState());
 		String errorCode = getStringParameterValue(idpCallbackRequest.getError());

@@ -23,6 +23,7 @@ import eu.eidas.auth.commons.protocol.eidas.spec.RepresentativeNaturalPersonSpec
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -79,7 +80,7 @@ public class SpecificProxyServiceConfiguration implements WebMvcConfigurer {
 
     @Bean
     public FilterRegistrationBean disableExtraHttpMethodsFilter(SpecificProxyServiceProperties specificProxyServiceProperties) {
-        final FilterRegistrationBean bean = new FilterRegistrationBean();
+        final FilterRegistrationBean<DisabledHttpMethodsFilter> bean = new FilterRegistrationBean();
         bean.setFilter(new DisabledHttpMethodsFilter(specificProxyServiceProperties.getWebapp().getDisabledHttpMethods()));
         bean.setInitParameters(new HashMap<>());
         return bean;

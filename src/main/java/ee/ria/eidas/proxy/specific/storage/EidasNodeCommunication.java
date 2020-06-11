@@ -104,7 +104,7 @@ public class EidasNodeCommunication {
         return putResponse(lightResponse);
     }
 
-    public ILightRequest getAndRemoveRequest(final String tokenBase64) throws SpecificCommunicationException {
+    public ILightRequest getAndRemoveRequest(final String tokenBase64) {
 
         try {
             final String tokenId = BinaryLightTokenHelper.getBinaryLightTokenId(tokenBase64,
@@ -124,7 +124,7 @@ public class EidasNodeCommunication {
         }
     }
 
-    private ILightRequest unmarshalRequest(String lightRequestString, Collection<AttributeDefinition<?>> registry) throws SpecificCommunicationException {
+    private ILightRequest unmarshalRequest(String lightRequestString, Collection<AttributeDefinition<?>> registry) {
         try {
             return codec.unmarshallRequest(lightRequestString, registry);
         } catch (Exception e) {

@@ -153,7 +153,7 @@ public class SpecificProxyServiceProperties {
     private void assertScopeMappingsIfPresent() {
         if (!oidc.getAttributeScopeMapping().isEmpty()) {
             List<String> missingMandatoryParameters = NATURAL_PERSON_MANDATORY_ATTRIBUTE_SET.stream()
-                    .distinct().filter(item -> !oidc.getAttributeScopeMapping().keySet().contains(item))
+                    .distinct().filter(item -> !oidc.getAttributeScopeMapping().containsKey(item))
                     .collect(Collectors.toList());
             Assert.isTrue(missingMandatoryParameters.isEmpty(), "Missing scope mapping for the following mandatory attributes: " + missingMandatoryParameters + ". Please check your configuration");
         }
@@ -162,7 +162,7 @@ public class SpecificProxyServiceProperties {
     private void assertOidcClaimMappingsConfigurationPresent() {
         Assert.isTrue(!oidc.getResponseClaimMapping().getAttributes().isEmpty(), "Missing claim mappings configuration!");
         List<String> missingMandatoryParameters = NATURAL_PERSON_MANDATORY_ATTRIBUTE_SET.stream()
-                .distinct().filter(item -> !oidc.getResponseClaimMapping().getAttributes().keySet().contains(item))
+                .distinct().filter(item -> !oidc.getResponseClaimMapping().getAttributes().containsKey(item))
                 .collect(Collectors.toList());
         Assert.isTrue(missingMandatoryParameters.isEmpty(), "Missing claim mapping for the following mandatory attributes: " + missingMandatoryParameters + ". Please check your configuration");
     }

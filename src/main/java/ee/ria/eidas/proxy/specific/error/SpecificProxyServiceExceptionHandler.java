@@ -93,11 +93,11 @@ public class SpecificProxyServiceExceptionHandler extends ResponseEntityExceptio
     }
 
     @ExceptionHandler({ RequestDeniedException.class })
-    public RedirectView handleAuthenticationRequestDenied(Exception ex, HttpServletRequest request,
+    public RedirectView handleAuthenticationRequestDenied(RequestDeniedException ex, HttpServletRequest request,
                                                           HttpServletResponse response) throws MalformedURLException, SpecificCommunicationException {
 
         logger.warn(ex.getMessage(), ex);
-        BinaryLightToken binaryLightToken = eidasNodeCommunication.putErrorResponse((RequestDeniedException)ex);
+        BinaryLightToken binaryLightToken = eidasNodeCommunication.putErrorResponse(ex);
         String token = BinaryLightTokenHelper.encodeBinaryLightTokenBase64(binaryLightToken);
         URL redirectUrl = UriComponentsBuilder.fromUri(URI.create(specificProxyServiceProperties.getNodeSpecificResponseUrl()))
                 .queryParam(EidasParameterKeys.TOKEN.getValue() , token)

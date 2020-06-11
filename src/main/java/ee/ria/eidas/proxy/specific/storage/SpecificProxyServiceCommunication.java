@@ -44,7 +44,7 @@ public class SpecificProxyServiceCommunication {
         return binaryLightToken;
     }
 
-    public ILightResponse getAndRemovePendingLightResponse(String binaryLightTokenBase64) throws SpecificCommunicationException {
+    public ILightResponse getAndRemovePendingLightResponse(String binaryLightTokenBase64) {
         if (StringUtils.isNotEmpty(binaryLightTokenBase64)) {
 
             try {
@@ -53,12 +53,7 @@ public class SpecificProxyServiceCommunication {
                         specificProxyServiceProperties.getConsentBinaryLightToken().getSecret(),
                         specificProxyServiceProperties.getConsentBinaryLightToken().getAlgorithm());
 
-                final ILightResponse iLightResponse = idpConsentCommunicationCache.get(lightTokenId);
-                if (null != iLightResponse) {
-                    idpConsentCommunicationCache.remove(lightTokenId);
-                }
-
-                return iLightResponse;
+                return idpConsentCommunicationCache.getAndRemove(lightTokenId);
 
             } catch (SpecificCommunicationException | SecurityEIDASException e) {
                 throw new BadRequestException("Invalid token", e);
@@ -69,7 +64,7 @@ public class SpecificProxyServiceCommunication {
         }
     }
 
-    public void putIdpRequest(String state, CorrelatedRequestsHolder requestsHolder) throws SpecificCommunicationException {
+    public void putIdpRequest(String state, CorrelatedRequestsHolder requestsHolder) {
         boolean isInserted = idpRequestCommunicationCache.putIfAbsent(state, requestsHolder);
         if (isInserted) {
             log.info("IDP request with ID: '{}' was saved. Cache: '{}'. IDP request: '{}'", state, idpRequestCommunicationCache.getName(), requestsHolder.getAuthenticationRequest().values());
@@ -78,7 +73,7 @@ public class SpecificProxyServiceCommunication {
         }
     }
 
-    public ILightRequest getAndRemoveIdpRequest(String inResponseToId) throws SpecificCommunicationException {
+    public ILightRequest getAndRemoveIdpRequest(String inResponseToId) {
         Optional<ILightRequest> originalLightRequest = Optional.ofNullable(idpRequestCommunicationCache.get(inResponseToId))
                 .map( CorrelatedRequestsHolder::getILightRequest);
         if (originalLightRequest.isPresent()) {

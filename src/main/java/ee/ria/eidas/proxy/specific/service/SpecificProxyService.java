@@ -35,6 +35,7 @@ import com.nimbusds.openid.connect.sdk.validators.IDTokenValidator;
 import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceProperties;
 import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceProperties.IdTokenClaimMappingProperties;
 import ee.ria.eidas.proxy.specific.storage.SpecificProxyServiceCommunication;
+import eu.eidas.auth.commons.EIDASStatusCode;
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.AttributeRegistry;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
@@ -211,7 +212,7 @@ public class SpecificProxyService {
                 .issuer(issuer)
                 .levelOfAssurance(loa.stringValue())
                 .relayState(originalLightRequest.getRelayState())
-                .status(ResponseStatus.builder().statusCode("urn:oasis:names:tc:SAML:2.0:status:Success").build())
+                .status(ResponseStatus.builder().statusCode(EIDASStatusCode.SUCCESS_URI.getValue()).build())
                 .subject(subject)
                 .subjectNameIdFormat(SamlNameIdFormat.UNSPECIFIED.getNameIdFormat())
                 .attributes(attributes);
@@ -256,12 +257,9 @@ public class SpecificProxyService {
 
         if (entry.getKey().isRequired()) {
             Assert.notNull(jsonPath, "Required attribute " + attributeFriendlyName + " has no jsonpath configured to extract claim from id-token");
-        } else {
-            // not required + no mapping configured = ignored
-            if (jsonPath == null) {
-                log.debug("No mapping to extract requested attribute from id-token {}", attributeFriendlyName);
-                return null;
-            }
+        } else if (!entry.getKey().isRequired() && StringUtils.isEmpty(jsonPath)) {
+            log.debug("Ignoring optional attribute {} - no mapping to extract it's corresponding value from id-token", attributeFriendlyName);
+            return null;
         }
 
         return getAttributeValueFromClaims(claims, attributeFriendlyName, jsonPath);

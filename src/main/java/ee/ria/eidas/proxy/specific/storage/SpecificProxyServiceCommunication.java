@@ -19,7 +19,6 @@ import javax.cache.Cache;
 import java.io.Serializable;
 import java.net.URL;
 import java.util.Map;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -45,22 +44,17 @@ public class SpecificProxyServiceCommunication {
     }
 
     public ILightResponse getAndRemovePendingLightResponse(String binaryLightTokenBase64) {
-        if (StringUtils.isNotEmpty(binaryLightTokenBase64)) {
+        Assert.notNull(StringUtils.isNotEmpty(binaryLightTokenBase64), "Token value cannot be null or empty!");
 
-            try {
+        try {
+            final String lightTokenId = BinaryLightTokenHelper.getBinaryLightTokenId(binaryLightTokenBase64,
+                    specificProxyServiceProperties.getConsentBinaryLightToken().getSecret(),
+                    specificProxyServiceProperties.getConsentBinaryLightToken().getAlgorithm());
 
-                final String lightTokenId = BinaryLightTokenHelper.getBinaryLightTokenId(binaryLightTokenBase64,
-                        specificProxyServiceProperties.getConsentBinaryLightToken().getSecret(),
-                        specificProxyServiceProperties.getConsentBinaryLightToken().getAlgorithm());
+            return idpConsentCommunicationCache.getAndRemove(lightTokenId);
 
-                return idpConsentCommunicationCache.getAndRemove(lightTokenId);
-
-            } catch (SpecificCommunicationException | SecurityEIDASException e) {
-                throw new BadRequestException("Invalid token", e);
-            }
-
-        } else {
-            return null;
+        } catch (SpecificCommunicationException | SecurityEIDASException e) {
+            throw new BadRequestException("Invalid token", e);
         }
     }
 
@@ -74,12 +68,13 @@ public class SpecificProxyServiceCommunication {
     }
 
     public ILightRequest getAndRemoveIdpRequest(String inResponseToId) {
-        Optional<ILightRequest> originalLightRequest = Optional.ofNullable(idpRequestCommunicationCache.get(inResponseToId))
-                .map( CorrelatedRequestsHolder::getILightRequest);
-        if (originalLightRequest.isPresent()) {
+        CorrelatedRequestsHolder correlatedRequestsHolder = idpRequestCommunicationCache.getAndRemove(inResponseToId);
+
+        if (correlatedRequestsHolder != null) {
             log.debug("Found and removed IDP request for id: '{}'", inResponseToId);
-            idpRequestCommunicationCache.remove(inResponseToId);
-            return originalLightRequest.get();
+            ILightRequest originalLightRequest = correlatedRequestsHolder.getILightRequest();
+            Assert.notNull(correlatedRequestsHolder, "Original lightrequest is required");
+            return originalLightRequest;
         } else {
             log.warn("Failed to find the IDP request for id: '{}' ", inResponseToId);
             return null;

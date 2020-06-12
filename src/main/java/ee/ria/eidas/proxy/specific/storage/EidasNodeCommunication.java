@@ -18,6 +18,7 @@ import eu.eidas.specificcommunication.BinaryLightTokenHelper;
 import eu.eidas.specificcommunication.exception.SpecificCommunicationException;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -105,6 +106,7 @@ public class EidasNodeCommunication {
     }
 
     public ILightRequest getAndRemoveRequest(final String tokenBase64) {
+        Assert.notNull(StringUtils.isNotEmpty(tokenBase64), "Token value cannot be null or empty!");
 
         try {
             final String tokenId = BinaryLightTokenHelper.getBinaryLightTokenId(tokenBase64,

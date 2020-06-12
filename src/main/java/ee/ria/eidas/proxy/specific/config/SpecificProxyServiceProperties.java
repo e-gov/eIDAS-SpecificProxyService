@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
+import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.POST;
@@ -143,10 +144,10 @@ public class SpecificProxyServiceProperties {
                     return true;
                 }
             }).collect(Collectors.toList());
-            Assert.isTrue(invalidRegexValues.isEmpty(), "Invalid claim post processing rules detected. The following configuration values are not valid regex expressions: " + invalidRegexValues + ". Please check your configuration");
+            Assert.isTrue(invalidRegexValues.isEmpty(), format("Invalid claim post processing rules detected. The following configuration values are not valid regex expressions: %s. Please check your configuration", invalidRegexValues));
 
             List<String> invalidParameterValues = oidc.getResponseClaimMapping().getAttributesPostProcessing().values().stream().filter(item -> !item.contains("(?<attributeValue>")).collect(Collectors.toList());
-            Assert.isTrue(invalidParameterValues.isEmpty(), "Invalid claim post processing rules detected: " + invalidParameterValues + ". A named regex group must specified to extract the claim value. Please check your configuration");
+            Assert.isTrue(invalidParameterValues.isEmpty(), format("Invalid claim post processing rules detected: %s. A named regex group must specified to extract the claim value. Please check your configuration", invalidParameterValues));
         }
     }
 
@@ -155,7 +156,7 @@ public class SpecificProxyServiceProperties {
             List<String> missingMandatoryParameters = NATURAL_PERSON_MANDATORY_ATTRIBUTE_SET.stream()
                     .distinct().filter(item -> !oidc.getAttributeScopeMapping().containsKey(item))
                     .collect(Collectors.toList());
-            Assert.isTrue(missingMandatoryParameters.isEmpty(), "Missing scope mapping for the following mandatory attributes: " + missingMandatoryParameters + ". Please check your configuration");
+            Assert.isTrue(missingMandatoryParameters.isEmpty(), format("Missing scope mapping for the following mandatory attributes: %s. Please check your configuration", missingMandatoryParameters));
         }
     }
 

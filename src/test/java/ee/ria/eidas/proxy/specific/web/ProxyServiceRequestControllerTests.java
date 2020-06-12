@@ -10,6 +10,7 @@ import eu.eidas.auth.commons.attribute.PersonType;
 import eu.eidas.auth.commons.attribute.impl.LiteralStringAttributeValueMarshaller;
 import eu.eidas.auth.commons.attribute.impl.StringAttributeValue;
 import eu.eidas.auth.commons.light.ILightRequest;
+import eu.eidas.auth.commons.light.impl.LightRequest;
 import eu.eidas.auth.commons.protocol.eidas.spec.EidasSpec;
 import eu.eidas.auth.commons.protocol.eidas.spec.NaturalPersonSpec;
 import eu.eidas.auth.commons.tx.BinaryLightToken;
@@ -25,6 +26,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static ee.ria.eidas.proxy.specific.util.LightRequestTestHelper.*;
@@ -198,6 +200,34 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
 
 		assertErrorIsLogged("Server encountered an unexpected error: Failed to unmarshal incoming request! Attribute http://eidas.europa.eu/attributes/naturalperson/UnknownAttribute not present in the registry");
+		assertResponseCommunicationCacheIsEmpty();
+	}
+
+	@Test
+	void internalServerErrorWhenRequestedLoANotSupported() throws Exception {
+
+		LightRequest request = LightRequest.builder()
+				.id(UUID.randomUUID().toString())
+				.citizenCountryCode(MOCK_CITIZEN_COUNTRY)
+				.issuer(MOCK_ISSUER_NAME)
+				.spType(MOCK_SP_TYPE)
+				.levelOfAssurance("INVALID_LOA")
+				.requestedAttributes(NATURAL_PERSON_MANDATORY_ATTRIBUTES).build();
+
+		BinaryLightToken mockBinaryLightToken = putRequest(request);
+
+		given()
+			.param(EidasParameterKeys.TOKEN.toString(), BinaryLightTokenHelper.encodeBinaryLightTokenBase64(mockBinaryLightToken))
+		.when()
+			.get(ENDPOINT_PROXY_SERVICE_REQUEST)
+		.then()
+			.assertThat()
+			.statusCode(500)
+			.body("message", equalTo("Internal server error"))
+			.body("errors", hasSize(1))
+			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
+
+		assertErrorIsLogged("Server encountered an unexpected error: Invalid level of assurance value. Allowed values: http://eidas.europa.eu/LoA/low, http://eidas.europa.eu/LoA/substantial, http://eidas.europa.eu/LoA/high");
 		assertResponseCommunicationCacheIsEmpty();
 	}
 

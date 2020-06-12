@@ -1,6 +1,7 @@
 package ee.ria.eidas.proxy.specific.web;
 
 import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceConfiguration;
+import ee.ria.eidas.proxy.specific.service.SpecificProxyService;
 import ee.ria.eidas.proxy.specific.storage.SpecificProxyServiceCommunication.CorrelatedRequestsHolder;
 import eu.eidas.auth.commons.light.ILightRequest;
 import io.restassured.RestAssured;
@@ -58,6 +59,11 @@ class IdpResponseControllerConsentNotRequiredTests extends IdpResponseController
 					"?token=c3BlY2lmaWNDb21t"));
 
 		assertPendingIdpRequestCommunicationCacheIsEmpty();
+		assertWarningIsLogged(SpecificProxyService.class.getCanonicalName(),
+				"Ignoring optional attribute BirthName - no mapping configured to extract it's corresponding value from id-token",
+				"Ignoring optional attribute Gender - no mapping configured to extract it's corresponding value from id-token",
+				"Ignoring optional attribute PlaceOfBirth - no mapping configured to extract it's corresponding value from id-token",
+				"Ignoring optional attribute CurrentAddress - no mapping configured to extract it's corresponding value from id-token");
 		assertResponse(mapEntry);
 	}
 

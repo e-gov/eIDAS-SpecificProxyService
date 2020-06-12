@@ -258,7 +258,7 @@ public class SpecificProxyService {
         if (entry.getKey().isRequired()) {
             Assert.notNull(jsonPath, "Required attribute " + attributeFriendlyName + " has no jsonpath configured to extract claim from id-token");
         } else if (!entry.getKey().isRequired() && StringUtils.isEmpty(jsonPath)) {
-            log.debug("Ignoring optional attribute {} - no mapping to extract it's corresponding value from id-token", attributeFriendlyName);
+            log.warn("Ignoring optional attribute {} - no mapping configured to extract it's corresponding value from id-token", attributeFriendlyName);
             return null;
         }
 

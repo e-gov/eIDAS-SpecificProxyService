@@ -44,7 +44,9 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static ee.ria.eidas.proxy.specific.util.LightRequestTestHelper.*;
@@ -212,7 +214,17 @@ public abstract class ControllerTest {
 
         LoggingEvent lastLoggingEvent = getCaptorLoggingEvent().getValue();
         assertThat(lastLoggingEvent.getLevel(), equalTo(Level.ERROR));
-        assertThat(lastLoggingEvent.getMessage(), startsWith(errorMessage));
+        assertThat(lastLoggingEvent.getFormattedMessage(), startsWith(errorMessage));
+    }
+
+    void assertWarningIsLogged(String logger, String... warningMessage) {
+        verify(getMockAppender(), atLeast(1)).doAppend(getCaptorLoggingEvent().capture());
+
+        List<String> events = getCaptorLoggingEvent().getAllValues().stream()
+                .filter(e -> e.getLevel() == Level.WARN && e.getLoggerName().equals(logger))
+                .map(e -> e.getFormattedMessage())
+                .collect(Collectors.toList());
+        assertEquals(Arrays.asList(warningMessage), events);
     }
 
     void assertHttpMethodsNotAllowed(String path, String... restrictedMethods) {

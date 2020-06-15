@@ -7,9 +7,8 @@
 - [3. Integration with the IDP (OpenID Connect server)](#integrate_with_idp)
   * [3.1. Requirements for IDP](#idp_requirements)
   * [3.2. Requesting eIDAS attributes using OpenID Connect scopes](#idp_request)
-  * [3.3. Fetching eIDAS attributes from OpenID Connect ID Token](#idp_response)  
+  * [3.3. Fetching eIDAS attributes from OpenID Connect ID Token](#idp_response)
 - [4. Logging](#logging)
-- [5. HTTPS support](#https)    
 - [6. Monitoring](#heartbeat)
 - [7. Appendix 1 - Configuration parameters reference](#configuration_parameters)
   * [7.1 Identity provider (OpenID Connect provider)](#configuration_parameters_idp)
@@ -19,6 +18,7 @@
   * [7.5 Mapping eIDAS attributes to OpenID Connect authentication request scopes](#configuration_parameters_oidc)
   * [7.6 Mapping eIDAS attributes to OpenID Connect ID-token claims](#configuration_claims_oidc)
   * [7.8 Postprocessing OpenID Connect ID-token claim values](#configuration_claims_postprocessing)
+  * [7.9 HTTPS truststore](#truststore)
 
 
 <a name="build"></a>
@@ -35,39 +35,36 @@ In order to enable communication between `EidasNode` and `SpecificProxyService` 
 
 **NB!** It is assumed that the `SpecificProxyService` webapp is installed in the same web server instance as `EidasNode` and that both have access to the same configuration files.
 
-<a name="integrate_eidasnode"></a>  
+<a name="integrate_eidasnode"></a>
 ### 2.1 Configuring communication with EidasNode
 
-To set the same communication definitions, it is required that the `SpecificProxyService` has access to communication definitions provided in the following file `EidasNode` configuration file:  
+To set the same communication definitions, it is required that the `SpecificProxyService` has access to communication definitions provided in the following file `EidasNode` configuration file:
 `$SPECIFIC_PROXY_SERVICE_CONFIG_REPOSITORY/specificCommunicationDefinitionProxyservice.xml`
 
-<a name="eidas_attributes"></a> 
-### 2.2 Ignite configuration    
+<a name="ignite_conf"></a>
+### 2.2 Ignite configuration
 
-To access the same Ignite cluster, it is required that the `SpecificProxyService` has access to Ignite configuration settings in the following `EidasNode` configuration file: `$EIDAS_CONFIG_REPOSITORY/igniteSpecificCommunication.xml` (a Spring configuration file that specifies the Ignite cache configuration details. Needed for shared request/response communication configuration).
+By default it is assumed that `EidasNode` and `SpecificProxyService` will share the same xml configuration file and that the Ignite configuration can be found at `$EIDAS_CONFIG_REPOSITORY/igniteSpecificCommunication.xml`. The configuration location can be overridden (see to [configuration parameters](#configuration_parameters_eidas) for further details).
 
-Note that new map definitions are necessary for `SpecificProxyService` webapp
-    
-````
-<bean class="org.apache.ignite.configuration.CacheConfiguration">
-    <property name="name" value="specificMSIdpRequestCorrelationMap"/>
-    <property name="atomicityMode" value="ATOMIC"/>
-    <property name="backups" value="1"/>
-    <property name="expiryPolicyFactory" ref="7_minutes_duration"/>
-</bean>
+The `SpecificProxyService` webapp starts an Ignite node in client mode using EidasNode webapp's Ignite configuration. The ignite client is started lazily (initialized on the first query).
 
-<bean class="org.apache.ignite.configuration.CacheConfiguration">
-    <property name="name" value="specificMSIdpConsentCorrelationMap"/>
-    <property name="atomicityMode" value="ATOMIC"/>
-    <property name="backups" value="1"/>
-    <property name="expiryPolicyFactory" ref="7_minutes_duration"/>
-</bean>    
-````
+Note that `SpecificProxyService` requires access to four predefined maps in the cluster - see Table 1 for details.
+
+| Map name        |  Description |
+| :---------------- | :---------- |
+| `nodeSpecificProxyserviceRequestCache` | Holds pending LightRequests from EidasNode webapp. |
+| `specificNodeProxyserviceResponseCache` | Holds LightResponses for EidasNode webapp. |
+| `specificMSIdpRequestCorrelationMap` | Holds pending IDP authentication requests. |
+| `specificMSIdpConsentCorrelationMap` | Holds pending user consent requests. |
+
+Table 1 - Required shared map's in SpecificProxyService webapp.
+
+An example of a configuration file is provided [here](src/test/resources/mock_eidasnode/igniteSpecificCommunication.xml).
 
 <a name="integrate_with_idp"></a>
 ## 3. Integration with the IDP (OpenID Connect server)
 
-<a name="idp_requirements"></a>  
+<a name="idp_requirements"></a>
 ### 3.1 Requirements for IDP
 
 The `SpecificProxyService` webapp delegates the eIDAS authentication request to a OIDC server.
@@ -103,20 +100,15 @@ TBD - log format
 
 TBD - overriding default log conf
 
-<a name="https"></a>
-## 5. HTTPS support
-
-TBD - trusting the idp
-
 <a name="heartbeat"></a>
 ## 6. Monitoring
 
 TBD - heartbeat endpoint
 
-<a name="configuration_parameters"></a> 
+<a name="configuration_parameters"></a>
 ## APPENDIX 1 - Configuration parameters
 
-<a name="configuration_parameters_idp"></a> 
+<a name="configuration_parameters_idp"></a>
 ### Identity provider (OpenID Connect provider)
 
 | Parameter        | Mandatory | Description, example |
@@ -134,14 +126,24 @@ TBD - heartbeat endpoint
 | `eidas.proxy.oidc.error-code-user-cancel` | No | <p>The expected error code returned in the OpenID Connect authentication [error response](https://openid.net/specs/openid-connect-core-1_0.html#AuthError) when user cancel's the authentication process at the IDP. </p> <p>Defaults to `user_cancel` when not specified.</p>    |
 
 
-<a name="configuration_parameters_eidas"></a> 
+<a name="configuration_parameters_eidas"></a>
 ### Integration with the `EidasNode` webapp
+
+EidasNode communication
 
 | Parameter        | Mandatory | Description, example |
 | :---------------- | :---------- | :----------------|
 | `eidas.proxy.node-specific-response-url` | Yes | The URL in the `EidasNode` webapp, that accepts the lighttoken that references the member state specific authentication response. |
 
-<a name="configuration_parameters_consent"></a> 
+Ignite configuration
+
+| Parameter        | Mandatory | Description, example |
+| :---------------- | :---------- | :----------------|
+| `eidas.proxy.communication-cache.ignite-configuration-file-location` | Yes | File path that references Ignite Spring context configuration. Defaults to `file:${EIDAS_CONFIG_REPOSITORY}/igniteSpecificCommunication.xml`, if not specified. |
+| `eidas.proxy.communication-cache.ignite-configuration-bean-name` | No | Ignite configuration ID (Spring bean ID). Defaults to `igniteSpecificCommunication.cfg`, if not specified. |
+
+
+<a name="configuration_parameters_consent"></a>
 ### User consent
 
 | Parameter        | Mandatory | Description, example |
@@ -178,7 +180,7 @@ eidas.proxy.oidc.attribute-scope-mapping.DateOfBirth=eidas:attribute:date_of_bir
 eidas.proxy.oidc.attribute-scope-mapping.PersonIdentifier=eidas:attribute:person_identifier
 ````
 
-<a name="configuration_claims_oidc"></a> 
+<a name="configuration_claims_oidc"></a>
 ### Mapping eIDAS attributes to OpenID Connect ID-token claims
 
 Configuring claims extraction from the OIDC id_token
@@ -208,4 +210,22 @@ Configuring attribute value extraction from the OIDC id_token claim value
 Example: The following configuration extracts the Estonian ID code `60001019906` from the claim value `EE60001019906`
 ````
 eidas.proxy.oidc.response-claim-mapping.attributes-post-processing.PersonIdentifier=^EE(?<value>[\\d]{11,11})$
+````
+
+<a name="truststore"></a>
+### HTTPS truststore
+
+The `SpecificProxyService` webapp uses the default Java truststore to trust external HTTPS endpoints.
+
+To override the default truststore, use the following system properties:
+
+| Parameter        | Mandatory | Description, example |
+| :---------------- | :---------- | :----------------|
+| javax.net.ssl.trustStore | No | Path to truststore file. |
+| javax.net.ssl.trustStorePassword | No | The secret to access truststore |
+| javax.net.ssl.trustStoreType | No | The trust store type (`PKCS12`, `JKS`, etc) |
+
+Example: Sample Tomcat setenv.sh file that specifies custom truststore at startup
+````
+export JAVA_OPTS="$JAVA_OPTS -Djavax.net.ssl.trustStore=/etc/eidas/secrets/tls/truststore.p12 -Djavax.net.ssl.trustStorePassword=secret -Djavax.net.ssl.trustStoreType=pkcs12"
 ````

@@ -3,6 +3,7 @@ package ee.ria.eidas.proxy.specific.config;
 import eu.eidas.auth.commons.protocol.eidas.spec.EidasSpec;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.http.HttpMethod;
@@ -12,13 +13,11 @@ import org.springframework.validation.annotation.Validated;
 import javax.annotation.PostConstruct;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -46,6 +45,8 @@ public class SpecificProxyServiceProperties {
         assertScopeMappingsIfPresent();
         assertOidcClaimMappingsConfigurationPresent();
         assertOidcClaimMappingPostProcessingRules();
+
+        log.info("Configuration: " + toString());
     }
 
     private boolean askConsent = true;
@@ -62,9 +63,13 @@ public class SpecificProxyServiceProperties {
     private OidcProviderProperties oidc = new OidcProviderProperties();
 
     @Valid
+    private CacheProperties communicationCache = new CacheProperties();
+
+    @Valid
     private WebappProperties webapp = new WebappProperties();
 
     @Valid
+    @ToString
     @Data
     public static class WebappProperties {
 
@@ -72,6 +77,7 @@ public class SpecificProxyServiceProperties {
     }
 
     @Data
+    @ToString
     @NoArgsConstructor
     public static class OidcProviderProperties {
 
@@ -83,6 +89,7 @@ public class SpecificProxyServiceProperties {
         private String clientId;
 
         @NotNull
+        @ToString.Exclude
         private String clientSecret;
 
         @NotNull
@@ -108,16 +115,19 @@ public class SpecificProxyServiceProperties {
     }
 
     @Data
+    @ToString
     public static class ConsentProperties {
 
         private String issuer;
 
+        @ToString.Exclude
         private String secret;
 
         private String algorithm;
     }
 
     @Data
+    @ToString
     public static class IdTokenClaimMappingProperties {
 
         private String subject = "$.sub";
@@ -131,6 +141,28 @@ public class SpecificProxyServiceProperties {
         private Map<String, String> attributes = new HashMap<>();
 
         private Map<String, String> attributesPostProcessing = new HashMap<>();
+    }
+
+    @Data
+    @ToString
+    public static class CacheProperties {
+
+        public static final String INCOMING_NODE_REQUESTS_CACHE = "incoming-node-requests-cache";
+        public static final String OUTGOING_NODE_RESPONSES_CACHE = "outgoing-node-responses-cache";
+        public static final String IDP_PENDING_REQUESTS_CACHE = "pending-idp-requests-cache";
+        public static final String IDP_PENDING_CONSENT_MAP = "pending-user-consents-cache";
+
+        private Map<String, String> cacheNameMapping = Stream.of(
+                new AbstractMap.SimpleEntry<>(INCOMING_NODE_REQUESTS_CACHE, "nodeSpecificProxyserviceRequestCache"),
+                new AbstractMap.SimpleEntry<>(OUTGOING_NODE_RESPONSES_CACHE, "specificNodeProxyserviceResponseCache"),
+                new AbstractMap.SimpleEntry<>(IDP_PENDING_REQUESTS_CACHE, "specificMSIdpRequestCorrelationMap"),
+                new AbstractMap.SimpleEntry<>(IDP_PENDING_CONSENT_MAP, "specificMSIdpConsentCorrelationMap"))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        @NotNull
+        private String igniteConfigurationFileLocation;
+
+        private String igniteConfigurationBeanName = "igniteSpecificCommunication.cfg";
     }
 
 

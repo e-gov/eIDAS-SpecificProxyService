@@ -9,7 +9,7 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceProperties;
 import ee.ria.eidas.proxy.specific.service.SpecificProxyService;
-import ee.ria.eidas.proxy.specific.storage.LightJAXBCodec;
+import ee.ria.eidas.proxy.specific.storage.EidasNodeCommunication;
 import ee.ria.eidas.proxy.specific.storage.SpecificProxyServiceCommunication;
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
@@ -24,6 +24,8 @@ import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.ignite.Ignite;
+import org.apache.ignite.Ignition;
 import org.junit.jupiter.api.*;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -74,7 +76,7 @@ public abstract class ControllerTest {
 
 
         try {
-            codec = new LightJAXBCodec(JAXBContext.newInstance(LightRequest.class, LightResponse.class,
+            codec = new EidasNodeCommunication.LightJAXBCodec(JAXBContext.newInstance(LightRequest.class, LightResponse.class,
                     ImmutableAttributeMap.class, AttributeDefinition.class));
         } catch (JAXBException e) {
             log.error("Unable to instantiate in static initializer ",e);
@@ -84,7 +86,10 @@ public abstract class ControllerTest {
     @LocalServerPort
     private int port;
 
-    private static LightJAXBCodec codec;
+    @Getter
+    private static Ignite ignite;
+
+    private static EidasNodeCommunication.LightJAXBCodec codec;
 
     static WireMockServer wireMockServer = new WireMockServer(WireMockConfiguration.wireMockConfig()
             .httpDisabled(true)
@@ -141,6 +146,7 @@ public abstract class ControllerTest {
 
     @BeforeAll
     public static void beforeAllTests() {
+        startMockIgniteServer();
         startMockOidcServer();
         configureRestAssured();
     }
@@ -174,8 +180,6 @@ public abstract class ControllerTest {
                         .withBodyFile("mock_responses/idp/jwks.json")));
     }
 
-
-
     @Test
     @Order(1)
     void contextLoads() {
@@ -199,13 +203,12 @@ public abstract class ControllerTest {
     }
 
     void assertPendingIdpRequestCommunicationCacheIsEmpty() {
-        List<Cache.Entry<String, SpecificProxyServiceCommunication.CorrelatedRequestsHolder>> list = getListFromIterator(getIdpRequestCommunicationCache().iterator());
-        assertEquals(0, list.size());
+        assertEquals(0, getListFromIterator(getIdpRequestCommunicationCache().iterator()).size());
     }
 
     void assertResponseCommunicationCacheIsEmpty() {
-        List<Cache.Entry<String, String>> list = getListFromIterator(getEidasNodeResponseCommunicationCache().iterator());
-        assertEquals(0, list.size());
+
+        assertEquals(0, getListFromIterator(getEidasNodeResponseCommunicationCache().iterator()).size());
     }
 
 
@@ -258,8 +261,8 @@ public abstract class ControllerTest {
         @Override
         public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
             String currentDirectory = System.getProperty("user.dir");
-            System.setProperty("SPECIFIC_PROXY_SERVICE_CONFIG_REPOSITORY", currentDirectory + "/src/test/resources/config/tomcat/specificProxyService");
-            System.setProperty("EIDAS_CONFIG_REPOSITORY", currentDirectory + "/src/test/resources/config/tomcat");
+            System.setProperty("SPECIFIC_PROXY_SERVICE_CONFIG_REPOSITORY", currentDirectory + "/src/test/resources/mock_eidasnode");
+            System.setProperty("EIDAS_CONFIG_REPOSITORY", currentDirectory + "/src/test/resources/mock_eidasnode");
         }
     }
 
@@ -275,6 +278,15 @@ public abstract class ControllerTest {
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json; charset=UTF-8")
                         .withBodyFile("mock_responses/idp/openid-configuration.json")));
+    }
+
+    private static void startMockIgniteServer() {
+        if (ignite == null) {
+            System.setProperty("IGNITE_QUIET", "false");
+            System.setProperty("IGNITE_HOME", System.getProperty("java.io.tmpdir"));
+            System.setProperty("java.net.preferIPv4Stack", "true");
+            ignite = Ignition.start(ControllerTest.class.getClassLoader().getResourceAsStream("mock_eidasnode/igniteSpecificCommunication.xml"));
+        }
     }
 
     private static void stopMockOidcServer() {

@@ -56,6 +56,7 @@ public class LightRequestTestHelper {
     public static final String MOCK_LOA_HIGH = "http://eidas.europa.eu/LoA/high";
     public static final String MOCK_CITIZEN_COUNTRY = "citizenCountry";
     public static final String MOCK_SP_TYPE = "public";
+    public static final String MOCK_PROVIDER_NAME = "mock_sp_name";
 
     private LightRequestTestHelper() {}
 
@@ -106,13 +107,14 @@ public class LightRequestTestHelper {
             .put(EidasSpec.Definitions.SIC, new StringAttributeValue(""))
             .build();
 
-    public static ILightRequest createLightRequest(String citizenCountry, String issuerName, String relayState, String loa, String spType, ImmutableAttributeMap requestedAttributes) {
+    public static ILightRequest createLightRequest(String citizenCountry, String issuerName, String relayState, String loa, String spType, String spName, ImmutableAttributeMap requestedAttributes) {
 
         final LightRequest.Builder builder = LightRequest.builder()
                 .id(UUID.randomUUID().toString())
                 .citizenCountryCode(citizenCountry)
                 .issuer(issuerName)
                 .spType(spType)
+                .providerName(spName)
                 .relayState(relayState)
                 .levelOfAssurance(loa)
                 .requestedAttributes(requestedAttributes);
@@ -139,11 +141,13 @@ public class LightRequestTestHelper {
     }
 
     public static ILightRequest createLightRequest(ImmutableAttributeMap requestedAttributes) {
-        return createLightRequest("citizenCountry", MOCK_ISSUER_NAME, MOCK_RELAY_STATE, MOCK_LOA_HIGH, MOCK_SP_TYPE, requestedAttributes);
+        return createLightRequest("citizenCountry", MOCK_ISSUER_NAME, MOCK_RELAY_STATE, MOCK_LOA_HIGH,
+                MOCK_SP_TYPE, MOCK_PROVIDER_NAME, requestedAttributes);
     }
 
     public static ILightRequest createDefaultLightRequest() {
-        return createLightRequest(MOCK_CITIZEN_COUNTRY, MOCK_ISSUER_NAME, MOCK_RELAY_STATE, MOCK_LOA_HIGH, MOCK_SP_TYPE, NATURAL_PERSON_ALL_ATTRIBUTES);
+        return createLightRequest(MOCK_CITIZEN_COUNTRY, MOCK_ISSUER_NAME, MOCK_RELAY_STATE, MOCK_LOA_HIGH, MOCK_SP_TYPE,
+                MOCK_PROVIDER_NAME, NATURAL_PERSON_ALL_ATTRIBUTES);
     }
 
     public static ILightResponse createDefaultLightResponse() {

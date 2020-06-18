@@ -29,7 +29,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import javax.servlet.ServletException;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Size;
 import java.net.MalformedURLException;
@@ -100,13 +99,13 @@ public class IdpResponseController {
 				oAuthCode,
 				originalLightRequest);
 
-		return processIdpAuthenticationResponse(model, lightResponse);
+		return processIdpAuthenticationResponse(model, originalLightRequest, lightResponse);
 	}
 
-	private ModelAndView processIdpAuthenticationResponse(Model model, ILightResponse lightResponse) throws SpecificCommunicationException, MalformedURLException {
+	private ModelAndView processIdpAuthenticationResponse(Model model, ILightRequest originalLightRequest, ILightResponse lightResponse) throws SpecificCommunicationException, MalformedURLException {
 
 		if (specificProxyServiceProperties.isAskConsent()) {
-			return getConsentModelAndView(model, lightResponse);
+			return getConsentModelAndView(model, originalLightRequest, lightResponse);
 		} else {
 			BinaryLightToken binaryLightToken = eidasNodeCommunication.putResponse(lightResponse);
 			String token = BinaryLightTokenHelper.encodeBinaryLightTokenBase64(binaryLightToken);
@@ -118,11 +117,12 @@ public class IdpResponseController {
 		}
 	}
 
-	private ModelAndView getConsentModelAndView(Model model, ILightResponse lightResponse) throws SpecificCommunicationException {
+	private ModelAndView getConsentModelAndView(Model model, ILightRequest originalLightRequest, ILightResponse lightResponse) throws SpecificCommunicationException {
 		ImmutableMap<AttributeDefinition<?>, ImmutableSet<? extends AttributeValue<?>>> attributes = prepareAttributesToAskConsent(lightResponse);
 
 		String base64Token = BinaryLightTokenHelper.encodeBinaryLightTokenBase64(specificProxyServiceCommunication.putPendingLightResponse(lightResponse));
 
+		model.addAttribute("spId", originalLightRequest.getProviderName());
 		model.addAttribute(EidasParameterKeys.ATTRIBUTE_LIST.toString(),attributes);
 		model.addAttribute("LoA", lightResponse.getLevelOfAssurance());
 		model.addAttribute("redirectUrl", "Consent");

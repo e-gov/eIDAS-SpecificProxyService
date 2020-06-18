@@ -4,6 +4,8 @@ import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceConfiguration;
 import ee.ria.eidas.proxy.specific.service.SpecificProxyService;
 import ee.ria.eidas.proxy.specific.storage.SpecificProxyServiceCommunication.CorrelatedRequestsHolder;
 import io.restassured.http.ContentType;
+import io.restassured.path.xml.XmlPath;
+import io.restassured.path.xml.config.XmlPathConfig;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -41,7 +43,11 @@ class IdpResponseControllerConsentRequiredTests extends IdpResponseControllerTes
 			.contentType(ContentType.HTML)
 			.extract().response();
 
+
 		assertThat( response.body().htmlPath().getString("html.head.title")).contains("Consent");
+
+		assertThat( response.body().htmlPath().getString("**.findAll { span -> span.@id == 'spId'}").trim()).isEqualTo("mock_sp_name");
+		assertThat( response.body().htmlPath().getNode("**.findAll { span -> span.@id == 'LoA'}").value().trim()).isEqualTo("http://eidas.europa.eu/LoA/high");
 		assertThat( response.body().htmlPath().getString("**.findAll { it.strong.@id == 'FirstName'}").trim()).isEqualTo("MARY ÄNN");
 		assertThat( response.body().htmlPath().getString("**.findAll { it.strong.@id == 'FamilyName'}").trim()).isEqualTo("O’CONNEŽ-ŠUSLIK TESTNUMBER");
 		assertThat( response.body().htmlPath().getString("**.findAll { it.strong.@id == 'DateOfBirth'}").trim()).isEqualTo("2000-01-01");

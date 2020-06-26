@@ -153,7 +153,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 	@Test
 	void internalServerErrorWhenIdpError_TokenErrorResponse_UnexpectedContent() throws Exception {
 
-		wireMockServer.stubFor(post(urlEqualTo("/oidc/token"))
+		mockOidcServer.stubFor(post(urlEqualTo("/oidc/token"))
 				.willReturn(aResponse()
 						.withStatus(200)
 						.withHeader("Content-Type", "application/json; charset=UTF-8")
@@ -181,7 +181,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 	@Test
 	void internalServerErrorWhenIdpError_TokenErrorResponse_InvalidTokenType() throws Exception {
 
-		wireMockServer.stubFor(post(urlEqualTo("/oidc/token"))
+		mockOidcServer.stubFor(post(urlEqualTo("/oidc/token"))
 				.willReturn(aResponse()
 						.withStatus(200)
 						.withHeader("Content-Type", "application/json; charset=UTF-8")
@@ -209,7 +209,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 	@Test
 	void internalServerErrorWhenIdpError_TokenErrorResponse_IdTokenHasExpired() throws Exception {
 
-		wireMockServer.stubFor(post(urlEqualTo("/oidc/token"))
+		mockOidcServer.stubFor(post(urlEqualTo("/oidc/token"))
 				.willReturn(aResponse()
 						.withStatus(200)
 						.withHeader("Content-Type", "application/json; charset=UTF-8")
@@ -237,7 +237,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 	@Test
 	void internalServerErrorWhenIdpError_TokenErrorResponse_IdTokenNotYetValid() throws Exception {
 
-		wireMockServer.stubFor(post(urlEqualTo("/oidc/token"))
+		mockOidcServer.stubFor(post(urlEqualTo("/oidc/token"))
 				.willReturn(aResponse()
 						.withStatus(200)
 						.withHeader("Content-Type", "application/json; charset=UTF-8")
@@ -265,7 +265,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 	@Test
 	void internalServerErrorWhenIdpError_TokenErrorResponse_InvalidLoa() throws Exception {
 
-		wireMockServer.stubFor(post(urlEqualTo("/oidc/token"))
+		mockOidcServer.stubFor(post(urlEqualTo("/oidc/token"))
 				.willReturn(aResponse()
 						.withStatus(200)
 						.withHeader("Content-Type", "application/json; charset=UTF-8")
@@ -293,7 +293,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 	@Test
 	void internalServerErrorWhenIdpError_TokenErrorResponse_InvalidIssuer() throws Exception {
 
-		wireMockServer.stubFor(post(urlEqualTo("/oidc/token"))
+		mockOidcServer.stubFor(post(urlEqualTo("/oidc/token"))
 				.withBasicAuth(getSpecificProxyServiceProperties().getOidc().getClientId(), getSpecificProxyServiceProperties().getOidc().getClientSecret())
 				.withHeader("Content-Type", containing("application/x-www-form-urlencoded"))
 				.willReturn(aResponse()
@@ -323,7 +323,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 	@Test
 	void internalServerErrorWhenIdpError_TokenErrorResponse_InvalidAudience() throws Exception {
 
-		wireMockServer.stubFor(post(urlEqualTo("/oidc/token"))
+		mockOidcServer.stubFor(post(urlEqualTo("/oidc/token"))
 				.withBasicAuth(getSpecificProxyServiceProperties().getOidc().getClientId(), getSpecificProxyServiceProperties().getOidc().getClientSecret())
 				.withHeader("Content-Type", containing("application/x-www-form-urlencoded"))
 				.willReturn(aResponse()
@@ -353,7 +353,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 	@Test
 	void internalServerErrorWhenIdpError_TokenErrorResponse_InvalidIdTokenSignature() throws Exception {
 
-		wireMockServer.stubFor(post(urlEqualTo("/oidc/token"))
+		mockOidcServer.stubFor(post(urlEqualTo("/oidc/token"))
 				.willReturn(aResponse()
 						.withStatus(200)
 						.withHeader("Content-Type", "application/json; charset=UTF-8")
@@ -381,7 +381,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 	@Test
 	void internalServerErrorWhenIdpError_ConnectionTimesOut() throws Exception {
 
-		wireMockServer.stubFor(post(urlEqualTo("/oidc/token"))
+		mockOidcServer.stubFor(post(urlEqualTo("/oidc/token"))
 				.willReturn(aResponse()
 						.withStatus(200)
 						.withFixedDelay(1500)));
@@ -408,7 +408,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 	@Test
 	void internalServerErrorWhenIdpError_TokenErrorResponse_InvalidRequest() throws Exception {
 
-		wireMockServer.stubFor(post(urlEqualTo("/oidc/token"))
+		mockOidcServer.stubFor(post(urlEqualTo("/oidc/token"))
 				.withBasicAuth(getSpecificProxyServiceProperties().getOidc().getClientId(), getSpecificProxyServiceProperties().getOidc().getClientSecret())
 				.withHeader("Content-Type", containing("application/x-www-form-urlencoded"))
 				.willReturn(aResponse()
@@ -438,7 +438,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 	@Test
 	void internalServerErrorWhenIdpError_TokenErrorResponse_MissingRequiredClaim_AttributeDateOfBirth() throws Exception {
 
-		wireMockServer.stubFor(post(urlEqualTo("/oidc/token"))
+		mockOidcServer.stubFor(post(urlEqualTo("/oidc/token"))
 				.withBasicAuth(getSpecificProxyServiceProperties().getOidc().getClientId(), getSpecificProxyServiceProperties().getOidc().getClientSecret())
 				.withHeader("Content-Type", containing("application/x-www-form-urlencoded"))
 				.willReturn(aResponse()
@@ -468,7 +468,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 	@Test
 	void internalServerErrorWhenIdpError_TokenErrorResponse_MissingRequiredClaim_Amr() throws Exception {
 
-		wireMockServer.stubFor(post(urlEqualTo("/oidc/token"))
+		mockOidcServer.stubFor(post(urlEqualTo("/oidc/token"))
 				.withBasicAuth(getSpecificProxyServiceProperties().getOidc().getClientId(), getSpecificProxyServiceProperties().getOidc().getClientSecret())
 				.withHeader("Content-Type", containing("application/x-www-form-urlencoded"))
 				.willReturn(aResponse()
@@ -498,7 +498,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 	@Test
 	void internalServerErrorWhenIdpError_TokenErrorResponse_InvalidAmr() throws Exception {
 
-		wireMockServer.stubFor(post(urlEqualTo("/oidc/token"))
+		mockOidcServer.stubFor(post(urlEqualTo("/oidc/token"))
 				.withBasicAuth(getSpecificProxyServiceProperties().getOidc().getClientId(), getSpecificProxyServiceProperties().getOidc().getClientSecret())
 				.withHeader("Content-Type", containing("application/x-www-form-urlencoded"))
 				.willReturn(aResponse()
@@ -528,7 +528,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 	@Test
 	void internalServerErrorWhenIdpError_TokenErrorResponse_InvalidClaimValueSub() throws Exception {
 
-		wireMockServer.stubFor(post(urlEqualTo("/oidc/token"))
+		mockOidcServer.stubFor(post(urlEqualTo("/oidc/token"))
 				.withBasicAuth(getSpecificProxyServiceProperties().getOidc().getClientId(), getSpecificProxyServiceProperties().getOidc().getClientSecret())
 				.withHeader("Content-Type", containing("application/x-www-form-urlencoded"))
 				.willReturn(aResponse()
@@ -586,7 +586,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 
 
 	void createMockOidcServerResponse_successfulAuthentication(String code) throws UnsupportedEncodingException {
-		wireMockServer.stubFor(post(urlEqualTo("/oidc/token"))
+		mockOidcServer.stubFor(post(urlEqualTo("/oidc/token"))
 				.withBasicAuth(
 						getSpecificProxyServiceProperties().getOidc().getClientId(),
 						getSpecificProxyServiceProperties().getOidc().getClientSecret())

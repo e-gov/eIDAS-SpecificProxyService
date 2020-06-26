@@ -49,7 +49,6 @@ import java.util.Map;
 
 import static com.nimbusds.jose.JWSAlgorithm.RS256;
 import static ee.ria.eidas.proxy.specific.config.SpecificProxyServiceProperties.CacheProperties.*;
-import static ee.ria.eidas.proxy.specific.config.SpecificProxyServiceProperties.CacheProperties.IDP_PENDING_CONSENT_MAP;
 
 @Slf4j
 @Configuration
@@ -89,13 +88,16 @@ public class SpecificProxyServiceConfiguration implements WebMvcConfigurer {
     @Bean
     public static PropertySourcesPlaceholderConfigurer properties(
             @Value("#{environment.SPECIFIC_PROXY_SERVICE_CONFIG_REPOSITORY}/specificCommunicationDefinitionProxyservice.xml")
-            String configFile) throws MalformedURLException {
+                    String specificCommunicationConfig,
+            @Value("#{environment.EIDAS_CONFIG_REPOSITORY}/eidas.xml")
+                    String eidasConfig) throws MalformedURLException {
 
-        Assert.isTrue(new File(configFile).exists(), "Required configuration file not found: " + configFile);
+        Assert.isTrue(new File(specificCommunicationConfig).exists(), "Required configuration file not found: " + specificCommunicationConfig);
+        Assert.isTrue(new File(eidasConfig).exists(), "Required configuration file not found: " + eidasConfig);
 
         PropertySourcesPlaceholderConfigurer ppc = new PropertySourcesPlaceholderConfigurer();
-        ppc.setLocations(new FileUrlResource(configFile));
-        ppc.setIgnoreUnresolvablePlaceholders( false );
+        ppc.setLocations(new FileUrlResource(specificCommunicationConfig), new FileUrlResource(eidasConfig));
+        ppc.setIgnoreUnresolvablePlaceholders(false);
         return ppc;
     }
 

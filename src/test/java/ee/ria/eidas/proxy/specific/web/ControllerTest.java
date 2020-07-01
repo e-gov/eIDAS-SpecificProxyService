@@ -5,56 +5,39 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.LoggingEvent;
 import ch.qos.logback.core.Appender;
-import com.github.tomakehurst.wiremock.WireMockServer;
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import ee.ria.eidas.proxy.specific.SpecificProxyTest;
 import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceProperties;
 import ee.ria.eidas.proxy.specific.service.SpecificProxyService;
-import ee.ria.eidas.proxy.specific.storage.EidasNodeCommunication;
 import ee.ria.eidas.proxy.specific.storage.SpecificProxyServiceCommunication;
-import eu.eidas.auth.commons.attribute.AttributeDefinition;
-import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.light.ILightRequest;
-import eu.eidas.auth.commons.light.impl.LightRequest;
-import eu.eidas.auth.commons.light.impl.LightResponse;
 import eu.eidas.auth.commons.tx.BinaryLightToken;
 import eu.eidas.specificcommunication.BinaryLightTokenHelper;
 import eu.eidas.specificcommunication.exception.SpecificCommunicationException;
 import io.restassured.RestAssured;
-import io.restassured.filter.log.RequestLoggingFilter;
-import io.restassured.filter.log.ResponseLoggingFilter;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.ignite.Ignite;
-import org.apache.ignite.Ignition;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.context.ApplicationContextInitializer;
-import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.test.context.ActiveProfiles;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.cache.Cache;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static ee.ria.eidas.proxy.specific.util.LightRequestTestHelper.*;
 import static io.restassured.RestAssured.given;
-import static io.restassured.config.RedirectConfig.redirectConfig;
-import static io.restassured.config.RestAssuredConfig.config;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -66,37 +49,7 @@ import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.verify;
 
 @Slf4j
-@ActiveProfiles("test")
-public abstract class ControllerTest {
-
-    static {
-        System.setProperty("javax.net.ssl.trustStore", "src/test/resources/__files/mock_keys/idp-tls-truststore.jks");
-        System.setProperty("javax.net.ssl.trustStorePassword", "changeit");
-        System.setProperty("javax.net.ssl.trustStoreType", "jks");
-
-
-        try {
-            codec = new EidasNodeCommunication.LightJAXBCodec(JAXBContext.newInstance(LightRequest.class, LightResponse.class,
-                    ImmutableAttributeMap.class, AttributeDefinition.class));
-        } catch (JAXBException e) {
-            log.error("Unable to instantiate in static initializer ",e);
-        }
-    }
-
-    @LocalServerPort
-    private int port;
-
-    @Getter
-    private static Ignite ignite;
-
-    private static EidasNodeCommunication.LightJAXBCodec codec;
-
-    static WireMockServer wireMockServer = new WireMockServer(WireMockConfiguration.wireMockConfig()
-            .httpDisabled(true)
-            .httpsPort(9877)
-            .keystorePath("src/test/resources/__files/mock_keys/idp-tls-keystore.jks")
-            .keystorePassword("changeit")
-    );
+public abstract class ControllerTest extends SpecificProxyTest {
 
     @Value("${lightToken.proxyservice.request.issuer.name}")
     private String lightTokenRequestIssuerName;
@@ -109,20 +62,6 @@ public abstract class ControllerTest {
 
     @Value("${lightToken.proxyservice.response.issuer.name}")
     private String lightTokenResponseIssuerName;
-
-    @Autowired
-    @Qualifier("nodeSpecificProxyserviceRequestCache")
-    @Getter
-    private Cache<String, String> eidasNodeRequestCommunicationCache;
-
-    @Autowired
-    @Qualifier("nodeSpecificProxyserviceResponseCache")
-    @Getter
-    private Cache<String, String> eidasNodeResponseCommunicationCache;
-
-    @Autowired
-    @Getter
-    private Cache<String, SpecificProxyServiceCommunication.CorrelatedRequestsHolder> idpRequestCommunicationCache;
 
     @Autowired
     @Getter
@@ -144,13 +83,6 @@ public abstract class ControllerTest {
     @Getter
     private ArgumentCaptor<LoggingEvent> captorLoggingEvent;
 
-    @BeforeAll
-    public static void beforeAllTests() {
-        startMockIgniteServer();
-        startMockOidcServer();
-        configureRestAssured();
-    }
-
     @BeforeEach
     public void startTest() {
         clearMockOidcServerMappings();
@@ -166,20 +98,6 @@ public abstract class ControllerTest {
         logger.detachAppender(mockAppender);
     }
 
-    @AfterAll
-    public static void afterAllTests() {
-        stopMockOidcServer();
-    }
-
-    private void clearMockOidcServerMappings() {
-        wireMockServer.resetAll();
-        wireMockServer.stubFor(get(urlEqualTo("/oidc/jwks"))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json; charset=UTF-8")
-                        .withBodyFile("mock_responses/idp/jwks.json")));
-    }
-
     @Test
     @Order(1)
     void contextLoads() {
@@ -193,6 +111,7 @@ public abstract class ControllerTest {
                 lightTokenRequestSecret,
                 lightTokenRequestAlgorithm);
         final String tokenId = binaryLightToken.getToken().getId();
+
         getEidasNodeRequestCommunicationCache().put(tokenId, codec.marshall(iLightRequest));
         return binaryLightToken;
     }
@@ -210,7 +129,6 @@ public abstract class ControllerTest {
 
         assertEquals(0, getListFromIterator(getEidasNodeResponseCommunicationCache().iterator()).size());
     }
-
 
     void assertErrorIsLogged(String errorMessage) {
         verify(getMockAppender(), atLeast(1)).doAppend(getCaptorLoggingEvent().capture());
@@ -254,47 +172,5 @@ public abstract class ControllerTest {
         assertThat(responseXml, hasXPath("/lightResponse/status/statusMessage", equalTo(expectedErrorMessage)));
         assertThat(responseXml, hasXPath("/lightResponse/status/subStatusCode", equalTo("urn:oasis:names:tc:SAML:2.0:status:RequestDenied")));
         assertThat(responseXml, hasXPath("count(/lightResponse/attributes/attribute)", equalTo("0")));
-    }
-
-    public static class TestContextInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
-
-        @Override
-        public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
-            String currentDirectory = System.getProperty("user.dir");
-            System.setProperty("SPECIFIC_PROXY_SERVICE_CONFIG_REPOSITORY", currentDirectory + "/src/test/resources/mock_eidasnode");
-            System.setProperty("EIDAS_CONFIG_REPOSITORY", currentDirectory + "/src/test/resources/mock_eidasnode");
-        }
-    }
-
-    private static void configureRestAssured() {
-        RestAssured.filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
-        RestAssured.config = config().redirect(redirectConfig().followRedirects(false));
-    }
-
-    private static void startMockOidcServer() {
-        wireMockServer.start();
-        wireMockServer.stubFor(get(urlEqualTo("/.well-known/openid-configuration"))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json; charset=UTF-8")
-                        .withBodyFile("mock_responses/idp/openid-configuration.json")));
-    }
-
-    private static void startMockIgniteServer() {
-        if (ignite == null) {
-            System.setProperty("IGNITE_QUIET", "false");
-            System.setProperty("IGNITE_HOME", System.getProperty("java.io.tmpdir"));
-            System.setProperty("java.net.preferIPv4Stack", "true");
-            ignite = Ignition.start(ControllerTest.class.getClassLoader().getResourceAsStream("mock_eidasnode/igniteSpecificCommunication.xml"));
-        }
-    }
-
-    private static void stopMockOidcServer() {
-        wireMockServer.stop();
-    }
-
-    private void clearCommunicationCache() {
-        idpRequestCommunicationCache.clear();
-        eidasNodeResponseCommunicationCache.clear();
     }
 }

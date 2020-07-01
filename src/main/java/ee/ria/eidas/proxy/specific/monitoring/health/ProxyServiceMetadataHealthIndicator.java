@@ -5,30 +5,15 @@ import org.springframework.boot.actuate.health.AbstractHealthIndicator;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import java.io.FileInputStream;
-import java.io.IOException;
+import javax.net.ssl.SSLSocketFactory;
 import java.net.URL;
-import java.security.*;
-import java.security.cert.CertificateException;
 import java.time.Duration;
+
+import static java.lang.Math.toIntExact;
 
 @Component
 public class ProxyServiceMetadataHealthIndicator extends AbstractHealthIndicator {
-    private SSLContext sslContext;
-
-    @Value("${javax.net.ssl.trustStore}")
-    private String trustStore;
-
-    @Value("${javax.net.ssl.trustStorePassword}")
-    private String trustStorePassword;
-
-    @Value("${javax.net.ssl.trustStoreType}")
-    private String trustStoreType;
 
     @Value("${service.metadata.url}")
     private String serviceMetadataUrl;
@@ -44,25 +29,16 @@ public class ProxyServiceMetadataHealthIndicator extends AbstractHealthIndicator
     protected void doHealthCheck(Health.Builder builder) throws Exception {
         URL url = new URL(serviceMetadataUrl);
         HttpsURLConnection con = (HttpsURLConnection) url.openConnection();
-        con.setConnectTimeout((int) connectTimeout.getSeconds());
-        con.setSSLSocketFactory(sslContext.getSocketFactory());
-        if (con.getResponseCode() == HttpsURLConnection.HTTP_OK) {
-            builder.up();
-        } else {
-            builder.down();
+        con.setConnectTimeout(toIntExact(connectTimeout.toMillis()));
+        con.setSSLSocketFactory((SSLSocketFactory) SSLSocketFactory.getDefault());
+        try {
+            if (con.getResponseCode() == HttpsURLConnection.HTTP_OK) {
+                builder.up();
+            } else {
+                builder.down();
+            }
+        } finally {
+            con.disconnect();
         }
-    }
-
-    @PostConstruct
-    public void setupSslContext()
-            throws IOException, KeyStoreException, NoSuchAlgorithmException, CertificateException,
-            KeyManagementException {
-        KeyStore truststore = KeyStore.getInstance(trustStoreType);
-        truststore.load(new FileInputStream(trustStore), trustStorePassword.toCharArray());
-        TrustManagerFactory trustFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-        trustFactory.init(truststore);
-        TrustManager[] trustManagers = trustFactory.getTrustManagers();
-        sslContext = SSLContext.getInstance("TLSv1.2");
-        sslContext.init(null, trustManagers, new SecureRandom());
     }
 }

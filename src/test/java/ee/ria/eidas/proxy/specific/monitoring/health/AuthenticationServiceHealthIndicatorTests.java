@@ -9,6 +9,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ContextConfiguration;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.nimbusds.openid.connect.sdk.op.OIDCProviderConfigurationRequest.OPENID_PROVIDER_WELL_KNOWN_PATH;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static java.net.HttpURLConnection.*;
@@ -26,9 +27,11 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 @ContextConfiguration(classes = SpecificProxyServiceConfiguration.class, initializers = ApplicationHealthEndpointTests.TestContextInitializer.class)
 public class AuthenticationServiceHealthIndicatorTests extends ApplicationHealthTest {
 
+
     @Test
-    public void healthStatusUpWhenAuthenticationServerStatus200() {
-        mockOidcServer.stubFor(get(urlEqualTo("/"))
+    public void healthStatusUpWhenStatus200() {
+
+        mockOidcServer.stubFor(get(urlEqualTo(OPENID_PROVIDER_WELL_KNOWN_PATH))
                 .willReturn(aResponse()
                         .withStatus(HTTP_OK)));
         Response healthResponse = given()
@@ -42,23 +45,10 @@ public class AuthenticationServiceHealthIndicatorTests extends ApplicationHealth
     }
 
     @Test
-    public void healthStatusUpWhenAuthenticationServerStatus404() {
-        mockOidcServer.stubFor(get(urlEqualTo("/"))
+    public void healthStatusDownWhenStatus404() {
+        mockOidcServer.stubFor(get(urlEqualTo(OPENID_PROVIDER_WELL_KNOWN_PATH))
                 .willReturn(aResponse()
                         .withStatus(HTTP_NOT_FOUND)));
-        Response healthResponse = given()
-                .when()
-                .get(APPLICATION_HEALTH_ENDPOINT_REQUEST)
-                .then()
-                .assertThat()
-                .statusCode(200)
-                .contentType(JSON).extract().response();
-        assertDependenciesUp(healthResponse);
-    }
-
-    @Test
-    public void healthStatusDownWhenAuthenticationServerDown() {
-        mockOidcServer.stop();
         Response healthResponse = given()
                 .when()
                 .get(APPLICATION_HEALTH_ENDPOINT_REQUEST)
@@ -70,8 +60,22 @@ public class AuthenticationServiceHealthIndicatorTests extends ApplicationHealth
     }
 
     @Test
-    public void healthStatusDownWhenAuthenticationServerStatusError() {
-        mockOidcServer.stubFor(get(urlEqualTo("/"))
+    public void healthStatusDownWhenConnectionRefused() {
+        mockOidcServer.stop();
+        Response healthResponse = given()
+                .when()
+                .get(APPLICATION_HEALTH_ENDPOINT_REQUEST)
+                .then()
+                .assertThat()
+                .statusCode(200)
+                .contentType(JSON).extract().response();
+        mockOidcServer.start();
+        assertDependenciesDown(healthResponse, Dependencies.PROXY_SERVICE_METADATA);
+    }
+
+    @Test
+    public void healthStatusDownWhenStatus500() {
+        mockOidcServer.stubFor(get(urlEqualTo(OPENID_PROVIDER_WELL_KNOWN_PATH))
                 .willReturn(aResponse()
                         .withStatus(HTTP_INTERNAL_ERROR)));
         Response healthResponse = given()

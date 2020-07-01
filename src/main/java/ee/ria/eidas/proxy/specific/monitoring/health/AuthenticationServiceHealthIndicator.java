@@ -7,11 +7,15 @@ import org.springframework.boot.actuate.health.AbstractHealthIndicator;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.stereotype.Component;
 
-import java.net.HttpURLConnection;
-import java.net.URL;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSocketFactory;
+import java.net.URI;
 import java.time.Duration;
 
-import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
+import static com.nimbusds.oauth2.sdk.util.URIUtils.removeTrailingSlash;
+import static com.nimbusds.openid.connect.sdk.op.OIDCProviderConfigurationRequest.OPENID_PROVIDER_WELL_KNOWN_PATH;
+import static java.lang.Math.toIntExact;
+import static java.net.URI.create;
 
 @Component
 public class AuthenticationServiceHealthIndicator extends AbstractHealthIndicator {
@@ -28,13 +32,19 @@ public class AuthenticationServiceHealthIndicator extends AbstractHealthIndicato
 
     @Override
     protected void doHealthCheck(Health.Builder builder) throws Exception {
-        URL url = new URL(specificProxyServiceProperties.getOidc().getIssuerUrl());
-        HttpURLConnection con = (HttpURLConnection) url.openConnection();
-        con.setConnectTimeout((int) connectTimeout.getSeconds());
-        if (con.getResponseCode() < HTTP_INTERNAL_ERROR) {
-            builder.up();
-        } else {
-            builder.down();
+        URI uri = create(removeTrailingSlash(create(specificProxyServiceProperties.getOidc().getIssuerUrl()))
+                + OPENID_PROVIDER_WELL_KNOWN_PATH);
+        HttpsURLConnection con = (HttpsURLConnection) uri.toURL().openConnection();
+        con.setConnectTimeout(toIntExact(connectTimeout.toMillis()));
+        con.setSSLSocketFactory((SSLSocketFactory) SSLSocketFactory.getDefault());
+        try {
+            if (con.getResponseCode() == HttpsURLConnection.HTTP_OK) {
+                builder.up();
+            } else {
+                builder.down();
+            }
+        } finally {
+            con.disconnect();
         }
     }
 }

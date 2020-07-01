@@ -100,7 +100,6 @@ TBD - log format
 
 TBD - overriding default log conf
 
-<a name="heartbeat"></a>
 ## 6. Monitoring
 
 `SpecificProxyService` webapp uses `Spring Boot Actuator` for monitoring. To customize Monitoring, Metrics, Auditing, and more see [Spring Boot Actuator documentation](https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-features.html#production-ready).    
@@ -109,33 +108,63 @@ TBD - overriding default log conf
 
 | Parameter        | Mandatory | Description, example |
 | :---------------- | :---------- | :----------------|
-| `management.endpoints.jmx.exposure.exclude` | Yes | Endpoint IDs that should be excluded to be exposed over JMX or `*` for all. Default value `*` |
-| `management.endpoints.web.exposure.exclude` | Yes | Endpoint IDs that should be excluded to be exposed over HTTP or `*` for all. Default value `*` |
+| `management.endpoints.jmx.exposure.exclude` | No | Endpoint IDs that should be excluded to be exposed over JMX or `*` for all. Recommended value `*` |
+| `management.endpoints.web.exposure.exclude` | No | Endpoint IDs that should be excluded to be exposed over HTTP or `*` for all. Recommended value `*` |
 
 ### 6.2 Custom application health endpoint configuration
 
-`SpecificProxyService` webapp implements custom application health endpoint with id `heartbeat` and uses following custom health indicators.
+`SpecificProxyService` webapp implements [custom health endpoint](https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-features.html#production-ready-endpoints-custom) with id `heartbeat` and [custom health indicators](https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-features.html#writing-custom-healthindicators) with id's `igniteCluster`, `authenticationService`, `proxyServiceMetadata`, `truststore`. This endpoint is disabled by default.
 
-#### 6.2.1 igniteService health indicator
-TBD - details
-#### 6.2.2 authenticationService health indicator
-TBD - details
-#### 6.2.3 proxyServiceMetadata health indicator
-TBD - details
-#### 6.2.4 truststore health indicator
-TBD - details
+Request:
 
-Default configuration to enable only `heartbeat` endpoint:
+````
+curl -X GET https://ee-eidas-proxy:8083/SpecificProxyService/heartbeat
+````
+
+Response:
+````
+{
+    "currentTime": "2020-07-01T09:42:46.307Z",
+    "upTime": "PT1M25S",
+    "buildTime": "2020-07-01T09:35:57.257Z",
+    "name": "ee-specific-proxy",
+    "startTime": "2020-07-01T09:41:33.411Z",
+    "commitId": "7fb1482da3c091c361a7a9f4dbaf1e19817bc76f",
+    "version": "0.0.1-SNAPSHOT",
+    "commitBranch": "develop",
+    "status": "UP",
+    "dependencies": [
+        {
+            "name": "authenticationService",
+            "status": "UP"
+        },
+        {
+            "name": "igniteCluster",
+            "status": "UP"
+        },
+        {
+            "name": "proxyServiceMetadata",
+            "status": "UP"
+        },
+        {
+            "name": "truststore",
+            "status": "UP"
+        }
+    ]
+}
+````
+
+#### 6.2.1 Minimal recommended configuration to enable only `heartbeat` endpoint:
 
 | Parameter        | Mandatory | Description, example |
 | :---------------- | :---------- | :----------------|
-| `management.endpoints.jmx.exposure.exclude` | Yes | Endpoint IDs that should be excluded to be exposed over JMX or `*` for all. Default value `*` |
-| `management.endpoints.web.exposure.include` | Yes | Endpoint IDs that should be included to be exposed over HTTP or `*` for all. Default value `heartbeat` |
-| `management.endpoints.web.base-path` | No |  Base path for Web endpoints. Relative to server.servlet.context-path or management.server.servlet.context-path if management.server.port is configured. Default value `/` |
-| `management.health.defaults.enabled` | No | Whether to enable default Spring Boot Actuator health indicators. Default value `false` |
-| `management.info.git.mode` | Yes | Mode to use to expose git information. Default value `full` |
-| `eidas.proxy.health.dependencies.connect-timeout` | Yes | Timeout for `authenticationService` and `proxyServiceMetadata` health indicators. Defaults to `3s` |
-| `eidas.proxy.health.trust-store-expiration-warning` | Yes | Certificate expiration warning period for `truststore` health indicator. Default value `30d` |
+| `management.endpoints.jmx.exposure.exclude` | No | Endpoint IDs that should be excluded to be exposed over JMX or `*` for all. Recommended value `*` |
+| `management.endpoints.web.exposure.include` | No | Endpoint IDs that should be included to be exposed over HTTP or `*` for all. Recommended value `heartbeat` |
+| `management.endpoints.web.base-path` | No |  Base path for Web endpoints. Relative to server.servlet.context-path or management.server.servlet.context-path if management.server.port is configured. Recommended value `/` |
+| `management.health.defaults.enabled` | No | Whether to enable default Spring Boot Actuator health indicators. Recommended value `false` |
+| `management.info.git.mode` | No | Mode to use to expose git information. Recommended value `full` |
+| `eidas.proxy.health.dependencies.connect-timeout` | No | Timeout for `authenticationService` and `proxyServiceMetadata` health indicators. Defaults to `3s` |
+| `eidas.proxy.health.trust-store-expiration-warning` | No | Certificate expiration warning period for `truststore` health indicator. Default value `30d` |
 
 <a name="configuration_parameters"></a>
 ## APPENDIX 1 - Configuration parameters

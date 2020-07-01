@@ -65,8 +65,9 @@ public abstract class ApplicationHealthTest extends SpecificProxyTest {
         assertTrue(currentTime.isAfter(startTime));
         assertTrue(currentTime.isBefore(Instant.now()));
 
-        Duration upTime = Duration.parse(healthResponse.jsonPath().get("upTime"));
-        assertEquals(Duration.between(startTime, currentTime).withNanos(0), upTime);
+        long upTime = Duration.parse(healthResponse.jsonPath().get("upTime")).getSeconds();
+        long expectedUpTime = Duration.between(startTime, currentTime).withNanos(0).getSeconds();
+        assertEquals(expectedUpTime, upTime, 1, "upTime");
     }
 
     @RequiredArgsConstructor

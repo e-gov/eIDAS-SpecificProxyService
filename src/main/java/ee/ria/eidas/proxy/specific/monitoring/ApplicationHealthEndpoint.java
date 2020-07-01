@@ -8,6 +8,7 @@ import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
 import org.springframework.boot.actuate.health.HealthContributorRegistry;
 import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.boot.actuate.health.NamedContributor;
 import org.springframework.boot.actuate.health.Status;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.info.GitProperties;
@@ -20,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static java.lang.Double.valueOf;
 import static java.time.Duration.ofSeconds;
@@ -56,8 +58,9 @@ public class ApplicationHealthEndpoint {
     }
 
     private Map<String, Object> getHealthDetails() {
+        Map<String, Status> healthIndicatorStatuses = getHealthIndicatorStatuses();
         Map<String, Object> details = new HashMap<>();
-        details.put("status", getAggregatedStatus().getCode());
+        details.put("status", getAggregatedStatus(healthIndicatorStatuses).getCode());
         details.put("name", buildProperties.getName());
         details.put("version", buildProperties.getVersion());
         details.put("buildTime", buildProperties.getTime());
@@ -67,7 +70,7 @@ public class ApplicationHealthEndpoint {
         details.computeIfAbsent("startTime", v -> getServiceStartTime());
         details.computeIfAbsent("upTime", v -> getServiceUpTime());
         details.computeIfAbsent("warnings", v -> getTrustStoreWarnings());
-        details.put("dependencies", getHealthIndicators());
+        details.put("dependencies", getFormatedStatuses(healthIndicatorStatuses));
         return details;
     }
 
@@ -86,22 +89,26 @@ public class ApplicationHealthEndpoint {
         return upTime != null ? ofSeconds(valueOf(upTime.value(SECONDS)).longValue()).toString() : null;
     }
 
-    private Status getAggregatedStatus() {
-        Optional<Status> anyNotUp = healthContributorRegistry.stream()
+    private Map<String, Status> getHealthIndicatorStatuses() {
+        return healthContributorRegistry.stream()
                 .filter(hc -> hc.getContributor() instanceof HealthIndicator)
-                .map(contributor -> ((HealthIndicator) contributor.getContributor()).getHealth(false).getStatus())
+                .collect(Collectors.toMap(NamedContributor::getName,
+                        healthContributorNamedContributor -> ((HealthIndicator) healthContributorNamedContributor
+                                .getContributor()).health().getStatus()));
+    }
+
+    private Status getAggregatedStatus(Map<String, Status> healthIndicatorStatuses) {
+        Optional<Status> anyNotUp = healthIndicatorStatuses.values().stream()
                 .filter(status -> !Status.UP.equals(status))
                 .findAny();
         return anyNotUp.isPresent() ? Status.DOWN : Status.UP;
     }
 
-    private List<HashMap<String, String>> getHealthIndicators() {
-        return healthContributorRegistry.stream()
-                .filter(hc -> hc.getContributor() instanceof HealthIndicator)
-                .map(contributor -> new HashMap<String, String>() {{
-                    put("name", contributor.getName());
-                    put("status", ((HealthIndicator) contributor.getContributor()).getHealth(false)
-                            .getStatus().getCode());
+    private List<HashMap<String, String>> getFormatedStatuses(Map<String, Status> healthIndicatorStatuses) {
+        return healthIndicatorStatuses.entrySet().stream()
+                .map(healthIndicator -> new HashMap<String, String>() {{
+                    put("name", healthIndicator.getKey());
+                    put("status", healthIndicator.getValue().getCode());
                 }}).collect(toList());
     }
 }

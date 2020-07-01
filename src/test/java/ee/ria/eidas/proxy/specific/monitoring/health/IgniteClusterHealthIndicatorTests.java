@@ -76,8 +76,8 @@ public class IgniteClusterHealthIndicatorTests extends ApplicationHealthTest {
                 .contentType(JSON).extract().response();
         assertDependenciesUp(healthResponse);
 
-        assertEquals(8, cachePuts.get());
-        assertEquals(8, cacheRemoves.get());
+        assertEquals(4, cachePuts.get());
+        assertEquals(4, cacheRemoves.get());
     }
 
     @Test
@@ -104,43 +104,43 @@ public class IgniteClusterHealthIndicatorTests extends ApplicationHealthTest {
     }
 
     @Test
-    public void healthStatusDownWhenUnhealthyEidasNodeRequestCommunicationCache() {
+    public void healthStatusDownWhen_UnhealthyEidasNodeRequestCommunicationCache() {
         assertHealthDownOnCachePutException(eidasNodeRequestCommunicationCache);
         assertEquals(0, cachePuts.get());
         assertEquals(0, cacheRemoves.get());
         assertHealthDownOnCacheGetAndRemoveException(eidasNodeRequestCommunicationCache);
-        assertEquals(2, cachePuts.get());
+        assertEquals(1, cachePuts.get());
         assertEquals(0, cacheRemoves.get());
     }
 
     @Test
     public void healthStatusDownWhenUnhealthyEidasNodeResponseCommunicationCache() {
         assertHealthDownOnCachePutException(eidasNodeResponseCommunicationCache);
-        assertEquals(2, cachePuts.get());
-        assertEquals(2, cacheRemoves.get());
+        assertEquals(1, cachePuts.get());
+        assertEquals(1, cacheRemoves.get());
         assertHealthDownOnCacheGetAndRemoveException(eidasNodeResponseCommunicationCache);
-        assertEquals(4, cachePuts.get());
-        assertEquals(2, cacheRemoves.get());
+        assertEquals(2, cachePuts.get());
+        assertEquals(1, cacheRemoves.get());
     }
 
     @Test
     public void healthStatusDownWhenUnhealthyIdpRequestCommunicationCache() {
         assertHealthDownOnCachePutException(idpRequestCommunicationCache);
-        assertEquals(4, cachePuts.get());
-        assertEquals(4, cacheRemoves.get());
+        assertEquals(2, cachePuts.get());
+        assertEquals(2, cacheRemoves.get());
         assertHealthDownOnCacheGetAndRemoveException(idpRequestCommunicationCache);
-        assertEquals(6, cachePuts.get());
-        assertEquals(4, cacheRemoves.get());
+        assertEquals(3, cachePuts.get());
+        assertEquals(2, cacheRemoves.get());
     }
 
     @Test
     public void healthStatusDownWhenUnhealthyIdpConsentCommunicationCache() {
         assertHealthDownOnCachePutException(idpConsentCommunicationCache);
-        assertEquals(6, cachePuts.get());
-        assertEquals(6, cacheRemoves.get());
+        assertEquals(3, cachePuts.get());
+        assertEquals(3, cacheRemoves.get());
         assertHealthDownOnCacheGetAndRemoveException(idpConsentCommunicationCache);
-        assertEquals(8, cachePuts.get());
-        assertEquals(6, cacheRemoves.get());
+        assertEquals(4, cachePuts.get());
+        assertEquals(3, cacheRemoves.get());
     }
 
     @SneakyThrows

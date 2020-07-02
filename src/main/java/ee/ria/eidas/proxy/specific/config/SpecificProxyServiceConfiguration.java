@@ -7,6 +7,7 @@ import com.nimbusds.oauth2.sdk.id.Issuer;
 import com.nimbusds.openid.connect.sdk.op.OIDCProviderConfigurationRequest;
 import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata;
 import com.nimbusds.openid.connect.sdk.validators.IDTokenValidator;
+import ee.ria.eidas.proxy.specific.service.OIDCProviderMetadataService;
 import ee.ria.eidas.proxy.specific.service.SpecificProxyService;
 import ee.ria.eidas.proxy.specific.storage.IgniteInstanceInitializer;
 import ee.ria.eidas.proxy.specific.storage.SpecificProxyServiceCommunication;
@@ -71,8 +72,8 @@ public class SpecificProxyServiceConfiguration implements WebMvcConfigurer {
     }
 
     @Bean
-    public FilterRegistrationBean disableExtraHttpMethodsFilter(SpecificProxyServiceProperties specificProxyServiceProperties) {
-        final FilterRegistrationBean<DisabledHttpMethodsFilter> bean = new FilterRegistrationBean();
+    public FilterRegistrationBean<DisabledHttpMethodsFilter> disableExtraHttpMethodsFilter(SpecificProxyServiceProperties specificProxyServiceProperties) {
+        final FilterRegistrationBean<DisabledHttpMethodsFilter> bean = new FilterRegistrationBean<>();
         bean.setFilter(new DisabledHttpMethodsFilter(specificProxyServiceProperties.getWebapp().getDisabledHttpMethods()));
         bean.setInitParameters(new HashMap<>());
         return bean;
@@ -81,8 +82,8 @@ public class SpecificProxyServiceConfiguration implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/resources/**")
-          .addResourceLocations("/resources/").setCachePeriod(3600)
-          .resourceChain(true).addResolver(new PathResourceResolver());
+                .addResourceLocations("/resources/").setCachePeriod(3600)
+                .resourceChain(true).addResolver(new PathResourceResolver());
     }
 
     @Bean
@@ -183,11 +184,8 @@ public class SpecificProxyServiceConfiguration implements WebMvcConfigurer {
 
     @Bean
     public SpecificProxyService specificProxyService(SpecificProxyServiceProperties specificProxyServiceProperties,
-         OIDCProviderMetadata oidcProviderMetadata,
-         IDTokenValidator idTokenValidator,
-         AttributeRegistry eidasAttributesRegistry) {
-
-        return new SpecificProxyService(specificProxyServiceProperties, oidcProviderMetadata, idTokenValidator, eidasAttributesRegistry);
+                                                     OIDCProviderMetadataService oidcProviderMetadataService, AttributeRegistry eidasAttributesRegistry) {
+        return new SpecificProxyService(specificProxyServiceProperties, oidcProviderMetadataService, eidasAttributesRegistry);
     }
 
     private String getCacheName(SpecificProxyServiceProperties properties, String cacheName) {

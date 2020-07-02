@@ -1,9 +1,13 @@
 package ee.ria.eidas.proxy.specific;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceConfiguration;
 import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceProperties;
+import ee.ria.eidas.proxy.specific.service.SpecificProxyService;
 import ee.ria.eidas.proxy.specific.storage.EidasNodeCommunication;
 import ee.ria.eidas.proxy.specific.storage.SpecificProxyServiceCommunication;
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
@@ -20,10 +24,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.Ignition;
 import org.apache.ignite.configuration.IgniteConfiguration;
+import org.hamcrest.CoreMatchers;
+import org.hamcrest.Matcher;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.info.BuildProperties;
@@ -34,22 +38,29 @@ import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
 
 import javax.cache.Cache;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import java.io.InputStream;
+import java.util.List;
 
+import static ch.qos.logback.classic.Level.*;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static io.restassured.config.RedirectConfig.redirectConfig;
 import static io.restassured.config.RestAssuredConfig.config;
+import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.toList;
 import static org.apache.ignite.events.EventType.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInRelativeOrder;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.slf4j.Logger.ROOT_LOGGER_NAME;
+import static org.slf4j.LoggerFactory.getLogger;
 
 @Slf4j
 @ActiveProfiles("test")
 @Getter
-@ContextConfiguration(classes = SpecificProxyServiceConfiguration.class, initializers = SpecificProxyTest.TestContextInitializer.class)
 public abstract class SpecificProxyTest {
 
     static {
@@ -85,6 +96,9 @@ public abstract class SpecificProxyTest {
     @Autowired
     protected SpecificProxyServiceProperties specificProxyServiceProperties;
 
+    @Autowired
+    protected SpecificProxyService specificProxyService;
+
     @MockBean
     protected BuildProperties buildProperties;
 
@@ -111,6 +125,9 @@ public abstract class SpecificProxyTest {
     @Qualifier("nodeSpecificProxyserviceResponseCache")
     protected Cache<String, String> eidasNodeResponseCommunicationCache;
 
+    private static ListAppender<ILoggingEvent> mockAppender;
+
+
     @LocalServerPort
     protected int port;
 
@@ -131,6 +148,18 @@ public abstract class SpecificProxyTest {
     @BeforeEach
     public void beforeEachTest() {
         RestAssured.port = port;
+        setupMockLogAppender();
+    }
+
+    @AfterEach
+    public void afterEachTest() {
+        ((Logger) getLogger(ROOT_LOGGER_NAME)).detachAppender(mockAppender);
+    }
+
+    @Test
+    @Order(1)
+    void contextLoads() {
+        assertNotNull(specificProxyService, "Should not be null!");
     }
 
     protected static void startMockEidasNodeServer() {
@@ -182,6 +211,49 @@ public abstract class SpecificProxyTest {
     protected void clearCommunicationCache() {
         idpRequestCommunicationCache.clear();
         eidasNodeResponseCommunicationCache.clear();
+    }
+
+    private void setupMockLogAppender() {
+        mockAppender = new ListAppender<>();
+        mockAppender.start();
+        ((Logger) getLogger(ROOT_LOGGER_NAME)).addAppender(mockAppender);
+    }
+
+    protected void assertInfoIsLogged(String... messagesInRelativeOrder) {
+        assertMessageIsLogged(null, INFO, messagesInRelativeOrder);
+    }
+
+    protected void assertWarningIsLogged(String... messagesInRelativeOrder) {
+        assertMessageIsLogged(null, WARN, messagesInRelativeOrder);
+    }
+
+    protected void assertErrorIsLogged(String... messagesInRelativeOrder) {
+        assertMessageIsLogged(null, ERROR, messagesInRelativeOrder);
+    }
+
+    protected void assertInfoIsLogged(Class<?> loggerClass, String... messagesInRelativeOrder) {
+        assertMessageIsLogged(loggerClass, INFO, messagesInRelativeOrder);
+    }
+
+    protected void assertWarningIsLogged(Class<?> loggerClass, String... messagesInRelativeOrder) {
+        assertMessageIsLogged(loggerClass, WARN, messagesInRelativeOrder);
+    }
+
+    protected void assertErrorIsLogged(Class<?> loggerClass, String... messagesInRelativeOrder) {
+        assertMessageIsLogged(loggerClass, ERROR, messagesInRelativeOrder);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void assertMessageIsLogged(Class<?> loggerClass, Level loggingLevel,
+                                       String... messagesInRelativeOrder) {
+        List<String> events = mockAppender.list.stream()
+                .filter(e -> e.getLevel() == loggingLevel && (loggerClass == null
+                        || e.getLoggerName().equals(loggerClass.getCanonicalName())))
+                .map(ILoggingEvent::getFormattedMessage)
+                .collect(toList());
+
+        assertThat(events, containsInRelativeOrder(stream(messagesInRelativeOrder)
+                .map(CoreMatchers::startsWith).toArray(Matcher[]::new)));
     }
 
     public static class TestContextInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {

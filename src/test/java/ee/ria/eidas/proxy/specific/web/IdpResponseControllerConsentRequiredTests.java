@@ -53,7 +53,7 @@ class IdpResponseControllerConsentRequiredTests extends IdpResponseControllerTes
 		assertThat( response.body().htmlPath().getString("**.findAll { it.strong.@id == 'DateOfBirth'}").trim()).isEqualTo("2000-01-01");
 		assertThat( response.body().htmlPath().getString("**.findAll { it.strong.@id == 'PersonIdentifier'}").trim()).isEqualTo("60001019906");
 
-		assertWarningIsLogged(SpecificProxyService.class.getCanonicalName(),
+		assertWarningIsLogged(SpecificProxyService.class,
 				"Ignoring optional attribute BirthName - no mapping configured to extract it's corresponding value from id-token",
 				"Ignoring optional attribute Gender - no mapping configured to extract it's corresponding value from id-token",
 				"Ignoring optional attribute PlaceOfBirth - no mapping configured to extract it's corresponding value from id-token",

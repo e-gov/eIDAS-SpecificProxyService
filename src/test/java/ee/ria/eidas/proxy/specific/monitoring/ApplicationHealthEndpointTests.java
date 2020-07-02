@@ -86,10 +86,9 @@ public class ApplicationHealthEndpointTests extends ApplicationHealthTest {
 
     @Test
     public void healthyApplicationStateWhenMissingMetrics() {
-        Search mockSearchResult = Mockito.mock(Search.class);
-        Mockito.when(mockSearchResult.timeGauge()).thenReturn(null);
-        Mockito.when(meterRegistry.find("process.start.time")).thenReturn(mockSearchResult);
-        Mockito.when(meterRegistry.find("process.uptime")).thenReturn(mockSearchResult);
+        Search nonExistentMetric = meterRegistry.find("non-existent");
+        Mockito.when(meterRegistry.find("process.start.time")).thenReturn(nonExistentMetric);
+        Mockito.when(meterRegistry.find("process.uptime")).thenReturn(nonExistentMetric);
         Response healthResponse = given()
                 .when()
                 .get(APPLICATION_HEALTH_ENDPOINT_REQUEST)

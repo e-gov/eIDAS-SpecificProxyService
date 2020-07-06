@@ -54,6 +54,9 @@ public class SpecificProxyServiceProperties {
     private List<String> supportedSpTypes = asList("public", "private");
 
     @NotNull
+    private String appInstanceId;
+
+    @NotNull
     private String nodeSpecificResponseUrl;
 
     @Valid
@@ -74,6 +77,8 @@ public class SpecificProxyServiceProperties {
     public static class WebappProperties {
 
         private List<HttpMethod> disabledHttpMethods = asList(GET, POST);
+
+        private String sessionIdCookieName = "JSESSIONID";
     }
 
     @Data

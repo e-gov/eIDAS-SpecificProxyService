@@ -142,7 +142,6 @@ public class SpecificProxyService {
 
         URI tokenEndpoint = oidcProviderMetadata.getTokenEndpointURI();
         TokenRequest request = new TokenRequest(oidcProviderMetadata.getTokenEndpointURI(), clientAuth, getAuthorizationGrant(oAuthCode), null, null, null);
-        log.info("Request id-token from {} ", request.getEndpointURI());
         OIDCTokenResponse successResponse = getOidcTokenResponse(tokenEndpoint, request);
 
         return successResponse.getOIDCTokens().getIDToken();
@@ -160,12 +159,18 @@ public class SpecificProxyService {
             HTTPRequest httpRequest = request.toHTTPRequest();
             httpRequest.setConnectTimeout(specificProxyServiceProperties.getOidc().getConnectTimeoutInMilliseconds());
             httpRequest.setReadTimeout(specificProxyServiceProperties.getOidc().getReadTimeoutInMilliseconds());
+            log.info("Request id-token from IDP - HTTP {} {}, Parameters: {}, Connect timeout: {}, Read timeout: {}, Auth method: {}, Client ID: {}",
+                    httpRequest.getMethod(), httpRequest.getURL(),
+                    httpRequest.getQueryParameters(),
+                    httpRequest.getConnectTimeout(),
+                    httpRequest.getReadTimeout(),
+                    request.getClientAuthentication().getMethod(),
+                    request.getClientAuthentication().getClientID());
             TokenResponse tokenResponse = OIDCTokenResponseParser.parse(httpRequest.send());
             if (tokenResponse.indicatesSuccess()) {
                 return (OIDCTokenResponse)tokenResponse.toSuccessResponse();
             } else {
                 TokenErrorResponse errorResponse = tokenResponse.toErrorResponse();
-                log.error("Token endpoint " + tokenEndpoint + " returned an error: " + errorResponse.getErrorObject());
                 throw new IllegalStateException("OIDC token request returned an error! " + errorResponse.getErrorObject());
             }
 

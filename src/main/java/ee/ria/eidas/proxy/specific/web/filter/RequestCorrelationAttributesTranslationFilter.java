@@ -1,7 +1,6 @@
 package ee.ria.eidas.proxy.specific.web.filter;
 
 import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceProperties;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,15 +16,12 @@ import java.io.IOException;
 
 import static java.util.Arrays.stream;
 
-/**
- * Translates and sets specific MDC attribute as a Servlet request attribute.
- */
 @Component
 public class RequestCorrelationAttributesTranslationFilter extends OncePerRequestFilter {
 
 	public static final String MDC_ATTRIBUTE_NAME_SESSION_ID = "sessionId";
-	public static final String MDC_ATTRIBUTE_NAME_REQUEST_ID = "requestId";
 	public static final String MDC_ATTRIBUTE_NAME_VERSION = "serviceVersion";
+	public static final String REQUEST_ATTRIBUTE_NAME_REQUEST_ID = "requestId";
 
 	@Autowired(required=false)
 	private BuildProperties buildProperties;
@@ -43,10 +39,10 @@ public class RequestCorrelationAttributesTranslationFilter extends OncePerReques
 			).findFirst().ifPresent( c ->  MDC.put(MDC_ATTRIBUTE_NAME_SESSION_ID, c.getValue()));
 		}
 
+		// NB! Set traceId also as HttpServletRequest attribute to make it accessible for Tomcat's AccessLogValve
 		String requestId = MDC.get("traceId");
 		if (StringUtils.isNotEmpty(requestId)) {
-			request.setAttribute(MDC_ATTRIBUTE_NAME_REQUEST_ID, requestId); // make accessible to access-log
-			MDC.put(MDC_ATTRIBUTE_NAME_REQUEST_ID, requestId);
+			request.setAttribute(REQUEST_ATTRIBUTE_NAME_REQUEST_ID, requestId);
 		}
 
 		if (buildProperties != null) {

@@ -59,7 +59,7 @@ class IdpResponseControllerConsentNotRequiredTests extends IdpResponseController
 					"?token=c3BlY2lmaWNDb21t"));
 
 		assertPendingIdpRequestCommunicationCacheIsEmpty();
-		assertWarningIsLogged(SpecificProxyService.class.getCanonicalName(),
+		assertWarningIsLogged(SpecificProxyService.class,
 				"Ignoring optional attribute BirthName - no mapping configured to extract it's corresponding value from id-token",
 				"Ignoring optional attribute Gender - no mapping configured to extract it's corresponding value from id-token",
 				"Ignoring optional attribute PlaceOfBirth - no mapping configured to extract it's corresponding value from id-token",

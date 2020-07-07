@@ -73,9 +73,7 @@ public class SpecificProxyService {
 
     private final SpecificProxyServiceProperties specificProxyServiceProperties;
 
-    private final OIDCProviderMetadata oidcProviderMetadata;
-
-    private final IDTokenValidator idTokenValidator;
+    private final OIDCProviderMetadataService oidcProviderMetadataService;
 
     private final AttributeRegistry eidasAttributeRegistry;
 
@@ -83,7 +81,8 @@ public class SpecificProxyService {
     public SpecificProxyServiceCommunication.CorrelatedRequestsHolder createOidcAuthenticationRequest(ILightRequest originalIlightRequest) {
         final String state = UUID.randomUUID().toString();
 
-        URI oidAuthenticationRequest = UriComponentsBuilder.fromUri(oidcProviderMetadata.getAuthorizationEndpointURI())
+        URI oidAuthenticationRequest =
+                UriComponentsBuilder.fromUri(oidcProviderMetadataService.getOidcProviderMetadata().getAuthorizationEndpointURI())
                 .queryParam("scope", getScope(originalIlightRequest))
                 .queryParam("response_type", "code")
                 .queryParam("client_id",  specificProxyServiceProperties.getOidc().getClientId())
@@ -104,7 +103,7 @@ public class SpecificProxyService {
 
         try {
 
-            ClaimsSet claims = idTokenValidator.validate(idToken, null);
+            ClaimsSet claims = oidcProviderMetadataService.getIdTokenValidator().validate(idToken, null);
             validateAuthenticationMethodReference(claims);
 
             log.debug("OIDC response successfully verified!");
@@ -140,6 +139,7 @@ public class SpecificProxyService {
                 new Secret(specificProxyServiceProperties.getOidc().getClientSecret())
         );
 
+        OIDCProviderMetadata oidcProviderMetadata = oidcProviderMetadataService.getOidcProviderMetadata();
         URI tokenEndpoint = oidcProviderMetadata.getTokenEndpointURI();
         TokenRequest request = new TokenRequest(oidcProviderMetadata.getTokenEndpointURI(), clientAuth, getAuthorizationGrant(oAuthCode), null, null, null);
         OIDCTokenResponse successResponse = getOidcTokenResponse(tokenEndpoint, request);

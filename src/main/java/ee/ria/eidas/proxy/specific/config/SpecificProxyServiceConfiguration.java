@@ -1,12 +1,6 @@
 package ee.ria.eidas.proxy.specific.config;
 
-import com.nimbusds.oauth2.sdk.http.HTTPRequest;
-import com.nimbusds.oauth2.sdk.http.HTTPResponse;
-import com.nimbusds.oauth2.sdk.id.ClientID;
-import com.nimbusds.oauth2.sdk.id.Issuer;
-import com.nimbusds.openid.connect.sdk.op.OIDCProviderConfigurationRequest;
-import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata;
-import com.nimbusds.openid.connect.sdk.validators.IDTokenValidator;
+import ee.ria.eidas.proxy.specific.service.OIDCProviderMetadataService;
 import ee.ria.eidas.proxy.specific.service.SpecificProxyService;
 import ee.ria.eidas.proxy.specific.storage.IgniteInstanceInitializer;
 import ee.ria.eidas.proxy.specific.storage.SpecificProxyServiceCommunication;
@@ -47,7 +41,6 @@ import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.nimbusds.jose.JWSAlgorithm.RS256;
 import static ee.ria.eidas.proxy.specific.config.SpecificProxyServiceProperties.CacheProperties.*;
 
 @Slf4j
@@ -71,8 +64,8 @@ public class SpecificProxyServiceConfiguration implements WebMvcConfigurer {
     }
 
     @Bean
-    public FilterRegistrationBean disableExtraHttpMethodsFilter(SpecificProxyServiceProperties specificProxyServiceProperties) {
-        final FilterRegistrationBean<DisabledHttpMethodsFilter> bean = new FilterRegistrationBean();
+    public FilterRegistrationBean<DisabledHttpMethodsFilter> disableExtraHttpMethodsFilter(SpecificProxyServiceProperties specificProxyServiceProperties) {
+        final FilterRegistrationBean<DisabledHttpMethodsFilter> bean = new FilterRegistrationBean<>();
         bean.setFilter(new DisabledHttpMethodsFilter(specificProxyServiceProperties.getWebapp().getDisabledHttpMethods()));
         bean.setInitParameters(new HashMap<>());
         return bean;
@@ -81,8 +74,8 @@ public class SpecificProxyServiceConfiguration implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/resources/**")
-          .addResourceLocations("/resources/").setCachePeriod(3600)
-          .resourceChain(true).addResolver(new PathResourceResolver());
+                .addResourceLocations("/resources/").setCachePeriod(3600)
+                .resourceChain(true).addResolver(new PathResourceResolver());
     }
 
     @Bean
@@ -99,32 +92,6 @@ public class SpecificProxyServiceConfiguration implements WebMvcConfigurer {
         ppc.setLocations(new FileUrlResource(specificCommunicationConfig), new FileUrlResource(eidasConfig));
         ppc.setIgnoreUnresolvablePlaceholders(false);
         return ppc;
-    }
-
-    @Bean
-    public OIDCProviderMetadata oidcProviderMetadata(SpecificProxyServiceProperties specificProxyServiceProperties) {
-        try {
-            Issuer issuer = new Issuer(specificProxyServiceProperties.getOidc().getIssuerUrl());
-
-            OIDCProviderConfigurationRequest request = new OIDCProviderConfigurationRequest(issuer);
-            HTTPRequest httpRequest = request.toHTTPRequest();
-            log.info("Fetching OIDC metadata for issuer: " + specificProxyServiceProperties.getOidc().getIssuerUrl());
-            HTTPResponse httpResponse = httpRequest.send();
-
-            return OIDCProviderMetadata.parse(httpResponse.getContentAsJSONObject());
-
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to fetch OpenID Connect provider metadata from issuer: " + specificProxyServiceProperties.getOidc().getIssuerUrl(), e);
-        }
-    }
-
-    @Bean
-    public IDTokenValidator getIdTokenValidator(OIDCProviderMetadata oidcProviderMetadata, SpecificProxyServiceProperties specificProxyServiceProperties) throws MalformedURLException {
-        Issuer iss = new Issuer(oidcProviderMetadata.getIssuer());
-        ClientID clientID = new ClientID(specificProxyServiceProperties.getOidc().getClientId());
-        IDTokenValidator validator = new IDTokenValidator(iss, clientID, RS256, oidcProviderMetadata.getJWKSetURI().toURL());
-        validator.setMaxClockSkew(specificProxyServiceProperties.getOidc().getMaxClockSkewInSeconds());
-        return validator;
     }
 
     @Bean
@@ -183,11 +150,8 @@ public class SpecificProxyServiceConfiguration implements WebMvcConfigurer {
 
     @Bean
     public SpecificProxyService specificProxyService(SpecificProxyServiceProperties specificProxyServiceProperties,
-         OIDCProviderMetadata oidcProviderMetadata,
-         IDTokenValidator idTokenValidator,
-         AttributeRegistry eidasAttributesRegistry) {
-
-        return new SpecificProxyService(specificProxyServiceProperties, oidcProviderMetadata, idTokenValidator, eidasAttributesRegistry);
+                                                     OIDCProviderMetadataService oidcProviderMetadataService, AttributeRegistry eidasAttributesRegistry) {
+        return new SpecificProxyService(specificProxyServiceProperties, oidcProviderMetadataService, eidasAttributesRegistry);
     }
 
     private String getCacheName(SpecificProxyServiceProperties properties, String cacheName) {

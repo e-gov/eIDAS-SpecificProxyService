@@ -269,7 +269,9 @@ Response:
 | `eidas.proxy.oidc.read-timeout-in-milliseconds` | No | Maximum period in milliseconds to wait for the OpenID Connect token endpoint response. Defaults to 5000 milliseconds if not specified. |
 | `eidas.proxy.oidc.max-clock-skew-in-seconds` | No | Sets the maximum allowed clock differences when validating the time ID-token was issued. Defaults to 30 seconds if not specified. |
 | `eidas.proxy.oidc.error-code-user-cancel` | No | <p>The expected error code returned in the OpenID Connect authentication [error response](https://openid.net/specs/openid-connect-core-1_0.html#AuthError) when user cancel's the authentication process at the IDP. </p> <p>Defaults to `user_cancel` when not specified.</p>    |
-
+| `eidas.proxy.oidc.metadata.update-schedule` | No | Metadata update cron schedule. Defaults to `0 0 0/24 * * ?` if not specified. |
+| `eidas.proxy.oidc.metadata.max-attempts` | No | Metadata update retry attempts in case of exception. Defaults to `3` if not specified. |
+| `eidas.proxy.oidc.metadata.backoff-delay-in-milliseconds` | No | Metadata update retry backoff delay in milliseconds. Defaults to `60000` if not specified. |
 
 <a name="configuration_parameters_eidas"></a>
 ### Integration with the `EidasNode` webapp

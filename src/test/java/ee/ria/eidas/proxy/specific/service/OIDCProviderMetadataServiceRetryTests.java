@@ -25,7 +25,7 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 
 @Slf4j
 @SpringBootTest(webEnvironment = RANDOM_PORT, properties = {"eidas.proxy.oidc.metadata.update-schedule=-",
-        "eidas.proxy.oidc.metadata.max-attempts=3", "eidas.proxy.oidc.metadata.backoff-delay=500",
+        "eidas.proxy.oidc.metadata.max-attempts=3", "eidas.proxy.oidc.metadata.backoff-delay-in-milliseconds=500",
         "eidas.proxy.oidc.connect-timeout-in-milliseconds=500"})
 @ContextConfiguration(classes = SpecificProxyServiceConfiguration.class, initializers = OIDCProviderMetadataServiceRetryTests.TestContextInitializer.class)
 class OIDCProviderMetadataServiceRetryTests extends SpecificProxyTest {

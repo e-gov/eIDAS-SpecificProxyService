@@ -43,7 +43,7 @@ public class OIDCProviderMetadataService {
     @PostConstruct
     @Scheduled(cron = "${eidas.proxy.oidc.metadata.update-schedule:0 0 0/24 * * ?}")
     @Retryable(value = {IllegalStateException.class}, maxAttemptsExpression = "${eidas.proxy.oidc.metadata.max-attempts:3}",
-            backoff = @Backoff(delayExpression = "${eidas.proxy.oidc.metadata.backoff-delay:60000}"))
+            backoff = @Backoff(delayExpression = "${eidas.proxy.oidc.metadata.backoff-delay-in-milliseconds:60000}"))
     public void updateMetadata() throws RuntimeException {
         log.info("Updating OIDC metadata for issuer: " + specificProxyServiceProperties.getOidc().getIssuerUrl());
         oidcProviderMetadata.set(requestOidcProviderMetadata());

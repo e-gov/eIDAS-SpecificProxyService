@@ -9,12 +9,14 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
+import static java.time.ZoneId.of;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
@@ -35,7 +37,9 @@ class TruststoreHealthIndicatorTests extends ApplicationHealthTest {
 
     @Test
     public void noTruststoreWarningsWhenWarningPeriodNotMet() {
-        Mockito.when(truststoreHealthIndicator.getCurrentTime()).thenReturn(Instant.parse("2021-04-13T08:50:00Z"));
+        Instant expectedTime = Instant.parse("2021-04-13T08:50:00Z");
+        Mockito.when(truststoreHealthIndicator.getSystemClock()).thenReturn(Clock.fixed(expectedTime, of("UTC")));
+
         Response healthResponse = given()
                 .when()
                 .get(APPLICATION_HEALTH_ENDPOINT_REQUEST)
@@ -51,7 +55,8 @@ class TruststoreHealthIndicatorTests extends ApplicationHealthTest {
 
     @Test
     public void truststoreWarningWhenCertificateAboutToExpire() {
-        Mockito.when(truststoreHealthIndicator.getCurrentTime()).thenReturn(Instant.parse("2021-04-14T08:50:00Z"));
+        Instant expectedTime = Instant.parse("2021-04-14T08:50:00Z");
+        Mockito.when(truststoreHealthIndicator.getSystemClock()).thenReturn(Clock.fixed(expectedTime, of("UTC")));
         Response healthResponse = given()
                 .when()
                 .get(APPLICATION_HEALTH_ENDPOINT_REQUEST)
@@ -71,7 +76,8 @@ class TruststoreHealthIndicatorTests extends ApplicationHealthTest {
 
     @Test
     public void truststoreWarningAndHealthStatusDownWhenCertificateExpired() {
-        Mockito.when(truststoreHealthIndicator.getCurrentTime()).thenReturn(Instant.parse("2021-05-13T08:51:00Z"));
+        Instant expectedTime = Instant.parse("2021-05-13T08:51:00Z");
+        Mockito.when(truststoreHealthIndicator.getSystemClock()).thenReturn(Clock.fixed(expectedTime, of("UTC")));
         Response healthResponse = given()
                 .when()
                 .get(APPLICATION_HEALTH_ENDPOINT_REQUEST)

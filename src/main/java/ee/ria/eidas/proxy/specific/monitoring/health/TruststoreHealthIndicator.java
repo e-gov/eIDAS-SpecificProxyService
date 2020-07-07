@@ -14,6 +14,7 @@ import java.io.FileInputStream;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.Period;
 import java.util.Enumeration;
@@ -45,13 +46,17 @@ public class TruststoreHealthIndicator extends AbstractHealthIndicator {
     @Value("${eidas.proxy.health.trust-store-expiration-warning:30d}")
     private Period trustStoreExpirationWarningPeriod;
 
+    @Getter
+    private Clock systemClock;
+
     public TruststoreHealthIndicator() {
         super("Truststore certificates expiration check failed");
+        this.systemClock = Clock.systemUTC();
     }
 
     @Override
     protected void doHealthCheck(Health.Builder builder) {
-        if (getCertificatesExpiredAt(getCurrentTime()).isEmpty()) {
+        if (getCertificatesExpiredAt(now(getSystemClock())).isEmpty()) {
             builder.up().withDetails(trustStoreCertificates).build();
         } else {
             builder.down().withDetails(trustStoreCertificates).build();
@@ -59,7 +64,7 @@ public class TruststoreHealthIndicator extends AbstractHealthIndicator {
     }
 
     public List<String> getCertificateExpirationWarnings() {
-        return getCertificatesExpiredAt(getCurrentTime().plus(trustStoreExpirationWarningPeriod)).values().stream()
+        return getCertificatesExpiredAt(now(getSystemClock()).plus(trustStoreExpirationWarningPeriod)).values().stream()
                 .map(certificateInfo -> format(TRUSTSTORE_WARNING, certificateInfo.getSubjectDN(),
                         certificateInfo.getSerialNumber(), certificateInfo.getValidTo()))
                 .collect(toList());
@@ -91,10 +96,6 @@ public class TruststoreHealthIndicator extends AbstractHealthIndicator {
                 }
             }
         }
-    }
-
-    Instant getCurrentTime() {
-        return now();
     }
 
     @Builder

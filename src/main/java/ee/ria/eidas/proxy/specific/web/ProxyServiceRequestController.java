@@ -1,6 +1,7 @@
 package ee.ria.eidas.proxy.specific.web;
 
 import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceProperties;
+import ee.ria.eidas.proxy.specific.error.BadRequestException;
 import ee.ria.eidas.proxy.specific.error.RequestDeniedException;
 import ee.ria.eidas.proxy.specific.service.SpecificProxyService;
 import ee.ria.eidas.proxy.specific.storage.EidasNodeCommunication;
@@ -58,6 +59,8 @@ public class ProxyServiceRequestController {
 		String tokenBase64 = getStringParameterValue(request.getToken());
 
 		ILightRequest incomingLightRequest = eidasNodeCommunication.getAndRemoveRequest(tokenBase64);
+		if (incomingLightRequest == null)
+			throw new BadRequestException("Invalid token");
 
 		if (!specificProxyServiceProperties.getSupportedSpTypes().contains(incomingLightRequest.getSpType()))
 			throw new RequestDeniedException("Service provider type not supported. Allowed types: " + specificProxyServiceProperties.getSupportedSpTypes(), incomingLightRequest.getId());

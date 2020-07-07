@@ -573,7 +573,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 					"?token=c3BlY2lmaWNDb21t"));
 
 		assertPendingIdpRequestCommunicationCacheIsEmpty();
-		assertResponseCommunicationCacheContainsUserCancelResponse("User canceled the authentication process", mapEntry.getValue().getILightRequest().getId());
+		assertResponseCommunicationCacheContainsUserCancelResponse("User canceled the authentication process", mapEntry.getValue().getLightRequest().getId());
 	}
 
 	Map.Entry<String, CorrelatedRequestsHolder> addMockRequestToPendingIdpRequestCommunicationCache() throws MalformedURLException {

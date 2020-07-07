@@ -51,7 +51,8 @@
                         "service.type": "specific",
                         "service.node.name": "${log.instance-id:-}",
                         "service.version": "%X{serviceVersion}",
-                        "trace.id": "%X{sessionId:-}",
+                        "session.id": "%X{sessionId:-}",
+                        "trace.id": "%X{spanId:-}",
                         "transaction.id": "%X{traceId:-}",
                         "message": "%message"
                         }
@@ -71,6 +72,8 @@
                 <throwableRootCauseClassName>
                     <fieldName>error.type</fieldName>
                 </throwableRootCauseClassName>
+                <logstashMarkers/>
+                <arguments/>
             </providers>
         </encoder>
         <param name="Append" value="true" />

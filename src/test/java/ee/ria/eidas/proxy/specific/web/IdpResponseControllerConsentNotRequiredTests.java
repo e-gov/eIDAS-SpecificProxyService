@@ -74,7 +74,7 @@ class IdpResponseControllerConsentNotRequiredTests extends IdpResponseController
 
 		Element responseXml = getXmlDocument(list.get(0).getValue());
 		assertThat(responseXml, hasXPath("/lightResponse/id", equalTo("7d02cecd-6a63-4124-97fa-74999817fb08"))); // jti claim value in id-token - token-response-ok.json
-		ILightRequest originalLightRequest = mapEntry.getValue().getILightRequest();
+		ILightRequest originalLightRequest = mapEntry.getValue().getLightRequest();
 		assertThat(responseXml, hasXPath("/lightResponse/inResponseToId", equalTo(originalLightRequest.getId())));
 		assertThat(responseXml, hasXPath("/lightResponse/relayState", equalTo(originalLightRequest.getRelayState())));
 		assertThat(responseXml, hasXPath("/lightResponse/levelOfAssurance", equalTo(originalLightRequest.getLevelOfAssurance().toString())));

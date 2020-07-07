@@ -1,5 +1,9 @@
 package ee.ria.eidas.proxy.specific.storage;
 
+import static ee.ria.eidas.proxy.specific.config.LogFieldNames.*;
+import static net.logstash.logback.argument.StructuredArguments.value;
+import static net.logstash.logback.marker.Markers.*;
+
 import com.google.common.collect.ImmutableSet;
 import ee.ria.eidas.proxy.specific.error.BadRequestException;
 import ee.ria.eidas.proxy.specific.error.RequestDeniedException;
@@ -44,7 +48,6 @@ import java.util.UUID;
 @Slf4j
 @Service
 public class EidasNodeCommunication {
-
 
     @Value("${lightToken.proxyservice.request.issuer.name}")
     private String lightTokenRequestIssuerName;
@@ -103,8 +106,26 @@ public class EidasNodeCommunication {
         final BinaryLightToken binaryLightToken = BinaryLightTokenHelper.createBinaryLightToken(
                 lightTokenResponseIssuerName, lightTokenResponseSecret, lightTokenResponseAlgorithm);
         final String tokenId = binaryLightToken.getToken().getId();
-        eidasResponseCommunicationCache.put(tokenId, codec.marshall(lightResponse));
-        log.info("LightResponse with ID: '{}' was saved. Cache: '{}'. LightResponse: '{}'", tokenId, eidasRequestCommunicationCache.getName(),  lightResponse.toString());
+        boolean isInserted = eidasResponseCommunicationCache.putIfAbsent(tokenId, codec.marshall(lightResponse));
+
+        if (isInserted) {
+
+            if (log.isInfoEnabled())
+                log.info(append(LIGHT_RESPONSE, lightResponse)
+                                .and(append(IGNITE_CACHE_NAME, eidasRequestCommunicationCache.getName())),
+                        "LightResponse with tokenId: '{}' was saved",
+                        value(LIGHT_RESPONSE_LIGHT_TOKEN_ID, tokenId));
+        } else {
+
+            if (log.isWarnEnabled())
+                log.warn(append(LIGHT_RESPONSE, lightResponse)
+                                .and(append(IGNITE_CACHE_NAME, eidasRequestCommunicationCache.getName())),
+                        "LightResponse was not saved. A LightResponse with tokenId: '{}' already exists",
+                        value(LIGHT_RESPONSE_LIGHT_TOKEN_ID, tokenId));
+        }
+
+
+
         return binaryLightToken;
     }
 
@@ -128,10 +149,20 @@ public class EidasNodeCommunication {
 
             String lightRequest = eidasRequestCommunicationCache.getAndRemove(tokenId);
             ILightRequest request = unmarshalRequest(lightRequest, eidasAttributeRegistry.getAttributes());
-            if (request == null)
-                throw new SpecificCommunicationException("The original request has expired or invalid ID was specified");
+            if (request != null) {
 
-            log.info("Lightrequest found from cache for ID: '{}'. Cache: '{}'. Lightrequest: '{}'", tokenId, eidasRequestCommunicationCache.getName(),  request.toString());
+                if (log.isInfoEnabled())
+                    log.info(append(LIGHT_REQUEST, request)
+                                    .and(append(IGNITE_CACHE_NAME, eidasRequestCommunicationCache.getName())),
+                            "LightRequest retrieved from cache for tokenId: {}", value(LIGHT_REQUEST_LIGHT_TOKEN_ID, tokenId));
+            } else {
+
+                if (log.isWarnEnabled())
+                    log.warn(append(IGNITE_CACHE_NAME, eidasRequestCommunicationCache.getName()),
+                            "LightRequest was not found from cache for tokenId: {}", value(LIGHT_REQUEST_LIGHT_TOKEN_ID, tokenId));
+
+            }
+
             return request;
         } catch (SpecificCommunicationException | SecurityEIDASException e) {
             throw new BadRequestException("Invalid token", e);

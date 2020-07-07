@@ -12,9 +12,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
+import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
-import org.springframework.validation.ObjectError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
@@ -35,6 +34,7 @@ import java.util.List;
 public class SpecificProxyServiceExceptionHandler extends ResponseEntityExceptionHandler {
 
     public static final String MULTIPLE_INSTANCES_OF_PARAMETER_IS_NOT_ALLOWED = "using multiple instances of parameter is not allowed";
+    public static final String BAD_REQUEST_ERROR_MESSAGE = "Bad request: %s";
 
     @Autowired
     private SpecificProxyServiceProperties specificProxyServiceProperties;
@@ -47,52 +47,22 @@ public class SpecificProxyServiceExceptionHandler extends ResponseEntityExceptio
     }
 
     @Override
-    protected ResponseEntity<Object> handleMethodArgumentNotValid(
-            MethodArgumentNotValidException ex,
-            HttpHeaders headers,
-            HttpStatus status,
-            WebRequest request) {
-        List<String> errors = new ArrayList<>();
-        for (FieldError error : ex.getBindingResult().getFieldErrors()) {
-            errors.add("Parameter " + error.getField() + ": " + error.getDefaultMessage());
-        }
-        for (ObjectError error : ex.getBindingResult().getGlobalErrors()) {
-            errors.add("Parameter " + error.getObjectName() + ": " + error.getDefaultMessage());
-        }
-
-        ErrorResponse apiError =
-                new ErrorResponse(ex.getLocalizedMessage(), errors);
-        return handleExceptionInternal(
-                ex, apiError, headers, HttpStatus.BAD_REQUEST, request);
-    }
-
-    @Override
     protected ResponseEntity<Object> handleBindException(BindException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
-        List<String> errors = new ArrayList<>();
-        for (FieldError error : ex.getBindingResult().getFieldErrors()) {
-            errors.add("Parameter " + error.getField() + ": " + error.getDefaultMessage());
-        }
-        for (ObjectError error : ex.getBindingResult().getGlobalErrors()) {
-            errors.add("Parameter " + error.getObjectName() + ": " + error.getDefaultMessage());
-        }
-
-        ErrorResponse apiError =
-                new ErrorResponse("Bad request", errors);
-        return handleExceptionInternal(
-                ex, apiError, headers, HttpStatus.BAD_REQUEST, request);
+        List<String> errors = getFieldErrors(ex.getBindingResult());
+        logger.error(String.format(BAD_REQUEST_ERROR_MESSAGE, errors));
+        ErrorResponse apiError = new ErrorResponse("Bad request", errors);
+        return handleExceptionInternal(ex, apiError, headers, HttpStatus.BAD_REQUEST, request);
     }
 
-    @ExceptionHandler( {BadRequestException.class})
+
+    @ExceptionHandler({BadRequestException.class})
     public ResponseEntity<Object> handleBindException(BadRequestException ex, WebRequest request) {
-
-
-        ErrorResponse apiError =
-                new ErrorResponse("Bad request", ex.getMessage());
-        return handleExceptionInternal(
-                ex, apiError, new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
+        logger.error(String.format(BAD_REQUEST_ERROR_MESSAGE, ex.getMessage()));
+        ErrorResponse apiError = new ErrorResponse("Bad request", ex.getMessage());
+        return handleExceptionInternal(ex, apiError, new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
     }
 
-    @ExceptionHandler({ RequestDeniedException.class })
+    @ExceptionHandler({RequestDeniedException.class})
     public RedirectView handleAuthenticationRequestDenied(RequestDeniedException ex, HttpServletRequest request,
                                                           HttpServletResponse response) throws MalformedURLException, SpecificCommunicationException {
 
@@ -105,12 +75,20 @@ public class SpecificProxyServiceExceptionHandler extends ResponseEntityExceptio
         return new RedirectView(redirectUrl.toString());
     }
 
-    @ExceptionHandler({ Exception.class })
+    @ExceptionHandler({Exception.class})
     public ResponseEntity<Object> handleAll(Exception ex, WebRequest request) {
         logger.error("Server encountered an unexpected error: " + ex.getMessage(), ex);
         ErrorResponse apiError = new ErrorResponse("Internal server error", "Something went wrong internally. Please consult server logs for further details.");
         return new ResponseEntity<>(
                 apiError, new HttpHeaders(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    private List<String> getFieldErrors(BindingResult result) {
+        List<String> errors = new ArrayList<>();
+        for (FieldError error : result.getFieldErrors()) {
+            errors.add("Parameter " + error.getField() + ": " + error.getDefaultMessage());
+        }
+        return errors;
     }
 
     @Getter

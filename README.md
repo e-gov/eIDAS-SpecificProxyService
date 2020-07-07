@@ -158,6 +158,7 @@ The following log record fields are supported:
 | `service.type` | Yes | The type of the service data is collected from. Constant value: `specific`. |
 | `service.node.name` | Yes | Unique name of a service node. This allows for two nodes of the same service running on the same host to be differentiated. |
 | `service.version` | No | Version of the service. |
+| `session.id` | No | Unique identifier of the session. Cookie based identifier that enables log correlation between `EidasNode` and `SpecificProxyService` webapps. |
 | `trace.id` | No | Unique identifier of the session. Groups multiple events like transactions that belong together. For example, a user request handled by multiple inter-connected services. |
 | `transaction.id` | No | Unique identifier of the transaction. A transaction is the highest level of work measured within a service, such as a request to a server. |
 | `message` | Yes | The log message. |
@@ -178,7 +179,8 @@ Example log message:
     "service.name": "ee-eidas-proxy",
     "service.type": "specific",
 	"service.node.name": "specificproxy-8ie7665",
-	"trace.id": "43CB9681C492423DFA5DBF892ABA693C",
+    "session.id": "43CB9681C492423DFA5DBF892ABA693C",
+	"trace.id": "49eb6edf9621cea5",
 	"transaction.id": "49eb6edf9621cea5",
 	"message": "Request with ID: 'e1b4f4a9-f59e-44b0-aa17-6acc76ad0412' received"
 }

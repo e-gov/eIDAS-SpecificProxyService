@@ -21,6 +21,10 @@ import java.io.Serializable;
 import java.net.URL;
 import java.util.Map;
 
+import static ee.ria.eidas.proxy.specific.config.LogFieldNames.*;
+import static net.logstash.logback.argument.StructuredArguments.value;
+import static net.logstash.logback.marker.Markers.append;
+
 @Slf4j
 @Service
 public class SpecificProxyServiceCommunication {
@@ -42,7 +46,22 @@ public class SpecificProxyServiceCommunication {
                 specificProxyServiceProperties.getConsentBinaryLightToken().getSecret(),
                 specificProxyServiceProperties.getConsentBinaryLightToken().getAlgorithm());
 
-        idpConsentCommunicationCache.put(binaryLightToken.getToken().getId(), lightResponse);
+        boolean isInserted = idpConsentCommunicationCache.putIfAbsent(binaryLightToken.getToken().getId(), lightResponse);
+
+        if (isInserted) {
+            if (log.isInfoEnabled())
+                log.info(append(LIGHT_RESPONSE, lightResponse)
+                                .and(append(IGNITE_CACHE_NAME, idpConsentCommunicationCache.getName())),
+                        "LightResponse was saved with tokenId: '{}' ",
+                        value(LIGHT_RESPONSE_LIGHT_TOKEN_ID, binaryLightToken.getToken().getId()));
+        } else {
+            if (log.isErrorEnabled())
+                log.error(append(LIGHT_RESPONSE, lightResponse)
+                                .and(append(IGNITE_CACHE_NAME, idpConsentCommunicationCache.getName())),
+                        "LightResponse with tokenId: '{}' already exists",
+                        value(LIGHT_RESPONSE_LIGHT_TOKEN_ID, binaryLightToken.getToken().getId()));
+        }
+
         return binaryLightToken;
     }
 
@@ -54,7 +73,24 @@ public class SpecificProxyServiceCommunication {
                     specificProxyServiceProperties.getConsentBinaryLightToken().getSecret(),
                     specificProxyServiceProperties.getConsentBinaryLightToken().getAlgorithm());
 
-            return idpConsentCommunicationCache.getAndRemove(lightTokenId);
+            ILightResponse lightResponse = idpConsentCommunicationCache.getAndRemove(lightTokenId);
+
+            if (lightResponse != null) {
+
+                if (log.isInfoEnabled())
+                    log.info(append(LIGHT_RESPONSE, lightResponse)
+                                    .and(append(IGNITE_CACHE_NAME, idpConsentCommunicationCache.getName())),
+                            "LightResponse retrieved from cache for tokenId: '{}'",
+                            value(LIGHT_RESPONSE_LIGHT_TOKEN_ID, lightTokenId));
+            } else {
+
+                if (log.isWarnEnabled())
+                    log.warn(append(IGNITE_CACHE_NAME, idpConsentCommunicationCache.getName()),
+                            "LightResponse not found from cache for tokenId: '{}'",
+                            value(LIGHT_RESPONSE_LIGHT_TOKEN_ID, lightTokenId));
+            }
+
+            return lightResponse;
 
         } catch (SpecificCommunicationException | SecurityEIDASException e) {
             throw new BadRequestException("Invalid token", e);
@@ -63,10 +99,21 @@ public class SpecificProxyServiceCommunication {
 
     public void putIdpRequest(String state, CorrelatedRequestsHolder requestsHolder) {
         boolean isInserted = idpRequestCommunicationCache.putIfAbsent(state, requestsHolder);
+
         if (isInserted) {
-            log.info("IDP request with ID: '{}' was saved. Cache: '{}'. IDP request: '{}'", state, idpRequestCommunicationCache.getName(), requestsHolder.getAuthenticationRequest().values());
+
+            if (log.isInfoEnabled())
+                log.info(append(IDP_REQUEST_CORRELATED_REQUESTS, requestsHolder)
+                    .and(append(IGNITE_CACHE_NAME, idpRequestCommunicationCache.getName())),
+                        "Pending IDP request was saved with tokenId: '{}' ",
+                        value(IDP_REQUEST_LIGHT_TOKEN_ID, state));
         } else {
-            log.error("IDP request not stored! Value already exists for key: '{}'! Cache: '{}'. IDP request: '{}'", state, idpRequestCommunicationCache.getName(), requestsHolder.getAuthenticationRequest().values());
+
+            if (log.isErrorEnabled())
+                log.error(append(IDP_REQUEST_CORRELATED_REQUESTS, requestsHolder)
+                            .and(append(IGNITE_CACHE_NAME, idpRequestCommunicationCache.getName())),
+                        "Pending IDP request already exists with tokenId: '{}' ",
+                    value(IDP_REQUEST_LIGHT_TOKEN_ID, state));
         }
     }
 
@@ -74,33 +121,42 @@ public class SpecificProxyServiceCommunication {
         CorrelatedRequestsHolder correlatedRequestsHolder = idpRequestCommunicationCache.getAndRemove(inResponseToId);
 
         if (correlatedRequestsHolder != null) {
-            log.debug("Found and removed IDP request for id: '{}'", inResponseToId);
-            ILightRequest originalLightRequest = correlatedRequestsHolder.getILightRequest();
-            Assert.notNull(correlatedRequestsHolder, "Original lightrequest is required");
+            ILightRequest originalLightRequest = correlatedRequestsHolder.getLightRequest();
+
+            if (log.isInfoEnabled())
+                log.info(append(IDP_REQUEST_CORRELATED_REQUESTS, correlatedRequestsHolder)
+                                .and(append(IGNITE_CACHE_NAME, idpRequestCommunicationCache.getName())),
+                        "Pending IDP request retrieved from cache for id: '{}'",
+                        value(IDP_REQUEST_LIGHT_TOKEN_ID, inResponseToId));
             return originalLightRequest;
         } else {
-            log.warn("Failed to find the IDP request for id: '{}' ", inResponseToId);
+
+            if (log.isWarnEnabled())
+                log.warn(append(IGNITE_CACHE_NAME, idpRequestCommunicationCache.getName()),
+                        "Pending IDP request not found from cache for id: '{}'",
+                        value(IDP_REQUEST_LIGHT_TOKEN_ID, inResponseToId));
+
             return null;
         }
     }
 
     /**
-     * Holds the light request and the correlated specific request.
+     * Holds the light request and the correlated specific IDP request.
      */
     public static class CorrelatedRequestsHolder implements Serializable {
 
         private static final long serialVersionUID = 8942548697342198159L;
 
         @Getter
-        private final ILightRequest iLightRequest;
+        private final ILightRequest lightRequest;
 
         @Getter
         private final Map<String, URL> authenticationRequest;
 
-        public CorrelatedRequestsHolder(ILightRequest iLightRequest, Map<String, URL> authenticationRequest) {
-            Assert.notNull(iLightRequest, "Original LightRequest missing!");
+        public CorrelatedRequestsHolder(ILightRequest lightRequest, Map<String, URL> authenticationRequest) {
+            Assert.notNull(lightRequest, "Original LightRequest missing!");
             Assert.notNull(authenticationRequest, "IDP authentication request missing!");
-            this.iLightRequest = iLightRequest;
+            this.lightRequest = lightRequest;
             this.authenticationRequest = authenticationRequest;
         }
 

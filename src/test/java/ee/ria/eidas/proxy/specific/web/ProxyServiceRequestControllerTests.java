@@ -403,7 +403,7 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 		assertEquals(1, list.size());
 		assertThat(list.get(0).getKey(), matchesPattern(UUID_REGEX));
 
-		ILightRequest cachedLightRequest = list.get(0).getValue().getILightRequest();
+		ILightRequest cachedLightRequest = list.get(0).getValue().getLightRequest();
 		assertEquals(mockLightRequest.getCitizenCountryCode(),cachedLightRequest.getCitizenCountryCode());
 		assertEquals(mockLightRequest.getId(),cachedLightRequest.getId());
 		assertEquals(mockLightRequest.getLevelOfAssurance(),cachedLightRequest.getLevelOfAssurance());

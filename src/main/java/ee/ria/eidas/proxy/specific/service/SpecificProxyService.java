@@ -61,6 +61,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static ee.ria.eidas.proxy.specific.config.LogFieldNames.*;
+import static net.logstash.logback.argument.StructuredArguments.value;
+import static net.logstash.logback.marker.Markers.append;
+
 /**
  * SpecificProxyService: provides implementation for interacting with the selected IdP.
  * For the request: it creates the OIDC protocol authentication request to be send to IdP for authentication
@@ -99,7 +103,10 @@ public class SpecificProxyService {
     public ILightResponse queryIdpForRequestedAttributes(String oAuthCode, ILightRequest originalLightRequest) {
 
         JWT idToken = getIdToken(oAuthCode, new ClientID(specificProxyServiceProperties.getOidc().getClientId()));
-        log.info("ID-TOKEN: " + idToken.getParsedString());
+        log.info(append("idp.token_request.response.id_token", idToken.getParsedString()),
+                "Id-token received for code {} in response to LightRequest with id: '{}'",
+                value(IDP_TOKEN_REQUEST_CODE, oAuthCode),
+                value(IDP_TOKEN_REQUEST_IN_RESPONSE_TO, originalLightRequest.getId()));
 
         try {
 
@@ -140,9 +147,8 @@ public class SpecificProxyService {
         );
 
         OIDCProviderMetadata oidcProviderMetadata = oidcProviderMetadataService.getOidcProviderMetadata();
-        URI tokenEndpoint = oidcProviderMetadata.getTokenEndpointURI();
         TokenRequest request = new TokenRequest(oidcProviderMetadata.getTokenEndpointURI(), clientAuth, getAuthorizationGrant(oAuthCode), null, null, null);
-        OIDCTokenResponse successResponse = getOidcTokenResponse(tokenEndpoint, request);
+        OIDCTokenResponse successResponse = getOidcTokenResponse(request);
 
         return successResponse.getOIDCTokens().getIDToken();
     }
@@ -153,19 +159,21 @@ public class SpecificProxyService {
         return new AuthorizationCodeGrant(authorizationCode, callback);
     }
 
-    private OIDCTokenResponse getOidcTokenResponse(URI tokenEndpoint, TokenRequest request) {
+    private OIDCTokenResponse getOidcTokenResponse(TokenRequest request) {
         try {
-
             HTTPRequest httpRequest = request.toHTTPRequest();
             httpRequest.setConnectTimeout(specificProxyServiceProperties.getOidc().getConnectTimeoutInMilliseconds());
             httpRequest.setReadTimeout(specificProxyServiceProperties.getOidc().getReadTimeoutInMilliseconds());
-            log.info("Request id-token from IDP - HTTP {} {}, Parameters: {}, Connect timeout: {}, Read timeout: {}, Auth method: {}, Client ID: {}",
-                    httpRequest.getMethod(), httpRequest.getURL(),
-                    httpRequest.getQueryParameters(),
-                    httpRequest.getConnectTimeout(),
-                    httpRequest.getReadTimeout(),
-                    request.getClientAuthentication().getMethod(),
-                    request.getClientAuthentication().getClientID());
+
+            log.info(append(IDP_TOKEN_REQUEST_HTTP_QUERY_PARAMS, httpRequest.getQueryParameters())
+                    .and(append(IDP_TOKEN_REQUEST_HTTP_METHOD, httpRequest.getMethod()))
+                    .and(append(IDP_TOKEN_REQUEST_HTTP_CONNECT_TIMEOUT, httpRequest.getConnectTimeout()))
+                    .and(append(IDP_TOKEN_REQUEST_HTTP_READ_TIMEOUT, httpRequest.getReadTimeout()))
+                    .and(append(IDP_TOKEN_REQUEST_AUTH_CLIENT_ID, request.getClientAuthentication().getClientID()))
+                    .and(append(IDP_TOKEN_REQUEST_AUTH_METHOD, request.getClientAuthentication().getMethod())),
+                    "Request id_token from '{}'",
+                    value(IDP_TOKEN_REQUEST_HTTP_URL, httpRequest.getURL()));
+
             TokenResponse tokenResponse = OIDCTokenResponseParser.parse(httpRequest.send());
             if (tokenResponse.indicatesSuccess()) {
                 return (OIDCTokenResponse)tokenResponse.toSuccessResponse();
@@ -201,7 +209,7 @@ public class SpecificProxyService {
     }
 
     private ILightResponse translateToLightResponse(ClaimsSet claimSet, ILightRequest originalLightRequest, IdTokenClaimMappingProperties mappingProperties) throws MalformedURLException, UnknownHostException {
-        log.info("JWT (claims): " + claimSet.toJSONString());
+        log.debug("JWT (claims): " + claimSet.toJSONString());
 
         JSONObject claims = claimSet.toJSONObject();
         String subject = getAttributeValueFromClaims(claims, "subject", mappingProperties.getSubject());

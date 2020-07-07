@@ -91,7 +91,7 @@ class OIDCProviderMetadataServiceRetryTests extends SpecificProxyTest {
 
     @Test
     void maxRetriesWithExceptionWhenInvalidHttpStatus() {
-        mockOidcServer.stubFor(get(urlEqualTo("/.well-known/openid-configuration"))
+        mockOidcServer.stubFor(get(urlEqualTo(OPENID_PROVIDER_WELL_KNOWN_PATH))
                 .willReturn(aResponse()
                         .withStatus(500)
                         .withHeader("Content-Type", "application/json; charset=UTF-8")

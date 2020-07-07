@@ -11,6 +11,7 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.nimbusds.openid.connect.sdk.op.OIDCProviderConfigurationRequest.OPENID_PROVIDER_WELL_KNOWN_PATH;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
@@ -30,7 +31,7 @@ class OIDCProviderMetadataServiceTests extends SpecificProxyTest {
         OIDCProviderMetadata oidcProviderMetadata = oidcProviderMetadataService.getOidcProviderMetadata();
         assertEquals("https://localhost:9877/oidc/jwks", oidcProviderMetadata.getJWKSetURI().toString());
 
-        mockOidcServer.stubFor(get(urlEqualTo("/.well-known/openid-configuration"))
+        mockOidcServer.stubFor(get(urlEqualTo(OPENID_PROVIDER_WELL_KNOWN_PATH))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json; charset=UTF-8")

@@ -47,6 +47,7 @@ import java.util.List;
 
 import static ch.qos.logback.classic.Level.*;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.nimbusds.openid.connect.sdk.op.OIDCProviderConfigurationRequest.OPENID_PROVIDER_WELL_KNOWN_PATH;
 import static io.restassured.config.RedirectConfig.redirectConfig;
 import static io.restassured.config.RestAssuredConfig.config;
 import static java.util.Arrays.stream;
@@ -174,7 +175,7 @@ public abstract class SpecificProxyTest {
         mockOidcServer.stubFor(get(urlEqualTo("/"))
                 .willReturn(aResponse()
                         .withStatus(404)));
-        mockOidcServer.stubFor(get(urlEqualTo("/.well-known/openid-configuration"))
+        mockOidcServer.stubFor(get(urlEqualTo(OPENID_PROVIDER_WELL_KNOWN_PATH))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json; charset=UTF-8")

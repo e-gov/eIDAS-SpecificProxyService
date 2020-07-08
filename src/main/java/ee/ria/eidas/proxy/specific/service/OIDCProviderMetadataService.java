@@ -14,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -41,7 +40,6 @@ public class OIDCProviderMetadataService {
     }
 
     @PostConstruct
-    @Scheduled(cron = "${eidas.proxy.oidc.metadata.update-schedule:0 0 0/24 * * ?}")
     @Retryable(value = {IllegalStateException.class}, maxAttemptsExpression = "${eidas.proxy.oidc.metadata.max-attempts:3}",
             backoff = @Backoff(delayExpression = "${eidas.proxy.oidc.metadata.backoff-delay-in-milliseconds:60000}"))
     public void updateMetadata() throws RuntimeException {

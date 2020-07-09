@@ -19,8 +19,8 @@ public class SpecificProxyApplication extends SpringBootServletInitializer {
 		SpringApplication.run(SpecificProxyApplication.class, args);
 	}
 
-	@Override
-	protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
-		return application.sources(SpecificProxyApplication.class);
-	}
+    @Override
+    protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+        return application.sources(SpecificProxyApplication.class).properties("server.error.whitelabel.enabled=false");
+    }
 }

@@ -17,6 +17,7 @@ import eu.eidas.auth.commons.tx.BinaryLightToken;
 import eu.eidas.specificcommunication.BinaryLightTokenHelper;
 import io.restassured.response.Response;
 import org.apache.http.HttpHeaders;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ContextConfiguration;
@@ -35,7 +36,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.*;
 import static org.hamcrest.core.StringStartsWith.startsWith;
 import static org.hamcrest.text.MatchesPattern.matchesPattern;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -60,9 +61,10 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(400)
-			.body("message", equalTo("Bad request"))
-			.body("errors", hasSize(1))
-			.body("errors", hasItem("Parameter token: must not be null"));
+			.body("error", equalTo("Bad Request"))
+			.body("errors", equalTo("Parameter 'token': must not be null"))
+			.body("incidentNumber", notNullValue())
+			.body("message", equalTo("Validation failed for object='requestParameters'. Error count: 1"));
 
 		assertResponseCommunicationCacheIsEmpty();
 	}
@@ -76,9 +78,10 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(400)
-			.body("message", equalTo("Bad request"))
-			.body("errors", hasSize(1))
-			.body("errors", hasItem("Parameter token[0]: only base64 characters allowed"));
+			.body("error", equalTo("Bad Request"))
+			.body("errors", equalTo("Parameter 'token[0]': only base64 characters allowed"))
+			.body("incidentNumber", notNullValue())
+			.body("message", equalTo("Validation failed for object='requestParameters'. Error count: 1"));
 
 		assertResponseCommunicationCacheIsEmpty();
 	}
@@ -92,9 +95,10 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(400)
-			.body("message", equalTo("Bad request"))
-			.body("errors", hasSize(1))
-			.body("errors", hasItem("Invalid token"));
+			.body("error", equalTo("Bad Request"))
+			.body("errors", nullValue())
+			.body("incidentNumber", notNullValue())
+			.body("message", equalTo("Invalid token"));
 
 		assertResponseCommunicationCacheIsEmpty();
 	}
@@ -112,9 +116,10 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(400)
-			.body("message", equalTo("Bad request"))
-			.body("errors", hasSize(1))
-			.body("errors", hasItem("Parameter token: using multiple instances of parameter is not allowed"));
+			.body("error", equalTo("Bad Request"))
+			.body("errors", equalTo("Parameter 'token': using multiple instances of parameter is not allowed"))
+			.body("incidentNumber", notNullValue())
+			.body("message", equalTo("Validation failed for object='requestParameters'. Error count: 1"));
 
 		assertResponseCommunicationCacheIsEmpty();
 	}
@@ -133,9 +138,10 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(400)
-			.body("message", equalTo("Bad request"))
-			.body("errors", hasSize(1))
-			.body("errors", hasItem("Invalid token"));
+			.body("error", equalTo("Bad Request"))
+			.body("errors", nullValue())
+			.body("incidentNumber", notNullValue())
+			.body("message", equalTo("Invalid token"));
 
 		assertResponseCommunicationCacheIsEmpty();
 	}
@@ -175,9 +181,10 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(400)
-			.body("message", equalTo("Bad request"))
-			.body("errors", hasSize(1))
-			.body("errors", hasItem("Invalid token"));
+			.body("error", equalTo("Bad Request"))
+			.body("errors", nullValue())
+			.body("incidentNumber", notNullValue())
+			.body("message", equalTo("Invalid token"));
 	}
 
 	@Test
@@ -195,9 +202,10 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(500)
-			.body("message", equalTo("Internal server error"))
-			.body("errors", hasSize(1))
-			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
+			.body("error", equalTo("Internal Server Error"))
+			.body("errors", nullValue())
+			.body("incidentNumber", notNullValue())
+			.body("message", equalTo("Something went wrong internally. Please consult server logs for further details."));
 
 		assertErrorIsLogged("Server encountered an unexpected error: Failed to unmarshal incoming request! Attribute http://eidas.europa.eu/attributes/naturalperson/UnknownAttribute not present in the registry");
 		assertResponseCommunicationCacheIsEmpty();
@@ -223,9 +231,10 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(500)
-			.body("message", equalTo("Internal server error"))
-			.body("errors", hasSize(1))
-			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
+			.body("error", equalTo("Internal Server Error"))
+			.body("errors", nullValue())
+			.body("incidentNumber", notNullValue())
+			.body("message", equalTo("Something went wrong internally. Please consult server logs for further details."));
 
 		assertErrorIsLogged("Server encountered an unexpected error: Invalid level of assurance value. Allowed values: http://eidas.europa.eu/LoA/low, http://eidas.europa.eu/LoA/substantial, http://eidas.europa.eu/LoA/high");
 		assertResponseCommunicationCacheIsEmpty();

@@ -78,8 +78,7 @@ public class SpecificProxyServiceCommunication {
             if (lightResponse != null) {
 
                 if (log.isInfoEnabled())
-                    log.info(append(LIGHT_RESPONSE, lightResponse)
-                                    .and(append(IGNITE_CACHE_NAME, idpConsentCommunicationCache.getName())),
+                    log.info(append(IGNITE_CACHE_NAME, idpConsentCommunicationCache.getName()),
                             "LightResponse retrieved from cache for tokenId: '{}'",
                             value(LIGHT_RESPONSE_LIGHT_TOKEN_ID, lightTokenId));
             } else {
@@ -124,8 +123,7 @@ public class SpecificProxyServiceCommunication {
             ILightRequest originalLightRequest = correlatedRequestsHolder.getLightRequest();
 
             if (log.isInfoEnabled())
-                log.info(append(IDP_REQUEST_CORRELATED_REQUESTS, correlatedRequestsHolder)
-                                .and(append(IGNITE_CACHE_NAME, idpRequestCommunicationCache.getName())),
+                log.info(append(IGNITE_CACHE_NAME, idpRequestCommunicationCache.getName()),
                         "Pending IDP request retrieved from cache for id: '{}'",
                         value(IDP_REQUEST_LIGHT_TOKEN_ID, inResponseToId));
             return originalLightRequest;

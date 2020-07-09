@@ -22,8 +22,7 @@ import static ee.ria.eidas.proxy.specific.web.IdpResponseController.ENDPOINT_IDP
 import static io.restassured.RestAssured.given;
 import static io.restassured.config.RedirectConfig.redirectConfig;
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.hasItem;
-import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.*;
 import static org.hamcrest.core.StringStartsWith.startsWith;
 
 abstract class IdpResponseControllerTests extends ControllerTest {
@@ -40,9 +39,10 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(400)
-			.body("message", equalTo("Bad request"))
-			.body("errors", hasSize(1))
-			.body("errors", hasItem("Parameter state: must not be empty"));
+			.body("error", equalTo("Bad Request"))
+			.body("errors", equalTo("Parameter 'state': must not be empty"))
+			.body("incidentNumber", notNullValue())
+			.body("message", equalTo("Validation failed for object='idpCallbackRequest'. Error count: 1"));
 	}
 
 	@Test
@@ -56,9 +56,10 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(400)
-			.body("message", equalTo("Bad request"))
-			.body("errors", hasSize(1))
-			.body("errors", hasItem("Parameter state: using multiple instances of parameter is not allowed"));
+			.body("error", equalTo("Bad Request"))
+			.body("errors", equalTo("Parameter 'state': using multiple instances of parameter is not allowed"))
+			.body("incidentNumber", notNullValue())
+			.body("message", equalTo("Validation failed for object='idpCallbackRequest'. Error count: 1"));
 	}
 
 	@Test
@@ -70,9 +71,10 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(400)
-			.body("message", equalTo("Bad request"))
-			.body("errors", hasSize(1))
-			.body("errors", hasItem("Either error or code parameter is required"));
+			.body("error", equalTo("Bad Request"))
+			.body("errors", nullValue())
+			.body("incidentNumber", notNullValue())
+			.body("message", equalTo("Either error or code parameter is required"));
 	}
 
 	@Test
@@ -86,9 +88,10 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(400)
-			.body("message", equalTo("Bad request"))
-			.body("errors", hasSize(1))
-			.body("errors", hasItem("Either error or code parameter can be present in a callback request. Both code and error parameters found"));
+			.body("error", equalTo("Bad Request"))
+			.body("errors", nullValue())
+			.body("incidentNumber", notNullValue())
+			.body("message", equalTo("Either error or code parameter can be present in a callback request. Both code and error parameters found"));
 	}
 
 	@Test
@@ -101,9 +104,10 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(400)
-			.body("message", equalTo("Bad request"))
-			.body("errors", hasSize(1))
-			.body("errors", hasItem("Invalid state"));
+				.body("error", equalTo("Bad Request"))
+				.body("errors", nullValue())
+				.body("incidentNumber", notNullValue())
+				.body("message", equalTo("Invalid state"));
 	}
 
 	@Test
@@ -117,14 +121,15 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(400)
-			.body("message", equalTo("Bad request"))
-			.body("errors", hasSize(1))
-			.body("errors", hasItem("Invalid state"));
+			.body("error", equalTo("Bad Request"))
+			.body("errors", nullValue())
+			.body("incidentNumber", notNullValue())
+			.body("message", equalTo("Invalid state"));
 	}
 
 	@Test
 	void invalidMethodsNotAllowed() {
-		assertHttpMethodsNotAllowed( ENDPOINT_IDP_RESPONSE, "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "PATCH", "CUSTOM", "HEAD", "TRACE");
+		assertHttpMethodsNotAllowed(ENDPOINT_IDP_RESPONSE, "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "PATCH", "CUSTOM", "HEAD", "TRACE");
 	}
 
 	@Test
@@ -141,9 +146,10 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(500)
-			.body("message", equalTo("Internal server error"))
-			.body("errors", hasSize(1))
-			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
+			.body("error", equalTo("Internal Server Error"))
+			.body("errors", nullValue())
+			.body("incidentNumber", notNullValue())
+			.body("message", equalTo("Something went wrong internally. Please consult server logs for further details."));
 
 		assertErrorIsLogged("Server encountered an unexpected error: OIDC authentication request has returned an error (code = 'invalid_request', description = 'null')");
 		assertPendingIdpRequestCommunicationCacheIsEmpty();
@@ -169,9 +175,10 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(500)
-			.body("message", equalTo("Internal server error"))
-			.body("errors", hasSize(1))
-			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
+			.body("error", equalTo("Internal Server Error"))
+			.body("errors", nullValue())
+			.body("incidentNumber", notNullValue())
+			.body("message", equalTo("Something went wrong internally. Please consult server logs for further details."));
 
 		assertErrorIsLogged("Server encountered an unexpected error: Invalid OIDC token endpoint response! Invalid JSON: Unexpected token <xml/>");
 		assertPendingIdpRequestCommunicationCacheIsEmpty();
@@ -197,9 +204,10 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(500)
-			.body("message", equalTo("Internal server error"))
-			.body("errors", hasSize(1))
-			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
+			.body("error", equalTo("Internal Server Error"))
+			.body("errors", nullValue())
+			.body("incidentNumber", notNullValue())
+			.body("message", equalTo("Something went wrong internally. Please consult server logs for further details."));
 
 		assertErrorIsLogged("Server encountered an unexpected error: Invalid OIDC token endpoint response! Token type must be Bearer");
 		assertPendingIdpRequestCommunicationCacheIsEmpty();
@@ -225,9 +233,10 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(500)
-			.body("message", equalTo("Internal server error"))
-			.body("errors", hasSize(1))
-			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
+			.body("error", equalTo("Internal Server Error"))
+			.body("errors", nullValue())
+			.body("incidentNumber", notNullValue())
+			.body("message", equalTo("Something went wrong internally. Please consult server logs for further details."));
 
 		assertErrorIsLogged("Server encountered an unexpected error: Error when validating id_token! Expired JWT");
 		assertPendingIdpRequestCommunicationCacheIsEmpty();
@@ -253,9 +262,10 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(500)
-			.body("message", equalTo("Internal server error"))
-			.body("errors", hasSize(1))
-			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
+			.body("error", equalTo("Internal Server Error"))
+			.body("errors", nullValue())
+			.body("incidentNumber", notNullValue())
+			.body("message", equalTo("Something went wrong internally. Please consult server logs for further details."));
 
 		assertErrorIsLogged("Server encountered an unexpected error: Error when validating id_token! JWT issue time ahead of current time");
 		assertPendingIdpRequestCommunicationCacheIsEmpty();
@@ -281,9 +291,10 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(500)
-			.body("message", equalTo("Internal server error"))
-			.body("errors", hasSize(1))
-			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
+			.body("error", equalTo("Internal Server Error"))
+			.body("errors", nullValue())
+			.body("incidentNumber", notNullValue())
+			.body("message", equalTo("Something went wrong internally. Please consult server logs for further details."));
 
 		assertErrorIsLogged("Server encountered an unexpected error: Invalid level of assurance in IDP response. Authentication was requested with level 'http://eidas.europa.eu/LoA/high', but IDP response level is 'http://eidas.europa.eu/LoA/low'.");
 		assertPendingIdpRequestCommunicationCacheIsEmpty();
@@ -311,9 +322,10 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(500)
-			.body("message", equalTo("Internal server error"))
-			.body("errors", hasSize(1))
-			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
+			.body("error", equalTo("Internal Server Error"))
+			.body("errors", nullValue())
+			.body("incidentNumber", notNullValue())
+			.body("message", equalTo("Something went wrong internally. Please consult server logs for further details."));
 
 		assertErrorIsLogged("Server encountered an unexpected error: Error when validating id_token! Unexpected JWT issuer: https://invalid-issuer:9877");
 		assertPendingIdpRequestCommunicationCacheIsEmpty();
@@ -341,9 +353,10 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(500)
-			.body("message", equalTo("Internal server error"))
-			.body("errors", hasSize(1))
-			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
+			.body("error", equalTo("Internal Server Error"))
+			.body("errors", nullValue())
+			.body("incidentNumber", notNullValue())
+			.body("message", equalTo("Something went wrong internally. Please consult server logs for further details."));
 
 		assertErrorIsLogged("Server encountered an unexpected error: Error when validating id_token! Unexpected JWT audience: [invalidClientId]");
 		assertPendingIdpRequestCommunicationCacheIsEmpty();
@@ -369,9 +382,10 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(500)
-			.body("message", equalTo("Internal server error"))
-			.body("errors", hasSize(1))
-			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
+			.body("error", equalTo("Internal Server Error"))
+			.body("errors", nullValue())
+			.body("incidentNumber", notNullValue())
+			.body("message", equalTo("Something went wrong internally. Please consult server logs for further details."));
 
 		assertErrorIsLogged("Server encountered an unexpected error: Error when validating id_token! Signed JWT rejected: Invalid signature");
 		assertPendingIdpRequestCommunicationCacheIsEmpty();
@@ -396,9 +410,10 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(500)
-			.body("message", equalTo("Internal server error"))
-			.body("errors", hasSize(1))
-			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
+			.body("error", equalTo("Internal Server Error"))
+			.body("errors", nullValue())
+			.body("incidentNumber", notNullValue())
+			.body("message", equalTo("Something went wrong internally. Please consult server logs for further details."));
 
 		assertErrorIsLogged("Server encountered an unexpected error: IO error while accessing OIDC token endpoint! Read timed out");
 		assertPendingIdpRequestCommunicationCacheIsEmpty();
@@ -426,9 +441,10 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(500)
-			.body("message", equalTo("Internal server error"))
-			.body("errors", hasSize(1))
-			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
+			.body("error", equalTo("Internal Server Error"))
+			.body("errors", nullValue())
+			.body("incidentNumber", notNullValue())
+			.body("message", equalTo("Something went wrong internally. Please consult server logs for further details."));
 
 		assertErrorIsLogged("Server encountered an unexpected error: OIDC token request returned an error! invalid_request");
 		assertPendingIdpRequestCommunicationCacheIsEmpty();
@@ -456,9 +472,10 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(500)
-			.body("message", equalTo("Internal server error"))
-			.body("errors", hasSize(1))
-			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
+			.body("error", equalTo("Internal Server Error"))
+			.body("errors", nullValue())
+			.body("incidentNumber", notNullValue())
+			.body("message", equalTo("Something went wrong internally. Please consult server logs for further details."));
 
 		assertErrorIsLogged("Server encountered an unexpected error: Failed to read attribute (DateOfBirth) value from ID-token with jsonpath ($.profile_attributes.date_of_birth). Please check your configuration");
 		assertPendingIdpRequestCommunicationCacheIsEmpty();
@@ -486,9 +503,10 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(500)
-			.body("message", equalTo("Internal server error"))
-			.body("errors", hasSize(1))
-			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
+			.body("error", equalTo("Internal Server Error"))
+			.body("errors", nullValue())
+			.body("incidentNumber", notNullValue())
+			.body("message", equalTo("Something went wrong internally. Please consult server logs for further details."));
 
 		assertErrorIsLogged("Server encountered an unexpected error: Missing required claim 'amr' in OIDC ID-token");
 		assertPendingIdpRequestCommunicationCacheIsEmpty();
@@ -516,9 +534,10 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(500)
-			.body("message", equalTo("Internal server error"))
-			.body("errors", hasSize(1))
-			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
+			.body("error", equalTo("Internal Server Error"))
+			.body("errors", nullValue())
+			.body("incidentNumber", notNullValue())
+			.body("message", equalTo("Something went wrong internally. Please consult server logs for further details."));
 
 		assertErrorIsLogged("Server encountered an unexpected error: The amr claim returned in the OIDC ID-token response is not allowed by the configuration. amr = '[banklink]', allowed amr values by the configuration = '[idcard, mID]'");
 		assertPendingIdpRequestCommunicationCacheIsEmpty();
@@ -546,9 +565,10 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		.then()
 			.assertThat()
 			.statusCode(500)
-			.body("message", equalTo("Internal server error"))
-			.body("errors", hasSize(1))
-			.body("errors", hasItem("Something went wrong internally. Please consult server logs for further details."));
+			.body("error", equalTo("Internal Server Error"))
+			.body("errors", nullValue())
+			.body("incidentNumber", notNullValue())
+			.body("message", equalTo("Something went wrong internally. Please consult server logs for further details."));
 
 		assertErrorIsLogged("Server encountered an unexpected error: Attribute 'PersonIdentifier' with value 'XX60001019906' does not match the expected format ^EE(?<attributeValue>[\\d]{11,11})$");
 		assertPendingIdpRequestCommunicationCacheIsEmpty();

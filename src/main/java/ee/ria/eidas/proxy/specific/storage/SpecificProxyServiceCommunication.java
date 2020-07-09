@@ -66,7 +66,7 @@ public class SpecificProxyServiceCommunication {
     }
 
     public ILightResponse getAndRemovePendingLightResponse(String binaryLightTokenBase64) {
-        Assert.notNull(StringUtils.isNotEmpty(binaryLightTokenBase64), "Token value cannot be null or empty!");
+        Assert.isTrue(StringUtils.isNotEmpty(binaryLightTokenBase64), "Token value cannot be null or empty!");
 
         try {
             final String lightTokenId = BinaryLightTokenHelper.getBinaryLightTokenId(binaryLightTokenBase64,

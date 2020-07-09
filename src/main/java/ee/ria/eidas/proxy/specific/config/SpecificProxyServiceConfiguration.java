@@ -156,7 +156,7 @@ public class SpecificProxyServiceConfiguration implements WebMvcConfigurer {
 
     private String getCacheName(SpecificProxyServiceProperties properties, String cacheName) {
         Map<String, String> nameMapping = properties.getCommunicationCache().getCacheNameMapping();
-        Assert.notNull(nameMapping.containsKey(cacheName), "Cache name mapping is required for " + cacheName + "!");
+        Assert.isTrue(nameMapping.containsKey(cacheName), "Cache name mapping is required for " + cacheName + "!");
         return nameMapping.get(cacheName);
     }
 }

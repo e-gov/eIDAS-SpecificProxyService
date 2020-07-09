@@ -139,7 +139,7 @@ public class EidasNodeCommunication {
     }
 
     public ILightRequest getAndRemoveRequest(final String tokenBase64) {
-        Assert.notNull(StringUtils.isNotEmpty(tokenBase64), "Token value cannot be null or empty!");
+        Assert.isTrue(StringUtils.isNotEmpty(tokenBase64), "Token value cannot be null or empty!");
 
         try {
             final String tokenId = BinaryLightTokenHelper.getBinaryLightTokenId(tokenBase64,

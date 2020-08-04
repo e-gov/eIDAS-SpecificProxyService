@@ -5,6 +5,7 @@ import ee.ria.eidas.proxy.specific.SpecificProxyTest;
 import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceConfiguration;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -64,6 +65,7 @@ class OIDCProviderMetadataServiceRetryTests extends SpecificProxyTest {
                 "Successfully updated OIDC token validator for issuer: https://localhost:9877");
     }
 
+    @Disabled
     @Test
     void maxRetriesWithExceptionWhenConnectionTimeout() {
         mockOidcServer.stubFor(get(urlEqualTo(OPENID_PROVIDER_WELL_KNOWN_PATH))

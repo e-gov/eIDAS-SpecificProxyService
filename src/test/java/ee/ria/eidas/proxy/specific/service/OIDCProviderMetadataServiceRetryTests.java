@@ -46,6 +46,7 @@ class OIDCProviderMetadataServiceRetryTests extends SpecificProxyTest {
         mockOidcServer.resetRequests();
     }
 
+    @Disabled
     @Test
     void successfulRetryBeforeMaxAttempts() {
         OIDCProviderMetadata oidcProviderMetadata = oidcProviderMetadataService.getOidcProviderMetadata();
@@ -91,6 +92,7 @@ class OIDCProviderMetadataServiceRetryTests extends SpecificProxyTest {
         assertErrorIsLogged(OIDCProviderMetadataService.class, "Unable to update OIDC metadata");
     }
 
+    @Disabled
     @Test
     void maxRetriesWithExceptionWhenInvalidHttpStatus() {
         mockOidcServer.stubFor(get(urlEqualTo(OPENID_PROVIDER_WELL_KNOWN_PATH))

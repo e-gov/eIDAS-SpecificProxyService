@@ -54,7 +54,7 @@ public class ApplicationHealthEndpointTests extends ApplicationHealthTest {
         assertEquals("branch", healthResponse.jsonPath().get("commitBranch"));
         assertNull(healthResponse.jsonPath().get("warnings"));
         assertStartAndUptime(healthResponse);
-        assertDependenciesUp(healthResponse);
+        assertAllDependenciesUp(healthResponse);
     }
 
     @Test
@@ -81,7 +81,7 @@ public class ApplicationHealthEndpointTests extends ApplicationHealthTest {
         assertNull(healthResponse.jsonPath().get("buildTime"));
         assertNull(healthResponse.jsonPath().get("warnings"));
         assertStartAndUptime(healthResponse);
-        assertDependenciesUp(healthResponse);
+        assertAllDependenciesUp(healthResponse);
     }
 
     @Test
@@ -98,6 +98,6 @@ public class ApplicationHealthEndpointTests extends ApplicationHealthTest {
                 .contentType(JSON).extract().response();
         assertNull(healthResponse.jsonPath().get("startTime"));
         assertNull(healthResponse.jsonPath().get("upTime"));
-        assertDependenciesUp(healthResponse);
+        assertAllDependenciesUp(healthResponse);
     }
 }

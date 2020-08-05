@@ -90,7 +90,7 @@ public class IgniteClusterHealthIndicatorTests extends ApplicationHealthTest {
                 .assertThat()
                 .statusCode(200)
                 .contentType(JSON).extract().response();
-        assertDependenciesDown(healthResponse, Dependencies.PROXY_SERVICE_METADATA);
+        assertDependenciesDown(healthResponse, Dependencies.IGNITE_CLUSTER);
 
         setClusterStateActive();
         healthResponse = given()
@@ -157,7 +157,7 @@ public class IgniteClusterHealthIndicatorTests extends ApplicationHealthTest {
                 .assertThat()
                 .statusCode(200)
                 .contentType(JSON).extract().response();
-        assertDependenciesDown(healthResponse, Dependencies.PROXY_SERVICE_METADATA);
+        assertDependenciesDown(healthResponse, Dependencies.IGNITE_CLUSTER);
     }
 
     @SneakyThrows
@@ -174,7 +174,7 @@ public class IgniteClusterHealthIndicatorTests extends ApplicationHealthTest {
                 .assertThat()
                 .statusCode(200)
                 .contentType(JSON).extract().response();
-        assertDependenciesDown(healthResponse, Dependencies.PROXY_SERVICE_METADATA);
+        assertDependenciesDown(healthResponse, Dependencies.IGNITE_CLUSTER);
     }
 
     @SuppressWarnings({"unchecked"})

@@ -56,7 +56,7 @@ public class AuthenticationServiceHealthIndicatorTests extends ApplicationHealth
                 .assertThat()
                 .statusCode(200)
                 .contentType(JSON).extract().response();
-        assertDependenciesDown(healthResponse, Dependencies.PROXY_SERVICE_METADATA);
+        assertDependenciesDown(healthResponse, Dependencies.AUTHENTICATION_SERVICE);
     }
 
     @Test
@@ -70,7 +70,7 @@ public class AuthenticationServiceHealthIndicatorTests extends ApplicationHealth
                 .statusCode(200)
                 .contentType(JSON).extract().response();
         mockOidcServer.start();
-        assertDependenciesDown(healthResponse, Dependencies.PROXY_SERVICE_METADATA);
+        assertDependenciesDown(healthResponse, Dependencies.AUTHENTICATION_SERVICE);
     }
 
     @Test
@@ -85,6 +85,6 @@ public class AuthenticationServiceHealthIndicatorTests extends ApplicationHealth
                 .assertThat()
                 .statusCode(200)
                 .contentType(JSON).extract().response();
-        assertDependenciesDown(healthResponse, Dependencies.PROXY_SERVICE_METADATA);
+        assertDependenciesDown(healthResponse, Dependencies.AUTHENTICATION_SERVICE);
     }
 }

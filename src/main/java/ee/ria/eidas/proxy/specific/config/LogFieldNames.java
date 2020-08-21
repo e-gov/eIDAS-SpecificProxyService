@@ -6,6 +6,7 @@ import lombok.experimental.UtilityClass;
 public class LogFieldNames {
 
     public static final String LIGHT_REQUEST = "light_request";
+    public static final String LIGHT_REQUEST_CITIZEN_COUNTRY_CODE = "light_request.citizen_country_code";
     public static final String LIGHT_REQUEST_LIGHT_TOKEN_ID = "light_request.light_token_id";
 
     public static final String LIGHT_RESPONSE = "light_response";

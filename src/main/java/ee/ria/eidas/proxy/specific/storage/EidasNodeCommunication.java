@@ -152,7 +152,7 @@ public class EidasNodeCommunication {
             if (request != null) {
 
                 if (log.isInfoEnabled())
-                    log.info(append(IGNITE_CACHE_NAME, eidasRequestCommunicationCache.getName()),
+                    log.info(append(LIGHT_REQUEST_CITIZEN_COUNTRY_CODE,request.getCitizenCountryCode()).and(append(IGNITE_CACHE_NAME, eidasRequestCommunicationCache.getName())),
                             "LightRequest retrieved from cache for tokenId: {}", value(LIGHT_REQUEST_LIGHT_TOKEN_ID, tokenId));
             } else {
 

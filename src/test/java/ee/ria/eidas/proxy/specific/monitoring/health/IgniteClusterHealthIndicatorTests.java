@@ -67,13 +67,7 @@ public class IgniteClusterHealthIndicatorTests extends ApplicationHealthTest {
     public void healthStatusUpWhenHealthyCache() {
         cachePuts.set(0);
         cacheRemoves.set(0);
-        Response healthResponse = given()
-                .when()
-                .get(APPLICATION_HEALTH_ENDPOINT_REQUEST)
-                .then()
-                .assertThat()
-                .statusCode(200)
-                .contentType(JSON).extract().response();
+        Response healthResponse = getHealthResponse();
         assertDependenciesUp(healthResponse);
 
         assertEquals(4, cachePuts.get());
@@ -83,23 +77,11 @@ public class IgniteClusterHealthIndicatorTests extends ApplicationHealthTest {
     @Test
     public void healthStatusDownWhenClusterStateInactive() {
         setClusterStateInactive();
-        Response healthResponse = given()
-                .when()
-                .get(APPLICATION_HEALTH_ENDPOINT_REQUEST)
-                .then()
-                .assertThat()
-                .statusCode(200)
-                .contentType(JSON).extract().response();
+        Response healthResponse = getHealthResponse();
         assertDependenciesDown(healthResponse, Dependencies.IGNITE_CLUSTER);
 
         setClusterStateActive();
-        healthResponse = given()
-                .when()
-                .get(APPLICATION_HEALTH_ENDPOINT_REQUEST)
-                .then()
-                .assertThat()
-                .statusCode(200)
-                .contentType(JSON).extract().response();
+        healthResponse = getHealthResponse();
         assertDependenciesUp(healthResponse);
     }
 
@@ -150,13 +132,7 @@ public class IgniteClusterHealthIndicatorTests extends ApplicationHealthTest {
         cacheRemoves.set(0);
         cleanMocks();
         Mockito.doThrow(new CacheException()).when(cache).put(any(), any());
-        Response healthResponse = given()
-                .when()
-                .get(APPLICATION_HEALTH_ENDPOINT_REQUEST)
-                .then()
-                .assertThat()
-                .statusCode(200)
-                .contentType(JSON).extract().response();
+        Response healthResponse = getHealthResponse();
         assertDependenciesDown(healthResponse, Dependencies.IGNITE_CLUSTER);
     }
 
@@ -167,13 +143,7 @@ public class IgniteClusterHealthIndicatorTests extends ApplicationHealthTest {
         cacheRemoves.set(0);
         cleanMocks();
         Mockito.doThrow(new CacheException()).when(cache).getAndRemove(any());
-        Response healthResponse = given()
-                .when()
-                .get(APPLICATION_HEALTH_ENDPOINT_REQUEST)
-                .then()
-                .assertThat()
-                .statusCode(200)
-                .contentType(JSON).extract().response();
+        Response healthResponse = getHealthResponse();
         assertDependenciesDown(healthResponse, Dependencies.IGNITE_CLUSTER);
     }
 

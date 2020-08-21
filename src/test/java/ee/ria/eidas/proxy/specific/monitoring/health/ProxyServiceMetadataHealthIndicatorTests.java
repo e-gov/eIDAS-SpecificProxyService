@@ -30,13 +30,7 @@ public class ProxyServiceMetadataHealthIndicatorTests extends ApplicationHealthT
         mockEidasNodeServer.stubFor(get(urlEqualTo("/EidasNode/ServiceMetadata"))
                 .willReturn(aResponse()
                         .withStatus(404)));
-        Response healthResponse = given()
-                .when()
-                .get(APPLICATION_HEALTH_ENDPOINT_REQUEST)
-                .then()
-                .assertThat()
-                .statusCode(200)
-                .contentType(JSON).extract().response();
+        Response healthResponse = getHealthResponse();
         assertDependenciesDown(healthResponse, Dependencies.PROXY_SERVICE_METADATA);
     }
 }

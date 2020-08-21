@@ -34,13 +34,7 @@ public class AuthenticationServiceHealthIndicatorTests extends ApplicationHealth
         mockOidcServer.stubFor(get(urlEqualTo(OPENID_PROVIDER_WELL_KNOWN_PATH))
                 .willReturn(aResponse()
                         .withStatus(HTTP_OK)));
-        Response healthResponse = given()
-                .when()
-                .get(APPLICATION_HEALTH_ENDPOINT_REQUEST)
-                .then()
-                .assertThat()
-                .statusCode(200)
-                .contentType(JSON).extract().response();
+        Response healthResponse = getHealthResponse();
         assertDependenciesUp(healthResponse);
     }
 
@@ -49,26 +43,14 @@ public class AuthenticationServiceHealthIndicatorTests extends ApplicationHealth
         mockOidcServer.stubFor(get(urlEqualTo(OPENID_PROVIDER_WELL_KNOWN_PATH))
                 .willReturn(aResponse()
                         .withStatus(HTTP_NOT_FOUND)));
-        Response healthResponse = given()
-                .when()
-                .get(APPLICATION_HEALTH_ENDPOINT_REQUEST)
-                .then()
-                .assertThat()
-                .statusCode(200)
-                .contentType(JSON).extract().response();
+        Response healthResponse = getHealthResponse();
         assertDependenciesDown(healthResponse, Dependencies.AUTHENTICATION_SERVICE);
     }
 
     @Test
     public void healthStatusDownWhenConnectionRefused() {
         mockOidcServer.stop();
-        Response healthResponse = given()
-                .when()
-                .get(APPLICATION_HEALTH_ENDPOINT_REQUEST)
-                .then()
-                .assertThat()
-                .statusCode(200)
-                .contentType(JSON).extract().response();
+        Response healthResponse = getHealthResponse();
         mockOidcServer.start();
         assertDependenciesDown(healthResponse, Dependencies.AUTHENTICATION_SERVICE);
     }
@@ -78,13 +60,7 @@ public class AuthenticationServiceHealthIndicatorTests extends ApplicationHealth
         mockOidcServer.stubFor(get(urlEqualTo(OPENID_PROVIDER_WELL_KNOWN_PATH))
                 .willReturn(aResponse()
                         .withStatus(HTTP_INTERNAL_ERROR)));
-        Response healthResponse = given()
-                .when()
-                .get(APPLICATION_HEALTH_ENDPOINT_REQUEST)
-                .then()
-                .assertThat()
-                .statusCode(200)
-                .contentType(JSON).extract().response();
+        Response healthResponse = getHealthResponse();
         assertDependenciesDown(healthResponse, Dependencies.AUTHENTICATION_SERVICE);
     }
 }

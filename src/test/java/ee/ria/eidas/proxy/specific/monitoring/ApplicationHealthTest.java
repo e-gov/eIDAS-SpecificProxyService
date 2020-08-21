@@ -13,6 +13,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.restassured.RestAssured.given;
+import static io.restassured.http.ContentType.JSON;
 import static java.lang.Double.valueOf;
 import static java.time.Instant.ofEpochMilli;
 import static java.util.Arrays.asList;
@@ -31,6 +33,16 @@ public abstract class ApplicationHealthTest extends SpecificProxyTest {
 
     protected static void setClusterStateActive() {
         eidasNodeIgnite.cluster().active(true);
+    }
+
+    protected Response getHealthResponse() {
+        return given()
+                .when()
+                .get(APPLICATION_HEALTH_ENDPOINT_REQUEST)
+                .then()
+                .assertThat()
+                .statusCode(200)
+                .contentType(JSON).extract().response();
     }
 
     protected void assertAllDependenciesUp(Response healthResponse) {

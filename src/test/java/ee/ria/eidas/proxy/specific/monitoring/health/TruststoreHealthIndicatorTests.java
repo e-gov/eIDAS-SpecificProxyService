@@ -39,14 +39,7 @@ class TruststoreHealthIndicatorTests extends ApplicationHealthTest {
     public void noTruststoreWarningsWhenWarningPeriodNotMet() {
         Instant expectedTime = Instant.parse("2021-04-13T08:50:00Z");
         Mockito.when(truststoreHealthIndicator.getSystemClock()).thenReturn(Clock.fixed(expectedTime, of("UTC")));
-
-        Response healthResponse = given()
-                .when()
-                .get(APPLICATION_HEALTH_ENDPOINT_REQUEST)
-                .then()
-                .assertThat()
-                .statusCode(200)
-                .contentType(JSON).extract().response();
+        Response healthResponse = getHealthResponse();
 
         List<String> warnings = healthResponse.jsonPath().getList("warnings");
         assertNull(warnings);
@@ -57,13 +50,7 @@ class TruststoreHealthIndicatorTests extends ApplicationHealthTest {
     public void truststoreWarningWhenCertificateAboutToExpire() {
         Instant expectedTime = Instant.parse("2021-04-14T08:50:00Z");
         Mockito.when(truststoreHealthIndicator.getSystemClock()).thenReturn(Clock.fixed(expectedTime, of("UTC")));
-        Response healthResponse = given()
-                .when()
-                .get(APPLICATION_HEALTH_ENDPOINT_REQUEST)
-                .then()
-                .assertThat()
-                .statusCode(200)
-                .contentType(JSON).extract().response();
+        Response healthResponse = getHealthResponse();
 
         List<String> warnings = healthResponse.jsonPath().getList("warnings");
         assertNotNull(warnings);
@@ -78,13 +65,7 @@ class TruststoreHealthIndicatorTests extends ApplicationHealthTest {
     public void truststoreWarningAndHealthStatusDownWhenCertificateExpired() {
         Instant expectedTime = Instant.parse("2021-05-13T08:51:00Z");
         Mockito.when(truststoreHealthIndicator.getSystemClock()).thenReturn(Clock.fixed(expectedTime, of("UTC")));
-        Response healthResponse = given()
-                .when()
-                .get(APPLICATION_HEALTH_ENDPOINT_REQUEST)
-                .then()
-                .assertThat()
-                .statusCode(200)
-                .contentType(JSON).extract().response();
+        Response healthResponse = getHealthResponse();
 
         List<String> warnings = healthResponse.jsonPath().getList("warnings");
         assertNotNull(warnings);

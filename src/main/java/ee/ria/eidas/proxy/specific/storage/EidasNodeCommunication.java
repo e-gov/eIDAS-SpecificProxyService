@@ -265,10 +265,8 @@ public class EidasNodeCommunication {
             if (nameUri == null) {
                 throw new SpecificCommunicationException("Invalid lookup nameUri");
             }
-            for (Iterator<AttributeDefinition<?>> iterator = registry.iterator(); iterator.hasNext();) {
-                AttributeDefinition<?> next = iterator.next();
-                Assert.notNull(next.getNameUri(), String.format("Attribute with null nameUri: %s , present in the registry", next));
-                if (next.getNameUri().equals(nameUri)) {
+            for (AttributeDefinition<?> next : registry) {
+                if (nameUri.equals(next.getNameUri())) {
                     return next;
                 }
             }

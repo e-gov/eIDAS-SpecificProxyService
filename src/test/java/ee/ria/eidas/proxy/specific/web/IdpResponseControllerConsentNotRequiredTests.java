@@ -4,7 +4,10 @@ import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceConfiguration;
 import ee.ria.eidas.proxy.specific.service.SpecificProxyService;
 import ee.ria.eidas.proxy.specific.storage.SpecificProxyServiceCommunication.CorrelatedRequestsHolder;
 import eu.eidas.auth.commons.light.ILightRequest;
+import eu.eidas.auth.commons.light.impl.LightRequest;
+import eu.eidas.auth.commons.protocol.impl.SamlNameIdFormat;
 import io.restassured.RestAssured;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHeaders;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -67,6 +70,36 @@ class IdpResponseControllerConsentNotRequiredTests extends IdpResponseController
 		assertResponse(mapEntry);
 	}
 
+	@Test
+	void redirectToEidasnodeWhenValidResponseAndConsentNotRequired_NameIdSpecified() throws Exception {
+
+		String code = UUID.randomUUID().toString();
+		createMockOidcServerResponse_successfulAuthentication(code);
+		Map.Entry<String, CorrelatedRequestsHolder> mapEntry = addMockRequestToPendingIdpRequestCommunicationCache(
+				createDefaultLightRequest(SamlNameIdFormat.PERSISTENT.getNameIdFormat()));
+
+		given()
+			.param("code", code)
+			.param("state", mapEntry.getKey())
+			.param("unknown-parameter-that-should-be-ignored", " * ? / \\ | < > , . ( ) [ ] { } ; : ‘ @ # $ % ^ &´`?0àáâãäåçèéêëìíîðñòôõöö")
+			.config(RestAssured.config().redirect(redirectConfig().followRedirects(false)))
+		.when()
+			.get(ENDPOINT_IDP_RESPONSE)
+		.then()
+			.assertThat()
+			.statusCode(302)
+			.header(HttpHeaders.LOCATION, startsWith("https://ee-eidas-proxy:8083/EidasNode/SpecificProxyServiceResponse" +
+					"?token=c3BlY2lmaWNDb21t"));
+
+		assertPendingIdpRequestCommunicationCacheIsEmpty();
+		assertWarningIsLogged(SpecificProxyService.class,
+				"Ignoring optional attribute BirthName - no mapping configured to extract it's corresponding value from id-token",
+				"Ignoring optional attribute Gender - no mapping configured to extract it's corresponding value from id-token",
+				"Ignoring optional attribute PlaceOfBirth - no mapping configured to extract it's corresponding value from id-token",
+				"Ignoring optional attribute CurrentAddress - no mapping configured to extract it's corresponding value from id-token");
+		assertResponse(mapEntry);
+	}
+
 	private void assertResponse(Map.Entry<String, CorrelatedRequestsHolder> mapEntry) throws SAXException, IOException, ParserConfigurationException {
 		List<Cache.Entry<String, String>> list = getListFromIterator(getEidasNodeResponseCommunicationCache().iterator());
 		assertEquals(1, list.size());
@@ -80,10 +113,16 @@ class IdpResponseControllerConsentNotRequiredTests extends IdpResponseController
 		assertThat(responseXml, hasXPath("/lightResponse/levelOfAssurance", equalTo(originalLightRequest.getLevelOfAssurance().toString())));
 		assertThat(responseXml, hasXPath("/lightResponse/issuer", equalTo("https://localhost:9877"))); // iss claim value in id-token - token-response-ok.json
 		assertThat(responseXml, hasXPath("/lightResponse/subject", equalTo("EE60001019906"))); // sub claim value in id-token - token-response-ok.json
-		assertThat(responseXml, hasXPath("/lightResponse/subjectNameIdFormat", equalTo("urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified")));
 		assertThat(responseXml, hasXPath("/lightResponse/ipAddress", matchesPattern(IP_REGEX)));
 		assertThat(responseXml, hasXPath("/lightResponse/status/statusCode", equalTo("urn:oasis:names:tc:SAML:2.0:status:Success")));
 		assertThat(responseXml, hasXPath("/lightResponse/status/failure", equalTo("false")));
+
+		if (StringUtils.isNotEmpty(originalLightRequest.getNameIdFormat())) {
+			assertThat(responseXml, hasXPath("/lightResponse/subjectNameIdFormat", equalTo(originalLightRequest.getNameIdFormat())));
+		} else {
+			assertThat(responseXml, hasXPath("/lightResponse/subjectNameIdFormat", equalTo("urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified")));
+		}
+
 		assertThat(responseXml, hasXPath("count(/lightResponse/attributes/attribute)", equalTo("4")));
 		assertThat(responseXml, hasXPath("/lightResponse/attributes/attribute[definition = 'http://eidas.europa.eu/attributes/naturalperson/PersonIdentifier']/value", equalTo("60001019906"))); // id code from sub claim value in id-token - token-response-ok.json
 		assertThat(responseXml, hasXPath("/lightResponse/attributes/attribute[definition = 'http://eidas.europa.eu/attributes/naturalperson/DateOfBirth']/value", equalTo("2000-01-01"))); // profile_attributes.date_of_birth claim value in id-token - token-response-ok.json

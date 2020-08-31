@@ -107,7 +107,7 @@ public class LightRequestTestHelper {
             .put(EidasSpec.Definitions.SIC, new StringAttributeValue(""))
             .build();
 
-    public static ILightRequest createLightRequest(String citizenCountry, String issuerName, String relayState, String loa, String spType, String spName, ImmutableAttributeMap requestedAttributes) {
+    public static ILightRequest createLightRequest(String citizenCountry, String issuerName, String relayState, String loa, String spType, String spName, ImmutableAttributeMap requestedAttributes, String nameIdFormat) {
 
         final LightRequest.Builder builder = LightRequest.builder()
                 .id(UUID.randomUUID().toString())
@@ -117,6 +117,7 @@ public class LightRequestTestHelper {
                 .providerName(spName)
                 .relayState(relayState)
                 .levelOfAssurance(loa)
+                .nameIdFormat(nameIdFormat)
                 .requestedAttributes(requestedAttributes);
 
         return builder.build();
@@ -140,14 +141,19 @@ public class LightRequestTestHelper {
         return builder.build();
     }
 
+    public static ILightRequest createDefaultLightRequest(String nameIdFormat) {
+        return createLightRequest(MOCK_CITIZEN_COUNTRY, MOCK_ISSUER_NAME, MOCK_RELAY_STATE, MOCK_LOA_HIGH, MOCK_SP_TYPE,
+                MOCK_PROVIDER_NAME, NATURAL_PERSON_ALL_ATTRIBUTES, nameIdFormat);
+    }
+
     public static ILightRequest createLightRequest(ImmutableAttributeMap requestedAttributes) {
         return createLightRequest("citizenCountry", MOCK_ISSUER_NAME, MOCK_RELAY_STATE, MOCK_LOA_HIGH,
-                MOCK_SP_TYPE, MOCK_PROVIDER_NAME, requestedAttributes);
+                MOCK_SP_TYPE, MOCK_PROVIDER_NAME, requestedAttributes, null);
     }
 
     public static ILightRequest createDefaultLightRequest() {
         return createLightRequest(MOCK_CITIZEN_COUNTRY, MOCK_ISSUER_NAME, MOCK_RELAY_STATE, MOCK_LOA_HIGH, MOCK_SP_TYPE,
-                MOCK_PROVIDER_NAME, NATURAL_PERSON_ALL_ATTRIBUTES);
+                MOCK_PROVIDER_NAME, NATURAL_PERSON_ALL_ATTRIBUTES, null);
     }
 
     public static ILightResponse createDefaultLightResponse() {

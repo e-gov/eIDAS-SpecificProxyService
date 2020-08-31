@@ -1,6 +1,7 @@
 package ee.ria.eidas.proxy.specific.web;
 
 import ee.ria.eidas.proxy.specific.storage.SpecificProxyServiceCommunication.CorrelatedRequestsHolder;
+import eu.eidas.auth.commons.light.ILightRequest;
 import io.restassured.RestAssured;
 import org.apache.http.HttpHeaders;
 import org.junit.jupiter.api.Test;
@@ -597,13 +598,16 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 	}
 
 	Map.Entry<String, CorrelatedRequestsHolder> addMockRequestToPendingIdpRequestCommunicationCache() throws MalformedURLException {
+		return addMockRequestToPendingIdpRequestCommunicationCache(createDefaultLightRequest());
+	}
+
+	Map.Entry<String, CorrelatedRequestsHolder> addMockRequestToPendingIdpRequestCommunicationCache(ILightRequest lightRequest) throws MalformedURLException {
 		String stateParameterValue = UUID.randomUUID().toString();
-		CorrelatedRequestsHolder requestsHolder = new CorrelatedRequestsHolder(createDefaultLightRequest(), Collections.singletonMap(stateParameterValue, new URL("http://oidAuthenticationRequest")));
+		CorrelatedRequestsHolder requestsHolder = new CorrelatedRequestsHolder(lightRequest, Collections.singletonMap(stateParameterValue, new URL("http://oidAuthenticationRequest")));
 		Map.Entry<String, CorrelatedRequestsHolder> mapEntry = new AbstractMap.SimpleEntry<String, CorrelatedRequestsHolder>(stateParameterValue, requestsHolder);
 		getIdpRequestCommunicationCache().put(stateParameterValue, requestsHolder);
 		return mapEntry;
 	}
-
 
 	void createMockOidcServerResponse_successfulAuthentication(String code) throws UnsupportedEncodingException {
 		mockOidcServer.stubFor(post(urlEqualTo("/oidc/token"))

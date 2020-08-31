@@ -31,7 +31,6 @@ import com.nimbusds.openid.connect.sdk.OIDCTokenResponse;
 import com.nimbusds.openid.connect.sdk.OIDCTokenResponseParser;
 import com.nimbusds.openid.connect.sdk.claims.ClaimsSet;
 import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata;
-import com.nimbusds.openid.connect.sdk.validators.IDTokenValidator;
 import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceProperties;
 import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceProperties.IdTokenClaimMappingProperties;
 import ee.ria.eidas.proxy.specific.storage.SpecificProxyServiceCommunication;
@@ -227,10 +226,19 @@ public class SpecificProxyService {
                 .relayState(originalLightRequest.getRelayState())
                 .status(ResponseStatus.builder().statusCode(EIDASStatusCode.SUCCESS_URI.getValue()).build())
                 .subject(subject)
-                .subjectNameIdFormat(SamlNameIdFormat.UNSPECIFIED.getNameIdFormat())
+                .subjectNameIdFormat(getNameIdFormat(originalLightRequest).toString())
                 .attributes(attributes);
 
         return builder.build();
+    }
+
+    private SamlNameIdFormat getNameIdFormat(ILightRequest originalLightRequest) {
+        if (StringUtils.isNotEmpty(originalLightRequest.getNameIdFormat())) {
+            return SamlNameIdFormat.fromString(originalLightRequest.getNameIdFormat());
+        } else {
+            return SamlNameIdFormat.UNSPECIFIED;
+        }
+
     }
 
     private ImmutableAttributeMap getAttributes(ILightRequest lightRequest, JSONObject claims, IdTokenClaimMappingProperties mappingProperties) {

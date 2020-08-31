@@ -6,6 +6,7 @@ import ee.ria.eidas.proxy.specific.error.RequestDeniedException;
 import ee.ria.eidas.proxy.specific.service.SpecificProxyService;
 import ee.ria.eidas.proxy.specific.storage.EidasNodeCommunication;
 import ee.ria.eidas.proxy.specific.storage.SpecificProxyServiceCommunication;
+import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.light.ILightRequest;
 import eu.eidas.specificcommunication.exception.SpecificCommunicationException;
 import lombok.Data;
@@ -20,10 +21,13 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static ee.ria.eidas.proxy.specific.error.SpecificProxyServiceExceptionHandler.MULTIPLE_INSTANCES_OF_PARAMETER_IS_NOT_ALLOWED;
 import static ee.ria.eidas.proxy.specific.web.filter.HttpRequestHelper.getStringParameterValue;
+import static java.util.stream.Collectors.toList;
 
 @Slf4j
 @Validated
@@ -65,11 +69,21 @@ public class ProxyServiceRequestController {
 		if (!specificProxyServiceProperties.getSupportedSpTypes().contains(incomingLightRequest.getSpType()))
 			throw new RequestDeniedException("Service provider type not supported. Allowed types: " + specificProxyServiceProperties.getSupportedSpTypes(), incomingLightRequest.getId());
 
+		if (specificProxyServiceProperties.isLegalPersonAttributesNotAccepted()
+				&& containsLegalPersonAttributes(incomingLightRequest))
+			throw new BadRequestException("Support for legal person attributes has been temporarily suspended");
+
 		SpecificProxyServiceCommunication.CorrelatedRequestsHolder correlatedRequestsHolder = specificProxyService.createOidcAuthenticationRequest(incomingLightRequest);
 
 		specificProxyServiceCommunication.putIdpRequest(correlatedRequestsHolder.getIdpAuthenticationRequestState(), correlatedRequestsHolder);
 
 		return new ModelAndView("redirect:" + correlatedRequestsHolder.getIdpAuthenticationRequest());
+	}
+
+	private boolean containsLegalPersonAttributes(ILightRequest incomingLightRequest) {
+		List<String> requestAttributesByFriendlyName = incomingLightRequest.getRequestedAttributes().getAttributeMap().keySet()
+				.stream().map(AttributeDefinition::getFriendlyName).collect(toList());
+		return !Collections.disjoint(Arrays.asList("LegalName", "LegalPersonIdentifier"), requestAttributesByFriendlyName);
 	}
 
 	@Data

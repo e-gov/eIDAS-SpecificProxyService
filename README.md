@@ -186,6 +186,7 @@ Example log message:
 }
 ````
 
+<a name="heartbeat"></a>
 ## 6. Monitoring
 
 `SpecificProxyService` webapp uses `Spring Boot Actuator` for monitoring. To customize Monitoring, Metrics, Auditing, and more see [Spring Boot Actuator documentation](https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-features.html#production-ready).    

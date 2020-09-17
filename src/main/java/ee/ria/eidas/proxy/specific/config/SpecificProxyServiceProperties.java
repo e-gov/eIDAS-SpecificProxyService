@@ -46,7 +46,7 @@ public class SpecificProxyServiceProperties {
         assertOidcClaimMappingsConfigurationPresent();
         assertOidcClaimMappingPostProcessingRules();
 
-        log.info("Configuration: " + toString());
+        log.info("Configuration: {}", toString());
     }
 
     private boolean askConsent = true;

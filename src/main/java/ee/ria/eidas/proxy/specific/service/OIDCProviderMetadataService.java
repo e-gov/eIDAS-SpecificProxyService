@@ -45,7 +45,7 @@ public class OIDCProviderMetadataService {
     @Retryable(value = {IllegalStateException.class}, maxAttemptsExpression = "${eidas.proxy.oidc.metadata.max-attempts:3}",
             backoff = @Backoff(delayExpression = "${eidas.proxy.oidc.metadata.backoff-delay-in-milliseconds:60000}"))
     public void updateMetadata() throws RuntimeException {
-        log.info("Updating OIDC metadata for issuer: " + specificProxyServiceProperties.getOidc().getIssuerUrl());
+        log.info("Updating OIDC metadata for issuer: {}", specificProxyServiceProperties.getOidc().getIssuerUrl());
         oidcProviderMetadata.set(requestOidcProviderMetadata());
         oidcIDTokenValidator.set(createIdTokenValidator());
     }
@@ -68,7 +68,7 @@ public class OIDCProviderMetadataService {
                         + issuerUrl + ", Invalid response status: " + httpResponse.getStatusCode());
             }
             OIDCProviderMetadata oidcProviderMetadata = OIDCProviderMetadata.parse(httpResponse.getContentAsJSONObject());
-            log.info("Successfully updated OIDC metadata for issuer: " + issuerUrl);
+            log.info("Successfully updated OIDC metadata for issuer: {}", issuerUrl);
             return oidcProviderMetadata;
         } catch (IllegalStateException e) {
             throw e;
@@ -89,7 +89,7 @@ public class OIDCProviderMetadataService {
             }
             IDTokenValidator validator = new IDTokenValidator(iss, clientID, RS256, jwkSetURL);
             validator.setMaxClockSkew(specificProxyServiceProperties.getOidc().getMaxClockSkewInSeconds());
-            log.info("Successfully updated OIDC token validator for issuer: " + specificProxyServiceProperties.getOidc().getIssuerUrl());
+            log.info("Successfully updated OIDC token validator for issuer: {}", specificProxyServiceProperties.getOidc().getIssuerUrl());
             return validator;
         } catch (Exception e) {
             throw new IllegalStateException("Failed to setup OpenID Connect token validator for issuer: " + specificProxyServiceProperties.getOidc().getIssuerUrl(), e);

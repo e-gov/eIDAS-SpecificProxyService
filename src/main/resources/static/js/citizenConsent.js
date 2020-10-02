@@ -30,7 +30,6 @@ function init () {
     initJSEnabledContainers();
     document.getElementById("buttonNext").addEventListener("click", function () {submitSendFormAction()});
     document.getElementById("buttonCancel").addEventListener("click", function () {submitCancelFormAction()});
-    document.getElementById("stepstatusjs").style.display = "block" ;
     document.getElementById("buttongroupjsjs").style.display = "block" ;
 }
 

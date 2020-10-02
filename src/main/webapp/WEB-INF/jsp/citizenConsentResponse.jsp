@@ -41,7 +41,6 @@
                     </div>
                 </div>
                 <div class="col-right-content">
-                    <jsp:include page="include/proxyService-content-security-header-deactivated.jsp"/>
                     <form id="consentSelector" name="consentSelector" method="${e:forHtml(binding)}"
                           action="${e:forHtml(redirectUrl)}">
                         <jsp:include page="include/proxyServiceTitleWithAssurance.jsp"/>

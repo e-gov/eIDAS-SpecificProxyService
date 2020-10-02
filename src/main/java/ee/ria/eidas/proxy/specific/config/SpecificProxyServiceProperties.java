@@ -78,7 +78,7 @@ public class SpecificProxyServiceProperties {
     @Data
     public static class WebappProperties {
 
-        private List<HttpMethod> disabledHttpMethods = asList(GET, POST);
+        private List<HttpMethod> allowedHttpMethods = asList(GET, POST);
 
         private String sessionIdCookieName = "JSESSIONID";
     }

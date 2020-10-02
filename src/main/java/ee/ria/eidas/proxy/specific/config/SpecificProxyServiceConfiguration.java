@@ -4,7 +4,6 @@ import ee.ria.eidas.proxy.specific.service.OIDCProviderMetadataService;
 import ee.ria.eidas.proxy.specific.service.SpecificProxyService;
 import ee.ria.eidas.proxy.specific.storage.IgniteInstanceInitializer;
 import ee.ria.eidas.proxy.specific.storage.SpecificProxyServiceCommunication;
-import ee.ria.eidas.proxy.specific.web.filter.DisabledHttpMethodsFilter;
 import eu.eidas.auth.commons.attribute.AttributeRegistries;
 import eu.eidas.auth.commons.attribute.AttributeRegistry;
 import eu.eidas.auth.commons.light.ILightResponse;
@@ -17,7 +16,6 @@ import org.apache.ignite.Ignite;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -38,7 +36,6 @@ import javax.cache.Cache;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.HashMap;
 import java.util.Map;
 
 import static ee.ria.eidas.proxy.specific.config.SpecificProxyServiceProperties.CacheProperties.*;
@@ -60,14 +57,6 @@ public class SpecificProxyServiceConfiguration implements WebMvcConfigurer {
         bean.setViewClass(JstlView.class);
         bean.setPrefix("/WEB-INF/jsp/");
         bean.setSuffix(".jsp");
-        return bean;
-    }
-
-    @Bean
-    public FilterRegistrationBean<DisabledHttpMethodsFilter> disableExtraHttpMethodsFilter(SpecificProxyServiceProperties specificProxyServiceProperties) {
-        final FilterRegistrationBean<DisabledHttpMethodsFilter> bean = new FilterRegistrationBean<>();
-        bean.setFilter(new DisabledHttpMethodsFilter(specificProxyServiceProperties.getWebapp().getDisabledHttpMethods()));
-        bean.setInitParameters(new HashMap<>());
         return bean;
     }
 

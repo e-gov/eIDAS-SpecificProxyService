@@ -130,7 +130,7 @@
                             </div>
                         </div>
                         <input type="hidden" id="token" name="token"
-                               value="<c:out value='${e:forHtml(token)}'/>"/>
+                               value="<c:out value='${e:forHtml(token)}' escapeXml="false"/>"/>
                         <noscript>
                             <p class="step-status"><fmt:message key="common.step" bundle="${i18n_eng}"/> <span>3</span>
                                 | 3</p>
@@ -144,7 +144,7 @@
                           action="${e:forHtml(redirectUrl)}">
                         <input type="hidden" name="cancel" value="true"/>
                         <input type="hidden" name="token"
-                               value="<c:out value='${e:forHtml(token)}'/>"/>
+                               value="<c:out value='${e:forHtml(token)}' escapeXml="false"/>"/>
                         <noscript>
                             <p class="box-btn">
                                 <button type="submit" id="buttonCancelNoScript" class="btn btn-cancel">

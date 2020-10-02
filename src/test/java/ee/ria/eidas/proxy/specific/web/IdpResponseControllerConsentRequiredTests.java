@@ -46,7 +46,7 @@ class IdpResponseControllerConsentRequiredTests extends IdpResponseControllerTes
 
 		assertThat( response.body().htmlPath().getString("html.head.title")).contains("Consent");
 
-		assertThat( response.body().htmlPath().getString("**.findAll { span -> span.@id == 'spId'}").trim()).isEqualTo("mock_sp_name");
+		assertThat( response.body().htmlPath().getString("**.findAll { span -> span.@id == 'spId'}").trim()).isEqualTo("SP Name & correctly escaped");
 		assertThat( response.body().htmlPath().getNode("**.findAll { span -> span.@id == 'LoA'}").value().trim()).isEqualTo("http://eidas.europa.eu/LoA/high");
 		assertThat( response.body().htmlPath().getString("**.findAll { it.strong.@id == 'FirstName'}").trim()).isEqualTo("MARY ÄNN");
 		assertThat( response.body().htmlPath().getString("**.findAll { it.strong.@id == 'FamilyName'}").trim()).isEqualTo("O’CONNEŽ-ŠUSLIK TESTNUMBER");

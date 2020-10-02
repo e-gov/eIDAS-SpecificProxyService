@@ -56,7 +56,7 @@ public class LightRequestTestHelper {
     public static final String MOCK_LOA_HIGH = "http://eidas.europa.eu/LoA/high";
     public static final String MOCK_CITIZEN_COUNTRY = "citizenCountry";
     public static final String MOCK_SP_TYPE = "public";
-    public static final String MOCK_PROVIDER_NAME = "mock_sp_name";
+    public static final String MOCK_PROVIDER_NAME = "SP Name & correctly escaped";
 
     private LightRequestTestHelper() {}
 

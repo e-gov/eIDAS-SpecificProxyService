@@ -21,11 +21,11 @@
 <%@ taglib prefix="e" uri="https://www.owasp.org/index.php/OWASP_Java_Encoder_Project" %>
 
 <h1 class="title">
-    <span id="spId"><c:out value="${e:forHtml(spId)}"/></span>
+    <span id="spId"><c:out value="${e:forHtml(spId)}" escapeXml="false"/></span>
     <span>
         <fmt:message key="presentConsent.levelOfAssurance" bundle="${i18n_eng}"/>
             <span id="LoA">
-                <c:out value="${e:forHtml(LoA)}"/>
+                <c:out value="${e:forHtml(LoA)}" escapeXml="false"/>
                 <button type="button" class="btn btn-info"
                     data-toggle="modal"
                     data-target="#loaModal">?

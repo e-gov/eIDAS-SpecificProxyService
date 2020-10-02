@@ -17,8 +17,10 @@ import eu.eidas.auth.commons.light.impl.LightRequest;
 import eu.eidas.auth.commons.light.impl.LightResponse;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.restassured.RestAssured;
+import io.restassured.builder.ResponseSpecBuilder;
 import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
+import io.restassured.specification.ResponseSpecification;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ignite.Ignite;
@@ -43,7 +45,9 @@ import javax.cache.Cache;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static ch.qos.logback.classic.Level.*;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
@@ -68,6 +72,7 @@ public abstract class SpecificProxyTest {
         System.setProperty("javax.net.ssl.trustStore", "src/test/resources/__files/mock_keys/idp-tls-truststore.jks");
         System.setProperty("javax.net.ssl.trustStorePassword", "changeit");
         System.setProperty("javax.net.ssl.trustStoreType", "jks");
+
         try {
             codec = new EidasNodeCommunication.LightJAXBCodec(JAXBContext.newInstance(LightRequest.class, LightResponse.class,
                     ImmutableAttributeMap.class, AttributeDefinition.class));
@@ -75,6 +80,15 @@ public abstract class SpecificProxyTest {
             log.error("Unable to instantiate in static initializer ", e);
         }
     }
+
+    private static final Map<String, Object> EXPECTED_RESPONSE_HEADERS = new HashMap<String, Object>() {{
+        put("X-XSS-Protection", "1; mode=block");
+        put("X-Content-Type-Options", "nosniff");
+        put("X-Frame-Options", "DENY");
+        put("Pragma", "no-cache");
+        put("Cache-Control", "no-cache, no-store, max-age=0, must-revalidate");
+        //put("Strict-Transport-Security", "max-age=600000 ; includeSubDomains") // TODO: App must be running on https
+    }};
 
     protected static final WireMockServer mockEidasNodeServer =
             new WireMockServer(WireMockConfiguration.wireMockConfig()
@@ -148,6 +162,7 @@ public abstract class SpecificProxyTest {
 
     @BeforeEach
     public void beforeEachTest() {
+        RestAssured.responseSpecification = new ResponseSpecBuilder().expectHeaders(EXPECTED_RESPONSE_HEADERS).build();
         RestAssured.port = port;
         setupMockLogAppender();
     }

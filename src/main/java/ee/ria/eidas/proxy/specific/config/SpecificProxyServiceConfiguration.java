@@ -13,7 +13,6 @@ import eu.eidas.auth.commons.protocol.eidas.spec.RepresentativeLegalPersonSpec;
 import eu.eidas.auth.commons.protocol.eidas.spec.RepresentativeNaturalPersonSpec;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ignite.Ignite;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -84,7 +83,6 @@ public class SpecificProxyServiceConfiguration implements WebMvcConfigurer {
     }
 
     @Bean
-    @Qualifier("eidasAttributeRegistry")
     public AttributeRegistry eidasAttributeRegistry() {
         return AttributeRegistries.copyOf(NaturalPersonSpec.REGISTRY, RepresentativeNaturalPersonSpec.REGISTRY,
                 LegalPersonSpec.REGISTRY, RepresentativeLegalPersonSpec.REGISTRY);
@@ -100,7 +98,7 @@ public class SpecificProxyServiceConfiguration implements WebMvcConfigurer {
     }
 
     @Lazy
-    @Bean("nodeSpecificProxyserviceRequestCache")
+    @Bean
     public Cache<String, String> nodeSpecificProxyserviceRequestCache(
             Ignite igniteInstance,
             SpecificProxyServiceProperties specificProxyServiceProperties) {
@@ -110,7 +108,7 @@ public class SpecificProxyServiceConfiguration implements WebMvcConfigurer {
     }
 
     @Lazy
-    @Bean("nodeSpecificProxyserviceResponseCache")
+    @Bean
     public Cache<String, String> nodeSpecificProxyserviceResponseCache(
             Ignite igniteInstance,
             SpecificProxyServiceProperties specificProxyServiceProperties) {

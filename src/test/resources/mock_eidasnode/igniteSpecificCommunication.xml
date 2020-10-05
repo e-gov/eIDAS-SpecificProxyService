@@ -19,7 +19,7 @@
                     <property name="name" value="nodeSpecificProxyserviceRequestCache"/>
                     <property name="atomicityMode" value="ATOMIC"/>
                     <property name="backups" value="1"/>
-                    <property name="expiryPolicyFactory" ref="7_minutes_duration"/>
+                    <property name="expiryPolicyFactory" ref="2_seconds_duration"/>
                 </bean>
 
                 <!-- Pending authentication responses from SpecificProxyService to EidasNode -->
@@ -27,7 +27,7 @@
                     <property name="name" value="specificNodeProxyserviceResponseCache"/>
                     <property name="atomicityMode" value="ATOMIC"/>
                     <property name="backups" value="1"/>
-                    <property name="expiryPolicyFactory" ref="7_minutes_duration"/>
+                    <property name="expiryPolicyFactory" ref="2_seconds_duration"/>
                 </bean>
 
                 <!-- Pending requests forwarded to local IDP -->
@@ -35,7 +35,7 @@
                     <property name="name" value="specificMSIdpRequestCorrelationMap"/>
                     <property name="atomicityMode" value="ATOMIC"/>
                     <property name="backups" value="1"/>
-                    <property name="expiryPolicyFactory" ref="7_minutes_duration"/>
+                    <property name="expiryPolicyFactory" ref="2_seconds_duration"/>
                 </bean>
 
                 <!-- Pending requests waiting user consent  -->
@@ -43,7 +43,7 @@
                     <property name="name" value="specificMSIdpConsentCorrelationMap"/>
                     <property name="atomicityMode" value="ATOMIC"/>
                     <property name="backups" value="1"/>
-                    <property name="expiryPolicyFactory" ref="7_minutes_duration"/>
+                    <property name="expiryPolicyFactory" ref="2_seconds_duration"/>
                 </bean>
 
             </list>
@@ -100,13 +100,12 @@
     <!--
         Defines expiry policy based on moment of creation for ignite cache.
     -->
-    <bean id="7_minutes_duration" class="javax.cache.expiry.CreatedExpiryPolicy" factory-method="factoryOf" scope="prototype">
+    <bean id="2_seconds_duration" class="javax.cache.expiry.CreatedExpiryPolicy" factory-method="factoryOf" scope="prototype">
         <constructor-arg>
             <bean class="javax.cache.expiry.Duration">
-                <constructor-arg value="MINUTES"/>
-                <constructor-arg value="7"/>
+                <constructor-arg value="SECONDS"/>
+                <constructor-arg value="2"/>
             </bean>
         </constructor-arg>
     </bean>
-
 </beans>

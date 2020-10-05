@@ -310,7 +310,7 @@ Ignite configuration
 
 | Parameter        | Mandatory | Description, example |
 | :---------------- | :---------- | :----------------|
-| `eidas.proxy.supported-sp-types` | No | <p>A comma separated list of supported service provider types. Defaults to `public, private` when not specified.</p><p> An error response (AccessDenied) is sent to the EidasNode Connector service when the service provider type in the authentication request is not listed as one of the configuration parameter values.</p> |
+| `eidas.proxy.supported-sp-types` | No | <p>A comma separated list of supported service provider types. Defaults to `public` when not specified.</p><p> An error response (AccessDenied) is sent to the EidasNode Connector service when the service provider type in the authentication request is not listed as one of the configuration parameter values.</p> |
 
 <a name="configuration_parameters_oidc"></a> 
 ### Mapping eIDAS attributes to OpenID Connect authentication request scopes

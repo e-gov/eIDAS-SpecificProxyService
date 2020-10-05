@@ -17,7 +17,6 @@ import eu.eidas.auth.commons.tx.BinaryLightToken;
 import eu.eidas.specificcommunication.BinaryLightTokenHelper;
 import io.restassured.response.Response;
 import org.apache.http.HttpHeaders;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ContextConfiguration;
@@ -35,7 +34,8 @@ import static ee.ria.eidas.proxy.specific.web.ProxyServiceRequestController.ENDP
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.StringStartsWith.startsWith;
 import static org.hamcrest.text.MatchesPattern.matchesPattern;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -236,6 +236,34 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 			.body("message", equalTo("Something went wrong internally. Please consult server logs for further details."));
 
 		assertErrorIsLogged("Server encountered an unexpected error: Invalid level of assurance value. Allowed values: http://eidas.europa.eu/LoA/low, http://eidas.europa.eu/LoA/substantial, http://eidas.europa.eu/LoA/high");
+		assertResponseCommunicationCacheIsEmpty();
+	}
+
+
+	@Test
+	void internalServerErrorWhenRequestedLoAMissing() throws Exception {
+		LightRequest request = LightRequest.builder()
+				.id(UUID.randomUUID().toString())
+				.citizenCountryCode(MOCK_CITIZEN_COUNTRY)
+				.issuer(MOCK_ISSUER_NAME)
+				.spType(MOCK_SP_TYPE)
+				.requestedAttributes(NATURAL_PERSON_MANDATORY_ATTRIBUTES).build();
+
+		BinaryLightToken mockBinaryLightToken = putRequest(request);
+
+		given()
+				.param(EidasParameterKeys.TOKEN.toString(), BinaryLightTokenHelper.encodeBinaryLightTokenBase64(mockBinaryLightToken))
+				.when()
+				.get(ENDPOINT_PROXY_SERVICE_REQUEST)
+				.then()
+				.assertThat()
+				.statusCode(500)
+				.body("error", equalTo("Internal Server Error"))
+				.body("errors", nullValue())
+				.body("incidentNumber", notNullValue())
+				.body("message", equalTo("Something went wrong internally. Please consult server logs for further details."));
+
+		assertErrorIsLogged("Server encountered an unexpected error: Mandatory LevelOfAssurance field is missing in LightRequest!");
 		assertResponseCommunicationCacheIsEmpty();
 	}
 

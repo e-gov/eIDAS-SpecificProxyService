@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+        http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <bean id="igniteSpecificCommunication.cfg" class="org.apache.ignite.configuration.IgniteConfiguration">
+
+        <property name="igniteInstanceName" value="igniteSpecificCommunicationTOMProxy"/>
+
+        <property name="cacheConfiguration">
+            <list>
+
+                <!-- Communication Caches -->
+
+                <!-- Pending authentication request from EidasNode to SpecificProxyService -->
+                <bean class="org.apache.ignite.configuration.CacheConfiguration">
+                    <property name="name" value="nodeSpecificProxyserviceRequestCache"/>
+                    <property name="atomicityMode" value="ATOMIC"/>
+                    <property name="backups" value="1"/>
+                    <property name="expiryPolicyFactory" ref="1_seconds_duration"/>
+                </bean>
+
+                <!-- Pending authentication responses from SpecificProxyService to EidasNode -->
+                <bean class="org.apache.ignite.configuration.CacheConfiguration">
+                    <property name="name" value="specificNodeProxyserviceResponseCache"/>
+                    <property name="atomicityMode" value="ATOMIC"/>
+                    <property name="backups" value="1"/>
+                    <property name="expiryPolicyFactory" ref="1_seconds_duration"/>
+                </bean>
+
+                <!-- Pending requests forwarded to local IDP -->
+                <bean class="org.apache.ignite.configuration.CacheConfiguration">
+                    <property name="name" value="specificMSIdpRequestCorrelationMap"/>
+                    <property name="atomicityMode" value="ATOMIC"/>
+                    <property name="backups" value="1"/>
+                    <property name="expiryPolicyFactory" ref="1_seconds_duration"/>
+                </bean>
+
+                <!-- Pending requests waiting user consent  -->
+                <bean class="org.apache.ignite.configuration.CacheConfiguration">
+                    <property name="name" value="specificMSIdpConsentCorrelationMap"/>
+                    <property name="atomicityMode" value="ATOMIC"/>
+                    <property name="backups" value="1"/>
+                    <property name="expiryPolicyFactory" ref="1_seconds_duration"/>
+                </bean>
+
+            </list>
+        </property>
+
+        <property name="sslContextFactory">
+            <bean class="org.apache.ignite.ssl.SslContextFactory">
+                <property name="keyStoreFilePath" value="src/test/resources/mock_eidasnode/mock_keys/ignite-keys.jks"/>
+                <property name="keyStorePassword" value="123456"/>
+                <property name="trustStoreFilePath" value="src/test/resources/mock_eidasnode/mock_keys/ignite-trust.jks"/>
+                <property name="trustStorePassword" value="123456"/>
+                <property name="protocol" value="TLS"/>
+            </bean>
+        </property>
+
+        <!-- Explicitly configure TCP discovery SPI to provide list of initial nodes. -->
+        <property name="discoverySpi">
+            <bean class="org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi">
+                <property name="ipFinder">
+                    <bean class="org.apache.ignite.spi.discovery.tcp.ipfinder.vm.TcpDiscoveryVmIpFinder">
+                        <property name="addresses">
+                            <list>
+                                <!--
+                                Explicitly specifying address of a local node to let it start and
+                                operate normally even if there is no more nodes in the cluster.
+                                You can also optionally specify an individual port or port range.
+                                -->
+                                <value>127.0.0.1</value>
+                            </list>
+                        </property>
+                    </bean>
+                </property>
+            </bean>
+        </property>
+
+        <!-- Disable thin client access -->
+        <property name="clientConnectorConfiguration">
+            <bean class="org.apache.ignite.configuration.ClientConnectorConfiguration">
+                <property name="thinClientEnabled" value="false"/>
+                <property name="odbcEnabled" value="false"/>
+                <property name="jdbcEnabled" value="false"/>
+            </bean>
+        </property>
+    </bean>
+
+    <!--
+        Initialize property configurer so we can reference environment variables.
+    -->
+    <bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="systemPropertiesModeName" value="SYSTEM_PROPERTIES_MODE_FALLBACK"/>
+        <property name="searchSystemEnvironment" value="true"/>
+    </bean>
+
+    <!--
+        Defines expiry policy based on moment of creation for ignite cache.
+    -->
+    <bean id="1_seconds_duration" class="javax.cache.expiry.CreatedExpiryPolicy" factory-method="factoryOf" scope="prototype">
+        <constructor-arg>
+            <bean class="javax.cache.expiry.Duration">
+                <constructor-arg value="SECONDS"/>
+                <constructor-arg value="1"/>
+            </bean>
+        </constructor-arg>
+    </bean>
+
+</beans>

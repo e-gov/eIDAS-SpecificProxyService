@@ -149,7 +149,7 @@ public abstract class SpecificProxyTest {
     @BeforeAll
     static void beforeAllTests() {
         startMockEidasNodeServer();
-        startMockEidasNodeIgniteServer();
+        startMockEidasNodeIgniteServer("mock_eidasnode/igniteSpecificCommunication.xml");
         startMockOidcServer();
         configureRestAssured();
     }
@@ -206,15 +206,14 @@ public abstract class SpecificProxyTest {
                         .withBodyFile("mock_responses/idp/jwks.json")));
     }
 
-    protected static void startMockEidasNodeIgniteServer() {
+    protected static void startMockEidasNodeIgniteServer(String configuration) {
         if (eidasNodeIgnite == null) {
             System.setProperty("IGNITE_QUIET", "false");
             System.setProperty("IGNITE_HOME", System.getProperty("java.io.tmpdir"));
             System.setProperty("java.net.preferIPv4Stack", "true");
-            InputStream cfgXml = SpecificProxyTest.class.getClassLoader()
-                    .getResourceAsStream("mock_eidasnode/igniteSpecificCommunication.xml");
+            InputStream cfgXml = SpecificProxyTest.class.getClassLoader().getResourceAsStream(configuration);
             IgniteConfiguration cfg = Ignition.loadSpringBean(cfgXml, "igniteSpecificCommunication.cfg");
-            cfg.setIncludeEventTypes(EVT_CACHE_OBJECT_PUT, EVT_CACHE_OBJECT_READ, EVT_CACHE_OBJECT_REMOVED);
+            cfg.setIncludeEventTypes(EVT_CACHE_OBJECT_PUT, EVT_CACHE_OBJECT_READ, EVT_CACHE_OBJECT_REMOVED, EVT_CACHE_OBJECT_EXPIRED);
             eidasNodeIgnite = Ignition.getOrStart(cfg);
         }
     }

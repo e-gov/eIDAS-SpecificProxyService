@@ -2,7 +2,6 @@ package ee.ria.eidas.proxy.specific.web;
 
 import ee.ria.eidas.proxy.specific.SpecificProxyTest;
 import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceConfiguration;
-import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceProperties;
 import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceProperties.IdTokenClaimMappingProperties;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;

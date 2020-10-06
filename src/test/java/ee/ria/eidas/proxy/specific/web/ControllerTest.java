@@ -7,20 +7,26 @@ import eu.eidas.auth.commons.tx.BinaryLightToken;
 import eu.eidas.specificcommunication.BinaryLightTokenHelper;
 import eu.eidas.specificcommunication.exception.SpecificCommunicationException;
 import lombok.Getter;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.util.FileCopyUtils;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.cache.Cache;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.List;
 
 import static ee.ria.eidas.proxy.specific.util.LightRequestTestHelper.*;
 import static io.restassured.RestAssured.given;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.text.MatchesPattern.matchesPattern;
@@ -52,15 +58,26 @@ public abstract class ControllerTest extends SpecificProxyTest {
         clearCommunicationCache();
     }
 
-    BinaryLightToken putRequest(final ILightRequest iLightRequest) throws SpecificCommunicationException {
+    BinaryLightToken putRequest(ILightRequest lightRequest) throws SpecificCommunicationException {
+        return putRequest(codec.marshall(lightRequest));
+    }
+
+    private BinaryLightToken putRequest(String lightRequestXml) throws SpecificCommunicationException {
         final BinaryLightToken binaryLightToken = BinaryLightTokenHelper.createBinaryLightToken(
                 lightTokenRequestIssuerName,
                 lightTokenRequestSecret,
                 lightTokenRequestAlgorithm);
         final String tokenId = binaryLightToken.getToken().getId();
 
-        getEidasNodeRequestCommunicationCache().put(tokenId, codec.marshall(iLightRequest));
+        getEidasNodeRequestCommunicationCache().put(tokenId, lightRequestXml);
         return binaryLightToken;
+    }
+
+    @SneakyThrows
+    BinaryLightToken putRequest(Resource lightRequest) {
+        try (Reader reader = new InputStreamReader(lightRequest.getInputStream(), UTF_8)) {
+            return putRequest(FileCopyUtils.copyToString(reader));
+        }
     }
 
     void assertRequestCommunicationCacheIsEmpty() {

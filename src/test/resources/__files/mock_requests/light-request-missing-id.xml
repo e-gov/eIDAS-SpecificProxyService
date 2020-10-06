@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<lightRequest>
+    <citizenCountryCode>DE</citizenCountryCode>
+    <issuer>issuerName</issuer>
+    <levelOfAssurance>http://eidas.europa.eu/LoA/high</levelOfAssurance>
+    <providerName>mock_sp_name</providerName>
+    <spType>public</spType>
+    <relayState>relayState</relayState>
+    <requestedAttributes>
+        <attribute>
+            <definition>http://eidas.europa.eu/attributes/legalperson/LegalName</definition>
+            <value></value>
+        </attribute>
+        <attribute>
+            <definition>http://eidas.europa.eu/attributes/legalperson/LegalPersonIdentifier</definition>
+            <value></value>
+        </attribute>
+    </requestedAttributes>
+</lightRequest>

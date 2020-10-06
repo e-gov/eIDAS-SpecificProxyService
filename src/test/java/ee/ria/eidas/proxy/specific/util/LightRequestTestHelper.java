@@ -54,7 +54,7 @@ public class LightRequestTestHelper {
     public static final String MOCK_ISSUER_NAME = "issuerName";
     public static final String MOCK_RELAY_STATE = "relayState";
     public static final String MOCK_LOA_HIGH = "http://eidas.europa.eu/LoA/high";
-    public static final String MOCK_CITIZEN_COUNTRY = "citizenCountry";
+    public static final String MOCK_CITIZEN_COUNTRY = "DE";
     public static final String MOCK_SP_TYPE = "public";
     public static final String MOCK_PROVIDER_NAME = "SP Name & correctly escaped";
 
@@ -147,7 +147,7 @@ public class LightRequestTestHelper {
     }
 
     public static ILightRequest createLightRequest(ImmutableAttributeMap requestedAttributes) {
-        return createLightRequest("citizenCountry", MOCK_ISSUER_NAME, MOCK_RELAY_STATE, MOCK_LOA_HIGH,
+        return createLightRequest("DE", MOCK_ISSUER_NAME, MOCK_RELAY_STATE, MOCK_LOA_HIGH,
                 MOCK_SP_TYPE, MOCK_PROVIDER_NAME, requestedAttributes, null);
     }
 

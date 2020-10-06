@@ -3,8 +3,11 @@ package ee.ria.eidas.proxy.specific.web;
 import ee.ria.eidas.proxy.specific.storage.SpecificProxyServiceCommunication.CorrelatedRequestsHolder;
 import eu.eidas.auth.commons.light.ILightRequest;
 import io.restassured.RestAssured;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.http.HttpHeaders;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.io.UnsupportedEncodingException;
@@ -31,23 +34,40 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 	@Value("${lightToken.proxyservice.response.issuer.name}")
 	private String lightTokenResponseIssuerName;
 
-	@Test
-	void badRequestWhenMissingRequiredParam_state() {
+	@ParameterizedTest
+	@ValueSource(strings = {"state", "code", "error", "errorDescription"})
+	void badRequestWhen_InvalidParameterSize(String paramName) {
 		given()
-			.param("sas", "asas")
+			.param(paramName,
+					RandomStringUtils.randomAlphanumeric(1001))
 		.when()
 			.get(ENDPOINT_IDP_RESPONSE)
 		.then()
 			.assertThat()
 			.statusCode(400)
 			.body("error", equalTo("Bad Request"))
-			.body("errors", equalTo("Parameter 'state': must not be empty"))
+			.body("errors", containsString("Parameter '" + paramName + "[0]': size must be between 1 and 1000"))
 			.body("incidentNumber", notNullValue())
-			.body("message", equalTo("Validation failed for object='idpCallbackRequest'. Error count: 1"));
+			.body("message", containsString("Validation failed for object='idpCallbackRequest'. Error count: "));
 	}
 
 	@Test
-	void badRequestWhenDuplicateParams_state() {
+	void badRequestWhen_MissingRequiredParam_state() {
+		given()
+				.param("sas", "asas")
+				.when()
+				.get(ENDPOINT_IDP_RESPONSE)
+				.then()
+				.assertThat()
+				.statusCode(400)
+				.body("error", equalTo("Bad Request"))
+				.body("errors", equalTo("Parameter 'state': must not be empty"))
+				.body("incidentNumber", notNullValue())
+				.body("message", equalTo("Validation failed for object='idpCallbackRequest'. Error count: 1"));
+	}
+
+	@Test
+	void badRequestWhen_DuplicateParams_state() {
 		given()
 			.param("state", ".,.")
 			.param("state", "...")
@@ -64,7 +84,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 	}
 
 	@Test
-	void badRequestWhenMissingRequiredParam_missingBothCodeAndError() {
+	void badRequestWhen_MissingRequiredParam_missingBothCodeAndError() {
 		given()
 			.param("state", "...")
 		.when()
@@ -79,7 +99,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 	}
 
 	@Test
-	void badRequestWhenHavingBothCodeAndErrorParameters() {
+	void badRequestWhen_HavingBothCodeAndErrorParameters() {
 		given()
 			.param("state", "...")
 			.param("code", "...")
@@ -96,7 +116,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 	}
 
 	@Test
-	void badRequestWhenInvalidOrNonexistingState_successResponse() {
+	void badRequestWhen_InvalidOrNonexistingState_successResponse() {
 		given()
 			.param("state", "invalidState")
 			.param("code", "1234567890abcdefghij")
@@ -112,7 +132,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 	}
 
 	@Test
-	void badRequestWhenInvalidOrNonxistingState_errorResponse() {
+	void badRequestWhen_InvalidOrNonxistingState_errorResponse() {
 		given()
 			.param("state", "invalidState")
 			.param("error", "user_cancel")
@@ -577,7 +597,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 	}
 
 	@Test
-	void redirectToEidasnodeWithErrorWhenIdpReturnsError_UserCancel() throws Exception {
+	void redirectToEidasnodeWithErrorWhen_IdpReturnsError_UserCancel() throws Exception {
 
 		Map.Entry<String, CorrelatedRequestsHolder> mapEntry = addMockRequestToPendingIdpRequestCommunicationCache();
 

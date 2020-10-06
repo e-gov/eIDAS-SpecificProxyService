@@ -155,15 +155,15 @@ public class IdpResponseController {
 	public static class IdpCallbackRequest {
 		@NotEmpty
 		@Size(max = 1, message = MULTIPLE_INSTANCES_OF_PARAMETER_IS_NOT_ALLOWED)
-		private List<String> state;
+		private List<@Size(min = 1, max = 1000) String> state;
 
 		@Size(max = 1, message = MULTIPLE_INSTANCES_OF_PARAMETER_IS_NOT_ALLOWED)
-		private List<String> code;
+		private List<@Size(min = 1, max = 1000) String> code;
 
 		@Size(max = 1, message = MULTIPLE_INSTANCES_OF_PARAMETER_IS_NOT_ALLOWED)
-		private List<String> error;
+		private List<@Size(min = 1, max = 1000) String> error;
 
 		@Size(max = 1, message = MULTIPLE_INSTANCES_OF_PARAMETER_IS_NOT_ALLOWED)
-		private List<String> errorDescription;
+		private List<@Size(min = 1, max = 1000) String> errorDescription;
 	}
 }

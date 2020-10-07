@@ -40,7 +40,7 @@ In order to enable communication between `EidasNode` and `SpecificProxyService` 
 <a name="integrate_eidasnode"></a>
 ### 2.1 Configuring communication with EidasNode
 
-To set the same communication definitions, it is required that the `SpecificProxyService` has access to communication definitions provided in the following file `EidasNode` configuration file:
+To set the same communication definitions, it is required that the `SpecificProxyService` has access to communication definitions provided in the following `EidasNode` configuration file:
 `$SPECIFIC_PROXY_SERVICE_CONFIG_REPOSITORY/specificCommunicationDefinitionProxyservice.xml`
 
 <a name="ignite_conf"></a>
@@ -315,11 +315,12 @@ Ignite configuration
 <a name="configuration_parameters_oidc"></a> 
 ### Mapping eIDAS attributes to OpenID Connect authentication request scopes
 
-Configuring the requested scopes for OIDC authentication request
+Allows to map the requested eIDAS attributes to their respective OpenID Connect scopes in the IDP authentication request
 
 | Parameter        | Mandatory | Description, example |
 | :---------------- | :---------- | :----------------|
-| `eidas.proxy.oidc.attribute-scope-mapping.<eidas attribute>=<scope value>` | No | Where `<eidas attribute>` is the (Friendly) Name of the attribute passed from EidasNode webapp and `<scope value>` is the corresponding OpenID Connect scope required to request that attribute from the IDP.  |
+| `eidas.proxy.oidc.attribute-scope-mapping.<eidas attribute>=<scope value>` | No | Where `<eidas attribute>` is the "Friendly Name" (as specified in [the eIDAS attribute profile](https://ec.europa.eu/cefdigital/wiki/display/CEFDIGITAL/eIDAS+eID+Profile?preview=/82773108/82796977/eIDAS%20SAML%20Attribute%20Profile%20v1.1_2.pdf) ) of the attribute passed from EidasNode webapp and `<scope value>` is the corresponding OpenID Connect scope. Default mapping configuration applies if no explicit configuration is provided (see Table 1 for further details) |
+
 
 Example: The following configuration maps four requested natural person eIDAS attributes to their respective scopes:  
 
@@ -330,6 +331,30 @@ eidas.proxy.oidc.attribute-scope-mapping.DateOfBirth=eidas:attribute:date_of_bir
 eidas.proxy.oidc.attribute-scope-mapping.PersonIdentifier=eidas:attribute:person_identifier
 ````
 
+Table 1 - default configuration of eidas attributes to oidc scopes
+
+| eIDAS attribute name | OIDC scope |
+| :------------------- | :---- |
+| FirstName | eidas:attribute:first_name |
+| FamilyName | eidas:attribute:family_name |
+| DateOfBirth | eidas:attribute:date_of_birth |
+| PersonIdentifier | eidas:attribute:person_identifier |
+| BirthName | eidas:attribute:birth_name |
+| PlaceOfBirth | eidas:attribute:place_of_birth |
+| CurrentAddress | eidas:attribute:current_address |
+| Gender | eidas:attribute:gender
+| LegalName | eidas:attribute:legal_name |
+| LegalPersonIdentifier | eidas:attribute:legal_person_identifier |
+| LegalAddress | eidas:attribute:legal_address |
+| VATRegistration | eidas:attribute:vat_registration |
+| TaxReference | eidas:attribute:tax_reference |
+| D-2012-17-EUIdentifier | eidas:attribute:business_codes |
+| LEI | eidas:attribute:lei |
+| EORI | eidas:attribute:eori |
+| SEED | eidas:attribute:seed |
+| SIC | eidas:attribute:sic |
+
+
 <a name="configuration_claims_oidc"></a>
 ### Mapping eIDAS attributes to OpenID Connect ID-token claims
 
@@ -337,7 +362,7 @@ Configuring claims extraction from the OIDC id_token
 
 | Parameter        | Mandatory | Description, example |
 | :---------------- | :---------- | :----------------|
-| `eidas.proxy.oidc.response-claim-mapping.attributes.<eidas attribute>=<jsonpath to claim>` | No | Where `<eidas attribute>` is the (Friendly) Name of the attribute passed from EidasNode webapp and `<jsonpath to claim>` is a [jsonpath expression](https://goessner.net/articles/JsonPath/) to extract the corresponding OpenID Connect claim value from the IDP returned ID-token.  |
+| `eidas.proxy.oidc.response-claim-mapping.attributes.<eidas attribute>=<jsonpath to claim>` | No | Where `<eidas attribute>` is the "Friendly Name" (as specified in [the eIDAS attribute profile](https://ec.europa.eu/cefdigital/wiki/display/CEFDIGITAL/eIDAS+eID+Profile?preview=/82773108/82796977/eIDAS%20SAML%20Attribute%20Profile%20v1.1_2.pdf) ) of the attribute in the light response and `<jsonpath to claim>` is a [jsonpath expression](https://goessner.net/articles/JsonPath/) to extract the corresponding OpenID Connect claim value from the ID-token.  |
 
 Example: The following configuration maps four natural person eIDAS attributes to OIDC id_token claims:
 
@@ -347,6 +372,15 @@ eidas.proxy.oidc.response-claim-mapping.attributes.FamilyName=$.profile_attribut
 eidas.proxy.oidc.response-claim-mapping.attributes.DateOfBirth=$.profile_attributes.date_of_birth
 eidas.proxy.oidc.response-claim-mapping.attributes.PersonIdentifier=$.sub
 ````
+
+Table 1 - default configuration of mapping OIDC id-token claims to eIDAS response attributes
+
+| eIDAS attribute name | Claim in OIDC id-token |
+| :------------------- | :---- |
+| FirstName | $.profile_attributes.given_name |
+| FamilyName | $.profile_attributes.family_name |
+| eidas.proxy.oidc.response-claim-mapping.attributes.DateOfBirth | $.profile_attributes.date_of_birth |
+| eidas.proxy.oidc.response-claim-mapping.attributes.PersonIdentifier | $.sub |
 
 ### Postprocessing OpenID Connect ID-token claim values
 

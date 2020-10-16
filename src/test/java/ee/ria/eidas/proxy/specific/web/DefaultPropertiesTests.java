@@ -3,7 +3,6 @@ package ee.ria.eidas.proxy.specific.web;
 import ee.ria.eidas.proxy.specific.SpecificProxyTest;
 import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceConfiguration;
 import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceProperties.IdTokenClaimMappingProperties;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -15,6 +14,8 @@ import org.springframework.test.context.TestPropertySource;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.POST;
 
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @ContextConfiguration(classes = SpecificProxyServiceConfiguration.class, initializers = DefaultPropertiesTests.TestContextInitializer.class)
@@ -40,10 +41,9 @@ public class DefaultPropertiesTests extends SpecificProxyTest {
         assertThat(specificProxyServiceProperties.getSupportedSpTypes()).containsExactly("public");
     }
 
-    @Disabled
     @Test
     void defaultWebappAllowedHttpMethods() {
-        // assertThat(specificProxyServiceProperties.getWebapp().getAllowedHttpMethods()).containsExactly(GET, POST);
+        assertThat(specificProxyServiceProperties.getWebapp().getAllowedHttpMethods()).containsExactly(GET, POST);
     }
 
     @Test

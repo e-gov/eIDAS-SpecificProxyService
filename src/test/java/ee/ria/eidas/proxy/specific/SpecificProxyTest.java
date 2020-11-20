@@ -52,6 +52,7 @@ import java.util.Map;
 import static ch.qos.logback.classic.Level.*;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.nimbusds.openid.connect.sdk.op.OIDCProviderConfigurationRequest.OPENID_PROVIDER_WELL_KNOWN_PATH;
+import static ee.ria.eidas.proxy.specific.config.SecurityConfiguration.CONTENT_SECURITY_POLICY;
 import static io.restassured.config.RedirectConfig.redirectConfig;
 import static io.restassured.config.RestAssuredConfig.config;
 import static java.util.Arrays.stream;
@@ -85,6 +86,7 @@ public abstract class SpecificProxyTest {
         put("X-XSS-Protection", "1; mode=block");
         put("X-Content-Type-Options", "nosniff");
         put("X-Frame-Options", "DENY");
+        put("Content-Security-Policy", CONTENT_SECURITY_POLICY);
         put("Pragma", "no-cache");
         put("Cache-Control", "no-cache, no-store, max-age=0, must-revalidate");
         //put("Strict-Transport-Security", "max-age=600000 ; includeSubDomains") // TODO: App must be running on https

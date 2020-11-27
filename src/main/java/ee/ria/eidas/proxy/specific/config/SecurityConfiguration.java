@@ -14,7 +14,6 @@ import org.springframework.security.web.header.HeaderWriterFilter;
 
 @EnableWebSecurity
 public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
-    public static final String CONTENT_SECURITY_POLICY = "default-src 'self';";
 
     @Autowired
     private SpecificProxyServiceProperties specificProxyServiceProperties;
@@ -31,7 +30,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                         HeaderWriterFilter.class)
                 .csrf().disable()
                 .headers()
-                .contentSecurityPolicy(CONTENT_SECURITY_POLICY)
+                .contentSecurityPolicy(specificProxyServiceProperties.getWebapp().getContentSecurityPolicy())
                 .and()
                 .frameOptions().deny()
                 .httpStrictTransportSecurity()

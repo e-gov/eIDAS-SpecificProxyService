@@ -12,6 +12,7 @@ import org.springframework.validation.annotation.Validated;
 
 import javax.annotation.PostConstruct;
 import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -77,10 +78,14 @@ public class SpecificProxyServiceProperties {
     @ToString
     @Data
     public static class WebappProperties {
+        public static final String DEFAULT_CONTENT_SECURITY_POLICY = "block-all-mixed-content; default-src 'self'; object-src: 'none'; frame-ancestors 'none';";
 
         private List<HttpMethod> allowedHttpMethods = asList(GET, POST);
 
         private String sessionIdCookieName = "JSESSIONID";
+
+        @NotEmpty
+        private String contentSecurityPolicy = DEFAULT_CONTENT_SECURITY_POLICY;
     }
 
     @Data
@@ -174,7 +179,7 @@ public class SpecificProxyServiceProperties {
 
 
     private void assertOidcClaimMappingPostProcessingRules() {
-        if(!oidc.getResponseClaimMapping().getAttributesPostProcessing().isEmpty()) {
+        if (!oidc.getResponseClaimMapping().getAttributesPostProcessing().isEmpty()) {
             List<String> invalidRegexValues = oidc.getResponseClaimMapping().getAttributesPostProcessing().values().stream().filter(item -> {
                 try {
                     Pattern.compile(item);

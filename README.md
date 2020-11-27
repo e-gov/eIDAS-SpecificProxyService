@@ -21,7 +21,7 @@
   * [7.6 Mapping eIDAS attributes to OpenID Connect ID-token claims](#configuration_claims_oidc)
   * [7.8 Postprocessing OpenID Connect ID-token claim values](#configuration_claims_postprocessing)
   * [7.9 HTTPS truststore](#truststore)
-
+  * [7.9 HTTP security](#http_security)
 
 <a name="build"></a>
 ## 1. Building the SpecifcProxyService webapp
@@ -413,3 +413,12 @@ Example: Sample Tomcat setenv.sh file that specifies custom truststore at startu
 ````
 export JAVA_OPTS="$JAVA_OPTS -Djavax.net.ssl.trustStore=/etc/eidas/secrets/tls/truststore.p12 -Djavax.net.ssl.trustStorePassword=secret -Djavax.net.ssl.trustStoreType=pkcs12"
 ````
+
+<a name="http_security"></a>
+### HTTPS security
+
+| Parameter        | Mandatory | Description, example |
+| :---------------- | :---------- | :----------------|
+| `eidas.proxy.webapp.allowed-http-methods` | No | Allowed HTTP methods for all service endpoints. Default value `GET, POST` |
+| `eidas.proxy.webapp.session-id-cookie-name` | No | Session id cookie to be used for log correlation. Default value `JSESSIONID` |
+| `eidas.proxy.webapp.content-security-policy` | No | Content security policy. Default value `block-all-mixed-content; default-src 'self'; object-src: 'none'; frame-ancestors 'none';` |

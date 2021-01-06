@@ -140,6 +140,26 @@ class ProxyServiceRequestControllerTests extends ControllerTest {
 
         assertResponseCommunicationCacheIsEmpty();
     }
+
+    @Test
+    void badRequestWhenInvalidLightToken_legalPersonAndNaturalPersonAttributesRequested() throws Exception {
+        ILightRequest mockLightRequest = createLightRequest(new ImmutableAttributeMap.Builder()
+                .putAll(LEGAL_PERSON_MANDATORY_ATTRIBUTES).putAll(NATURAL_PERSON_ALL_ATTRIBUTES).build());
+        BinaryLightToken mockBinaryLightToken = putRequest(mockLightRequest);
+
+        given()
+                .param(EidasParameterKeys.TOKEN.toString(), BinaryLightTokenHelper.encodeBinaryLightTokenBase64(mockBinaryLightToken))
+                .when()
+                .get(ENDPOINT_PROXY_SERVICE_REQUEST)
+                .then()
+                .assertThat()
+                .statusCode(400)
+                .body("error", equalTo("Bad Request"))
+                .body("incidentNumber", notNullValue())
+                .body("message", equalTo("Request may not contain both legal person and natural person attributes"));
+
+        assertResponseCommunicationCacheIsEmpty();
+    }
 }
 
 

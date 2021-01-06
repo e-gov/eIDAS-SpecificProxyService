@@ -127,11 +127,7 @@ public class ProxyServiceRequestLightRequestAcceptanceTests extends ControllerTe
 
         // assert redirect parameters
         assertValidOidcAuthenticationRequest(response);
-        assertScopeParameter(response, "openid idcard mid " +
-                "eidas:attribute:person_identifier " +
-                "eidas:attribute:family_name " +
-                "eidas:attribute:first_name " +
-                "eidas:attribute:date_of_birth");
+        assertScopeParameter(response, "openid idcard mid");
 
         // assert request communication cache
         assertRequestInIdpCommunicationCache(mockLightRequest);
@@ -454,17 +450,7 @@ public class ProxyServiceRequestLightRequestAcceptanceTests extends ControllerTe
 
         // assert redirect parameters
         assertValidOidcAuthenticationRequest(response);
-        assertScopeParameter(response, "openid idcard mid " +
-                "eidas:attribute:legal_name " +
-                "eidas:attribute:legal_person_identifier " +
-                "eidas:attribute:legal_address " +
-                "eidas:attribute:vat_registration " +
-                "eidas:attribute:tax_reference " +
-                "eidas:attribute:business_codes " +
-                "eidas:attribute:lei " +
-                "eidas:attribute:eori " +
-                "eidas:attribute:seed " +
-                "eidas:attribute:sic");
+        assertScopeParameter(response, "openid idcard mid legalperson");
 
         // assert request communication cache
         assertRequestInIdpCommunicationCache(mockLightRequest);
@@ -487,9 +473,7 @@ public class ProxyServiceRequestLightRequestAcceptanceTests extends ControllerTe
 
         // assert redirect parameters
         assertValidOidcAuthenticationRequest(response);
-        assertScopeParameter(response, "openid idcard mid " +
-                "eidas:attribute:legal_name " +
-                "eidas:attribute:legal_person_identifier");
+        assertScopeParameter(response, "openid idcard mid legalperson");
 
         // assert request communication cache
         assertRequestInIdpCommunicationCache(mockLightRequest);
@@ -516,15 +500,7 @@ public class ProxyServiceRequestLightRequestAcceptanceTests extends ControllerTe
 
         // assert OIDC redirect URL
         assertValidOidcAuthenticationRequest(response);
-        assertScopeParameter(response, "openid idcard mid " +
-                "eidas:attribute:person_identifier " +
-                "eidas:attribute:family_name " +
-                "eidas:attribute:first_name " +
-                "eidas:attribute:date_of_birth " +
-                "eidas:attribute:birth_name " +
-                "eidas:attribute:gender " +
-                "eidas:attribute:place_of_birth " +
-                "eidas:attribute:current_address");
+        assertScopeParameter(response, "openid idcard mid");
 
         // assert request communication cache
         assertRequestInIdpCommunicationCache(mockLightRequest);
@@ -547,11 +523,7 @@ public class ProxyServiceRequestLightRequestAcceptanceTests extends ControllerTe
 
         // assert redirect parameters
         assertValidOidcAuthenticationRequest(response);
-        assertScopeParameter(response, "openid idcard mid " +
-                "eidas:attribute:person_identifier " +
-                "eidas:attribute:family_name " +
-                "eidas:attribute:first_name " +
-                "eidas:attribute:date_of_birth");
+        assertScopeParameter(response, "openid idcard mid");
 
         // assert request communication cache
         assertRequestInIdpCommunicationCache(mockLightRequest);
@@ -575,11 +547,7 @@ public class ProxyServiceRequestLightRequestAcceptanceTests extends ControllerTe
 
         // assert redirect parameters
         assertValidOidcAuthenticationRequest(response);
-        assertScopeParameter(response, "openid idcard mid " +
-                "eidas:attribute:person_identifier " +
-                "eidas:attribute:family_name " +
-                "eidas:attribute:first_name " +
-                "eidas:attribute:date_of_birth");
+        assertScopeParameter(response, "openid idcard mid");
 
         // assert request communication cache
         assertRequestInIdpCommunicationCache(mockLightRequest);

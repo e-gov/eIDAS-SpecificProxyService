@@ -29,7 +29,7 @@ class IdpResponseControllerConsentRequiredTests extends IdpResponseControllerTes
 	void returnHtmlErrorPageWhenConsentRequired() throws Exception {
 
 		String code = UUID.randomUUID().toString();
-		createMockOidcServerResponse_successfulAuthentication(code);
+		createMockOidcServerResponse_successfulAuthentication(code, "mock_responses/idp/token-response-ok.json");
 		Map.Entry<String, CorrelatedRequestsHolder> mapEntry = addMockRequestToPendingIdpRequestCommunicationCache();
 
 		Response response = given()

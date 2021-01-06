@@ -61,6 +61,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static ee.ria.eidas.proxy.specific.config.LogFieldNames.*;
+import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
 import static net.logstash.logback.argument.StructuredArguments.value;
 import static net.logstash.logback.marker.Markers.append;
 
@@ -194,24 +196,31 @@ public class SpecificProxyService {
         scopes.add("openid");
         scopes.addAll(specificProxyServiceProperties.getOidc().getScope());
 
-        for (ImmutableAttributeMap.ImmutableAttributeEntry<?> entry : originalIlightRequest.getRequestedAttributes().entrySet()) {
-            if (!specificProxyServiceProperties.getOidc().getAttributeScopeMapping().containsKey(entry.getKey().getFriendlyName())) {
-                log.warn("Attribute was requested that has no OIDC scope mapping: " + entry.getKey().getFriendlyName() );
-            } else {
-                String scope = specificProxyServiceProperties.getOidc().getAttributeScopeMapping().get(entry.getKey().getFriendlyName());
-                log.debug("Add attribute scope: " + scope);
-                scopes.add(scope);
-            }
-        }
+        if (containsLegalPersonAttributes(originalIlightRequest))
+            scopes.add("legalperson");
 
         return StringUtils.join(scopes, ' ');
+    }
+
+    private boolean containsLegalPersonAttributes(ILightRequest incomingLightRequest) {
+        List<String> requestAttributesByFriendlyName = incomingLightRequest.getRequestedAttributes().getAttributeMap().keySet()
+                .stream().map(AttributeDefinition::getFriendlyName).collect(toList());
+        return !Collections.disjoint(asList("LegalName", "LegalPersonIdentifier"), requestAttributesByFriendlyName);
     }
 
     private ILightResponse translateToLightResponse(ClaimsSet claimSet, ILightRequest originalLightRequest, IdTokenClaimMappingProperties mappingProperties) throws MalformedURLException, UnknownHostException {
         log.debug("JWT (claims): " + claimSet.toJSONString());
 
         JSONObject claims = claimSet.toJSONObject();
-        String subject = getAttributeValueFromClaims(claims, "subject", mappingProperties.getSubject());
+
+        String subject;
+        if (containsLegalPersonAttributes(originalLightRequest)) {
+            subject = getAttributeValueFromClaims(claims, "subject", "$.profile_attributes.legal_person.registry_code");
+        }
+        else {
+            subject = getAttributeValueFromClaims(claims, "subject", mappingProperties.getSubject());
+        }
+
         String responseId = getAttributeValueFromClaims(claims, "responseId", mappingProperties.getId());
         LevelOfAssurance loa = LevelOfAssurance.valueOf(StringUtils.upperCase(getAttributeValueFromClaims(claims, "loa", mappingProperties.getAcr())));
         String issuer = getAttributeValueFromClaims(claims, "issuer", mappingProperties.getIssuer());

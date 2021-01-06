@@ -3,6 +3,7 @@ package ee.ria.eidas.proxy.specific.web;
 import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceConfiguration;
 import ee.ria.eidas.proxy.specific.service.SpecificProxyService;
 import ee.ria.eidas.proxy.specific.storage.SpecificProxyServiceCommunication.CorrelatedRequestsHolder;
+import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.light.ILightRequest;
 import eu.eidas.auth.commons.light.impl.LightRequest;
 import eu.eidas.auth.commons.protocol.impl.SamlNameIdFormat;
@@ -45,7 +46,7 @@ class IdpResponseControllerConsentNotRequiredTests extends IdpResponseController
 	void redirectToEidasnodeWhenValidResponseAndConsentNotRequired() throws Exception {
 
 		String code = UUID.randomUUID().toString();
-		createMockOidcServerResponse_successfulAuthentication(code);
+		createMockOidcServerResponse_successfulAuthentication(code, "mock_responses/idp/token-response-ok.json");
 		Map.Entry<String, CorrelatedRequestsHolder> mapEntry = addMockRequestToPendingIdpRequestCommunicationCache();
 
 		given()
@@ -74,7 +75,7 @@ class IdpResponseControllerConsentNotRequiredTests extends IdpResponseController
 	void redirectToEidasnodeWhenValidResponseAndConsentNotRequired_NameIdSpecified() throws Exception {
 
 		String code = UUID.randomUUID().toString();
-		createMockOidcServerResponse_successfulAuthentication(code);
+		createMockOidcServerResponse_successfulAuthentication(code, "mock_responses/idp/token-response-ok.json");
 		Map.Entry<String, CorrelatedRequestsHolder> mapEntry = addMockRequestToPendingIdpRequestCommunicationCache(
 				createDefaultLightRequest(SamlNameIdFormat.PERSISTENT.getNameIdFormat()));
 
@@ -98,6 +99,38 @@ class IdpResponseControllerConsentNotRequiredTests extends IdpResponseController
 				"Ignoring optional attribute PlaceOfBirth - no mapping configured to extract it's corresponding value from id-token",
 				"Ignoring optional attribute CurrentAddress - no mapping configured to extract it's corresponding value from id-token");
 		assertResponse(mapEntry);
+	}
+
+	@Test
+	void redirectToEidasnodeWhenValidResponseAndConsentNotRequired_LegalPersonAttributesRequested() throws Exception {
+
+		String code = UUID.randomUUID().toString();
+		createMockOidcServerResponse_successfulAuthentication(code, "mock_responses/idp/legal-person-token-response-ok.json");
+		Map.Entry<String, CorrelatedRequestsHolder> mapEntry = addMockRequestToPendingIdpRequestCommunicationCache(
+				createLightRequest(MOCK_CITIZEN_COUNTRY, MOCK_ISSUER_NAME, MOCK_RELAY_STATE, MOCK_LOA_HIGH, MOCK_SP_TYPE,
+						MOCK_PROVIDER_NAME, new ImmutableAttributeMap.Builder()
+								.putAll(LEGAL_PERSON_MANDATORY_ATTRIBUTES).putAll(NATURAL_PERSON_ALL_ATTRIBUTES).build(), null));
+
+		given()
+				.param("code", code)
+				.param("state", mapEntry.getKey())
+				.param("unknown-parameter-that-should-be-ignored", " * ? / \\ | < > , . ( ) [ ] { } ; : ‘ @ # $ % ^ &´`?0àáâãäåçèéêëìíîðñòôõöö")
+				.config(RestAssured.config().redirect(redirectConfig().followRedirects(false)))
+				.when()
+				.get(ENDPOINT_IDP_RESPONSE)
+				.then()
+				.assertThat()
+				.statusCode(302)
+				.header(HttpHeaders.LOCATION, startsWith("https://ee-eidas-proxy:8083/EidasNode/SpecificProxyServiceResponse" +
+						"?token=c3BlY2lmaWNDb21t"));
+
+		assertPendingIdpRequestCommunicationCacheIsEmpty();
+		assertWarningIsLogged(SpecificProxyService.class,
+				"Ignoring optional attribute BirthName - no mapping configured to extract it's corresponding value from id-token",
+				"Ignoring optional attribute Gender - no mapping configured to extract it's corresponding value from id-token",
+				"Ignoring optional attribute PlaceOfBirth - no mapping configured to extract it's corresponding value from id-token",
+				"Ignoring optional attribute CurrentAddress - no mapping configured to extract it's corresponding value from id-token");
+		assertLegalPersonResponse(mapEntry);
 	}
 
 	private void assertResponse(Map.Entry<String, CorrelatedRequestsHolder> mapEntry) throws SAXException, IOException, ParserConfigurationException {
@@ -128,6 +161,38 @@ class IdpResponseControllerConsentNotRequiredTests extends IdpResponseController
 		assertThat(responseXml, hasXPath("/lightResponse/attributes/attribute[definition = 'http://eidas.europa.eu/attributes/naturalperson/DateOfBirth']/value", equalTo("2000-01-01"))); // profile_attributes.date_of_birth claim value in id-token - token-response-ok.json
 		assertThat(responseXml, hasXPath("/lightResponse/attributes/attribute[definition = 'http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName']/value", equalTo("MARY ÄNN"))); // profile_attributes.given_name claim value in id-token - token-response-ok.json
 		assertThat(responseXml, hasXPath("/lightResponse/attributes/attribute[definition = 'http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName']/value", equalTo("O’CONNEŽ-ŠUSLIK TESTNUMBER"))); // profile_attributes.family_name claim value in id-token - token-response-ok.json
+	}
+
+	private void assertLegalPersonResponse(Map.Entry<String, CorrelatedRequestsHolder> mapEntry) throws SAXException, IOException, ParserConfigurationException {
+		List<Cache.Entry<String, String>> list = getListFromIterator(getEidasNodeResponseCommunicationCache().iterator());
+		assertEquals(1, list.size());
+		assertThat(list.get(0).getKey(), matchesPattern(UUID_REGEX));
+
+		Element responseXml = getXmlDocument(list.get(0).getValue());
+		assertThat(responseXml, hasXPath("/lightResponse/id", equalTo("7d02cecd-6a63-4124-97fa-74999817fb08"))); // jti claim value in id-token - legal-person-token-response-ok.json
+		ILightRequest originalLightRequest = mapEntry.getValue().getLightRequest();
+		assertThat(responseXml, hasXPath("/lightResponse/inResponseToId", equalTo(originalLightRequest.getId())));
+		assertThat(responseXml, hasXPath("/lightResponse/relayState", equalTo(originalLightRequest.getRelayState())));
+		assertThat(responseXml, hasXPath("/lightResponse/levelOfAssurance", equalTo(originalLightRequest.getLevelOfAssurance().toString())));
+		assertThat(responseXml, hasXPath("/lightResponse/issuer", equalTo("https://localhost:9877"))); // iss claim value in id-token - legal-person-token-response-ok.json
+		assertThat(responseXml, hasXPath("/lightResponse/subject", equalTo("test123"))); // profile_attributes.legal_person.registry_code claim value in id-token - legal-person-token-response-ok.json
+		assertThat(responseXml, hasXPath("/lightResponse/ipAddress", matchesPattern(IP_REGEX)));
+		assertThat(responseXml, hasXPath("/lightResponse/status/statusCode", equalTo("urn:oasis:names:tc:SAML:2.0:status:Success")));
+		assertThat(responseXml, hasXPath("/lightResponse/status/failure", equalTo("false")));
+
+		if (StringUtils.isNotEmpty(originalLightRequest.getNameIdFormat())) {
+			assertThat(responseXml, hasXPath("/lightResponse/subjectNameIdFormat", equalTo(originalLightRequest.getNameIdFormat())));
+		} else {
+			assertThat(responseXml, hasXPath("/lightResponse/subjectNameIdFormat", equalTo("urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified")));
+		}
+
+		assertThat(responseXml, hasXPath("count(/lightResponse/attributes/attribute)", equalTo("6")));
+		assertThat(responseXml, hasXPath("/lightResponse/attributes/attribute[definition = 'http://eidas.europa.eu/attributes/naturalperson/PersonIdentifier']/value", equalTo("60001019906"))); // id code from sub claim value in id-token - legal-person-token-response-ok.json
+		assertThat(responseXml, hasXPath("/lightResponse/attributes/attribute[definition = 'http://eidas.europa.eu/attributes/naturalperson/DateOfBirth']/value", equalTo("2000-01-01"))); // profile_attributes.date_of_birth claim value in id-token - legal-person-token-response-ok.json
+		assertThat(responseXml, hasXPath("/lightResponse/attributes/attribute[definition = 'http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName']/value", equalTo("MARY ÄNN"))); // profile_attributes.given_name claim value in id-token - legal-person-token-response-ok.json
+		assertThat(responseXml, hasXPath("/lightResponse/attributes/attribute[definition = 'http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName']/value", equalTo("O’CONNEŽ-ŠUSLIK TESTNUMBER"))); // profile_attributes.family_name claim value in id-token - legal-person-token-response-ok.json
+		assertThat(responseXml, hasXPath("/lightResponse/attributes/attribute[definition = 'http://eidas.europa.eu/attributes/legalperson/LegalName']/value", equalTo("Legal Name"))); // profile_attributes.legal_person.name claim value in id-token - legal-person-token-response-ok.json
+		assertThat(responseXml, hasXPath("/lightResponse/attributes/attribute[definition = 'http://eidas.europa.eu/attributes/legalperson/LegalPersonIdentifier']/value", equalTo("test123"))); // profile_attributes.legal_person.registry_code claim value in id-token - legal-person-token-response-ok.json
 	}
 }
 

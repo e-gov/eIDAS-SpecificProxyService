@@ -629,7 +629,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		return mapEntry;
 	}
 
-	void createMockOidcServerResponse_successfulAuthentication(String code) throws UnsupportedEncodingException {
+	void createMockOidcServerResponse_successfulAuthentication(String code, String responseFile) throws UnsupportedEncodingException {
 		mockOidcServer.stubFor(post(urlEqualTo("/oidc/token"))
 				.withBasicAuth(
 						getSpecificProxyServiceProperties().getOidc().getClientId(),
@@ -641,7 +641,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 				.willReturn(aResponse()
 						.withStatus(200)
 						.withHeader("Content-Type", "application/json; charset=UTF-8")
-						.withBodyFile("mock_responses/idp/token-response-ok.json")));
+						.withBodyFile(responseFile)));
 	}
 }
 

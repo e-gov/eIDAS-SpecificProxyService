@@ -87,18 +87,8 @@ public class ProxyServiceRequestController {
         if (incomingLightRequest.getNameIdFormat() != null && SamlNameIdFormat.fromString(incomingLightRequest.getNameIdFormat()) == null)
             throw new BadRequestException("Invalid NameIdFormat");
 
-        if (specificProxyServiceProperties.isLegalPersonAttributesNotAccepted()
-                && containsLegalPersonAttributes(incomingLightRequest))
-            throw new BadRequestException("Support for legal person attributes has been temporarily suspended");
-
         if (containsLegalPersonAndNaturalPersonAttributes(incomingLightRequest))
             throw new BadRequestException("Request may not contain both legal person and natural person attributes");
-    }
-
-    private boolean containsLegalPersonAttributes(ILightRequest incomingLightRequest) {
-        List<String> requestAttributesByFriendlyName = incomingLightRequest.getRequestedAttributes().getAttributeMap().keySet()
-                .stream().map(AttributeDefinition::getFriendlyName).collect(toList());
-        return !Collections.disjoint(asList("LegalName", "LegalPersonIdentifier"), requestAttributesByFriendlyName);
     }
 
     private boolean containsLegalPersonAndNaturalPersonAttributes(ILightRequest incomingLightRequest) {

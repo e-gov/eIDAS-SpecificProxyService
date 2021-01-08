@@ -32,11 +32,6 @@ public class DefaultPropertiesTests extends SpecificProxyTest {
     }
 
     @Test
-    void defaultLegalPersonAttributesNotAccepted() {
-        assertFalse(specificProxyServiceProperties.isLegalPersonAttributesNotAccepted());
-    }
-
-    @Test
     void defaultSupportedSPType() {
         assertThat(specificProxyServiceProperties.getSupportedSpTypes()).containsExactly("public");
     }

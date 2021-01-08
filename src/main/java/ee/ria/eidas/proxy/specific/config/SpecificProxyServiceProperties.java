@@ -52,8 +52,6 @@ public class SpecificProxyServiceProperties {
 
     private boolean askConsent = true;
 
-    private boolean legalPersonAttributesNotAccepted = false;  // Return error when legal-person attributes are requested - see TARA2-90 for further details
-
     private List<String> supportedSpTypes = asList("public");
 
     @NotNull

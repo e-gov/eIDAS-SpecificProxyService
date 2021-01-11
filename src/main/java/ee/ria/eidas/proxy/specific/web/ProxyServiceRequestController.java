@@ -95,7 +95,7 @@ public class ProxyServiceRequestController {
         List<String> requestAttributesByFriendlyName = incomingLightRequest.getRequestedAttributes().getAttributeMap().keySet()
                 .stream().map(AttributeDefinition::getFriendlyName).collect(toList());
         return !Collections.disjoint(asList("LegalName", "LegalPersonIdentifier"), requestAttributesByFriendlyName) &&
-                !Collections.disjoint(asList("CurrentGivenName", "CurrentFamilyName", "PersonIdentifier", "DateOfBirth"), requestAttributesByFriendlyName);
+                !Collections.disjoint(asList("GivenName", "FamilyName", "PersonIdentifier", "DateOfBirth"), requestAttributesByFriendlyName);
     }
 
     @Data

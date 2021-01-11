@@ -24,7 +24,7 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @ContextConfiguration(classes = SpecificProxyServiceConfiguration.class, initializers = IgniteInstanceInitializerTests.TestContextInitializer.class)
 public class IgnateCacheExpirationTests extends SpecificProxyTest {
-    private static final long EVENT_TIMEOUT = 4_000;
+    private static final long EVENT_TIMEOUT = 10_000;
 
     @Test
     void nodeSpecificProxyserviceRequestCacheEventExpires() {

@@ -215,10 +215,10 @@ public class SpecificProxyService {
 
         String subject;
         if (containsLegalPersonAttributes(originalLightRequest)) {
-            subject = getAttributeValueFromClaims(claims, "subject", "$.profile_attributes.legal_person.registry_code");
+            subject = getAttributeValueFromClaims(claims, "subject", mappingProperties.getLegalPersonSubject());
         }
         else {
-            subject = getAttributeValueFromClaims(claims, "subject", mappingProperties.getSubject());
+            subject = getAttributeValueFromClaims(claims, "subject", mappingProperties.getNaturalPersonSubject());
         }
 
         String responseId = getAttributeValueFromClaims(claims, "responseId", mappingProperties.getId());

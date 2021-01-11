@@ -84,7 +84,7 @@ public class DefaultPropertiesTests extends SpecificProxyTest {
     @Test
     void defaultIdTokenClaimMappingProperties() {
         IdTokenClaimMappingProperties responseClaimMapping = specificProxyServiceProperties.getOidc().getResponseClaimMapping();
-        assertEquals("$.sub", responseClaimMapping.getSubject());
+        assertEquals("$.sub", responseClaimMapping.getNaturalPersonSubject());
         assertEquals("$.jti", responseClaimMapping.getId());
         assertEquals("$.iss", responseClaimMapping.getIssuer());
         assertEquals("$.acr", responseClaimMapping.getAcr());

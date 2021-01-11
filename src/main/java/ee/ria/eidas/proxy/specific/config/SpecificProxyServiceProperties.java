@@ -140,7 +140,9 @@ public class SpecificProxyServiceProperties {
     @ToString
     public static class IdTokenClaimMappingProperties {
 
-        private String subject = "$.sub";
+        private String naturalPersonSubject = "$.sub";
+
+        private String legalPersonSubject = "$.profile_attributes.represents_legal_person.registry_code";
 
         private String id = "$.jti";
 

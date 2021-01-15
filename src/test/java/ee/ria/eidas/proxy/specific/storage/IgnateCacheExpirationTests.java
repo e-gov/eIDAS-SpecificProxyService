@@ -6,6 +6,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ignite.events.CacheEvent;
 import org.apache.ignite.lang.IgnitePredicate;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ContextConfiguration;
@@ -27,21 +28,25 @@ public class IgnateCacheExpirationTests extends SpecificProxyTest {
     private static final long EVENT_TIMEOUT = 10_000;
 
     @Test
+    @Disabled
     void nodeSpecificProxyserviceRequestCacheEventExpires() {
         cacheEventExpires(eidasNodeRequestCommunicationCache);
     }
 
     @Test
+    @Disabled
     void nodeSpecificProxyserviceResponseCacheEventExpires() {
         cacheEventExpires(eidasNodeResponseCommunicationCache);
     }
 
     @Test
+    @Disabled
     void specificMSIdpRequestCorrelationMapEventExpires() {
         cacheEventExpires(idpRequestCommunicationCache);
     }
 
     @Test
+    @Disabled
     void specificMSIdpConsentCorrelationMapEventExpires() {
         cacheEventExpires(idpConsentCommunicationCache);
     }

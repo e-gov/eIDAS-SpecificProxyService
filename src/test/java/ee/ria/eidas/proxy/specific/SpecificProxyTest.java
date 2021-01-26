@@ -8,13 +8,9 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceProperties;
 import ee.ria.eidas.proxy.specific.service.SpecificProxyService;
-import ee.ria.eidas.proxy.specific.storage.EidasNodeCommunication;
+import ee.ria.eidas.proxy.specific.storage.LightJAXBCodec;
 import ee.ria.eidas.proxy.specific.storage.SpecificProxyServiceCommunication;
-import eu.eidas.auth.commons.attribute.AttributeDefinition;
-import eu.eidas.auth.commons.attribute.ImmutableAttributeMap;
 import eu.eidas.auth.commons.light.ILightResponse;
-import eu.eidas.auth.commons.light.impl.LightRequest;
-import eu.eidas.auth.commons.light.impl.LightResponse;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.restassured.RestAssured;
 import io.restassured.builder.ResponseSpecBuilder;
@@ -41,8 +37,6 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.test.context.ActiveProfiles;
 
 import javax.cache.Cache;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
@@ -72,13 +66,6 @@ public abstract class SpecificProxyTest {
         System.setProperty("javax.net.ssl.trustStore", "src/test/resources/__files/mock_keys/idp-tls-truststore.jks");
         System.setProperty("javax.net.ssl.trustStorePassword", "changeit");
         System.setProperty("javax.net.ssl.trustStoreType", "jks");
-
-        try {
-            codec = new EidasNodeCommunication.LightJAXBCodec(JAXBContext.newInstance(LightRequest.class, LightResponse.class,
-                    ImmutableAttributeMap.class, AttributeDefinition.class));
-        } catch (JAXBException e) {
-            log.error("Unable to instantiate in static initializer ", e);
-        }
     }
 
     private static final Map<String, Object> EXPECTED_RESPONSE_HEADERS = new HashMap<String, Object>() {{
@@ -106,7 +93,7 @@ public abstract class SpecificProxyTest {
             .keystorePassword("changeit")
     );
 
-    protected static EidasNodeCommunication.LightJAXBCodec codec;
+    protected static LightJAXBCodec codec = LightJAXBCodec.buildDefault();
     protected static Ignite eidasNodeIgnite;
 
     @Autowired

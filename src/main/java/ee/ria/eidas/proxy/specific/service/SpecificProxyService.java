@@ -70,7 +70,6 @@ import static net.logstash.logback.marker.Markers.append;
  * SpecificProxyService: provides implementation for interacting with the selected IdP.
  * For the request: it creates the OIDC protocol authentication request to be send to IdP for authentication
  * For the response: it processes the received OIDC callback response, retrieves the person attributes and builds the LightResponse
- *
  */
 @Slf4j
 @RequiredArgsConstructor
@@ -88,14 +87,14 @@ public class SpecificProxyService {
 
         URI oidAuthenticationRequest =
                 UriComponentsBuilder.fromUri(oidcProviderMetadataService.getOidcProviderMetadata().getAuthorizationEndpointURI())
-                .queryParam("scope", getScope(originalIlightRequest))
-                .queryParam("response_type", "code")
-                .queryParam("client_id",  specificProxyServiceProperties.getOidc().getClientId())
-                .queryParam("redirect_uri", specificProxyServiceProperties.getOidc().getRedirectUri())
-                .queryParam("acr_values", getLevelOfAssurance(originalIlightRequest))
-                .queryParam("ui_locales", specificProxyServiceProperties.getOidc().getDefaultUiLanguage())
-                .queryParam("state", state)
-                .encode(StandardCharsets.UTF_8).build().toUri();
+                        .queryParam("scope", getScope(originalIlightRequest))
+                        .queryParam("response_type", "code")
+                        .queryParam("client_id", specificProxyServiceProperties.getOidc().getClientId())
+                        .queryParam("redirect_uri", specificProxyServiceProperties.getOidc().getRedirectUri())
+                        .queryParam("acr_values", getLevelOfAssurance(originalIlightRequest))
+                        .queryParam("ui_locales", specificProxyServiceProperties.getOidc().getDefaultUiLanguage())
+                        .queryParam("state", state)
+                        .encode(StandardCharsets.UTF_8).build().toUri();
 
         return createCorrelatedRequestsHolder(originalIlightRequest, oidAuthenticationRequest.toURL(), state);
     }
@@ -167,17 +166,17 @@ public class SpecificProxyService {
             httpRequest.setReadTimeout(specificProxyServiceProperties.getOidc().getReadTimeoutInMilliseconds());
 
             log.info(append(IDP_TOKEN_REQUEST_HTTP_QUERY_PARAMS, httpRequest.getQueryParameters())
-                    .and(append(IDP_TOKEN_REQUEST_HTTP_METHOD, httpRequest.getMethod()))
-                    .and(append(IDP_TOKEN_REQUEST_HTTP_CONNECT_TIMEOUT, httpRequest.getConnectTimeout()))
-                    .and(append(IDP_TOKEN_REQUEST_HTTP_READ_TIMEOUT, httpRequest.getReadTimeout()))
-                    .and(append(IDP_TOKEN_REQUEST_AUTH_CLIENT_ID, request.getClientAuthentication().getClientID()))
-                    .and(append(IDP_TOKEN_REQUEST_AUTH_METHOD, request.getClientAuthentication().getMethod())),
+                            .and(append(IDP_TOKEN_REQUEST_HTTP_METHOD, httpRequest.getMethod()))
+                            .and(append(IDP_TOKEN_REQUEST_HTTP_CONNECT_TIMEOUT, httpRequest.getConnectTimeout()))
+                            .and(append(IDP_TOKEN_REQUEST_HTTP_READ_TIMEOUT, httpRequest.getReadTimeout()))
+                            .and(append(IDP_TOKEN_REQUEST_AUTH_CLIENT_ID, request.getClientAuthentication().getClientID()))
+                            .and(append(IDP_TOKEN_REQUEST_AUTH_METHOD, request.getClientAuthentication().getMethod())),
                     "Request id_token from '{}'",
                     value(IDP_TOKEN_REQUEST_HTTP_URL, httpRequest.getURL()));
 
             TokenResponse tokenResponse = OIDCTokenResponseParser.parse(httpRequest.send());
             if (tokenResponse.indicatesSuccess()) {
-                return (OIDCTokenResponse)tokenResponse.toSuccessResponse();
+                return (OIDCTokenResponse) tokenResponse.toSuccessResponse();
             } else {
                 TokenErrorResponse errorResponse = tokenResponse.toErrorResponse();
                 throw new IllegalStateException("OIDC token request returned an error! " + errorResponse.getErrorObject());
@@ -186,7 +185,7 @@ public class SpecificProxyService {
         } catch (IOException e) {
             throw new IllegalStateException(String.format("IO error while accessing OIDC token endpoint! %s", e.getMessage()), e);
         } catch (ParseException e) {
-            throw new IllegalStateException(String.format("Invalid OIDC token endpoint response! %s", e.getMessage()) , e);
+            throw new IllegalStateException(String.format("Invalid OIDC token endpoint response! %s", e.getMessage()), e);
         }
     }
 
@@ -216,8 +215,7 @@ public class SpecificProxyService {
         String subject;
         if (containsLegalPersonAttributes(originalLightRequest)) {
             subject = getAttributeValueFromClaims(claims, "subject", mappingProperties.getLegalPersonSubject());
-        }
-        else {
+        } else {
             subject = getAttributeValueFromClaims(claims, "subject", mappingProperties.getNaturalPersonSubject());
         }
 
@@ -253,7 +251,7 @@ public class SpecificProxyService {
     private ImmutableAttributeMap getAttributes(ILightRequest lightRequest, JSONObject claims, IdTokenClaimMappingProperties mappingProperties) {
         ImmutableAttributeMap.Builder attrBuilder = ImmutableAttributeMap.builder();
 
-        for ( ImmutableAttributeMap.ImmutableAttributeEntry entry : lightRequest.getRequestedAttributes().entrySet()) {
+        for (ImmutableAttributeMap.ImmutableAttributeEntry entry : lightRequest.getRequestedAttributes().entrySet()) {
             String friendlyName = entry.getKey().getFriendlyName();
             String claimValue = getClaimValueFromIdToken(claims, entry, mappingProperties);
             if (claimValue != null) {
@@ -324,7 +322,7 @@ public class SpecificProxyService {
         Assert.notNull(originalIlightRequest.getLevelOfAssurance(), "Mandatory LevelOfAssurance field is missing in LightRequest!");
         LevelOfAssurance loa = LevelOfAssurance.fromString(originalIlightRequest.getLevelOfAssurance());
         if (loa == null) {
-            throw new IllegalArgumentException("Invalid level of assurance value. Allowed values: " + Arrays.stream(LevelOfAssurance.values()).map(LevelOfAssurance::getValue).collect(Collectors.joining(", ")) );
+            throw new IllegalArgumentException("Invalid level of assurance value. Allowed values: " + Arrays.stream(LevelOfAssurance.values()).map(LevelOfAssurance::getValue).collect(Collectors.joining(", ")));
         }
         return loa.name().toLowerCase();
     }

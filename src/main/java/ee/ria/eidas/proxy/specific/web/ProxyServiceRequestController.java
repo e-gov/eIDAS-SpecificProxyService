@@ -10,6 +10,7 @@ import ee.ria.eidas.proxy.specific.storage.SpecificProxyServiceCommunication.Cor
 import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.light.ILightRequest;
 import eu.eidas.auth.commons.protocol.impl.SamlNameIdFormat;
+import eu.eidas.specificcommunication.exception.SpecificCommunicationException;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,16 +53,16 @@ public class ProxyServiceRequestController {
     private SpecificProxyServiceCommunication specificProxyServiceCommunication;
 
     @GetMapping(value = ENDPOINT_PROXY_SERVICE_REQUEST)
-    public ModelAndView get(@Validated RequestParameters request) {
+    public ModelAndView get(@Validated RequestParameters request) throws SpecificCommunicationException {
         return execute(request);
     }
 
     @PostMapping(value = ENDPOINT_PROXY_SERVICE_REQUEST)
-    public ModelAndView post(@Validated RequestParameters request) {
+    public ModelAndView post(@Validated RequestParameters request) throws SpecificCommunicationException {
         return execute(request);
     }
 
-    private ModelAndView execute(RequestParameters request) {
+    private ModelAndView execute(RequestParameters request) throws SpecificCommunicationException {
         String tokenBase64 = getStringParameterValue(request.getToken());
 
         ILightRequest incomingLightRequest = eidasNodeCommunication.getAndRemoveRequest(tokenBase64);

@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.Ignition;
 import org.apache.ignite.configuration.IgniteConfiguration;
+import org.apache.ignite.logger.slf4j.Slf4jLogger;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 
@@ -27,6 +28,7 @@ public class IgniteInstanceInitializer {
             Ignition.setClientMode(true);
             IgniteConfiguration cfg = Ignition.loadSpringBean(resource.getInputStream(), properties.getIgniteConfigurationBeanName());
             cfg.setIgniteInstanceName(cfg.getIgniteInstanceName() + "Client");
+            cfg.setGridLogger(new Slf4jLogger());
             instance = Ignition.start(cfg);
         }
     }

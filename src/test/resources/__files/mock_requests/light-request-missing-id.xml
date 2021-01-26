@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<lightRequest>
+<lightRequest xmlns="http://cef.eidas.eu/LightRequest">
     <citizenCountryCode>DE</citizenCountryCode>
+    <id></id>
     <issuer>issuerName</issuer>
     <levelOfAssurance>http://eidas.europa.eu/LoA/high</levelOfAssurance>
     <providerName>mock_sp_name</providerName>

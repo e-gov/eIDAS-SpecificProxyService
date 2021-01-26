@@ -208,7 +208,7 @@ public class ProxyServiceRequestLightRequestAcceptanceTests extends ControllerTe
                 .body("incidentNumber", notNullValue())
                 .body("message", equalTo("Something went wrong internally. Please consult server logs for further details."));
 
-        assertErrorIsLogged("Server encountered an unexpected error: Failed to unmarshal incoming request! Attribute http://eidas.europa.eu/attributes/naturalperson/UnknownAttribute not present in the registry");
+        assertErrorIsLogged("Server encountered an unexpected error: Missing registry");
         assertResponseCommunicationCacheIsEmpty();
     }
 
@@ -222,63 +222,6 @@ public class ProxyServiceRequestLightRequestAcceptanceTests extends ControllerTe
                 .xmlType(NaturalPersonSpec.Namespace.URI, "UnknownAttribute", NaturalPersonSpec.Namespace.PREFIX)
                 .attributeValueMarshaller(new LiteralStringAttributeValueMarshaller())
                 .build();
-    }
-
-    @Test
-    void internalServerErrorWhen_RequestedLoAMissing() throws Exception {
-        LightRequest request = LightRequest.builder()
-                .id(UUID.randomUUID().toString())
-                .citizenCountryCode(MOCK_CITIZEN_COUNTRY)
-                .issuer(MOCK_ISSUER_NAME)
-                .spType(MOCK_SP_TYPE)
-                .requestedAttributes(NATURAL_PERSON_MANDATORY_ATTRIBUTES).build();
-
-        BinaryLightToken mockBinaryLightToken = putRequest(request);
-
-        given()
-                .param(EidasParameterKeys.TOKEN.toString(), BinaryLightTokenHelper.encodeBinaryLightTokenBase64(mockBinaryLightToken))
-                .when()
-                .get(ENDPOINT_PROXY_SERVICE_REQUEST)
-                .then()
-                .assertThat()
-                .statusCode(500)
-                .body("error", equalTo("Internal Server Error"))
-                .body("errors", nullValue())
-                .body("incidentNumber", notNullValue())
-                .body("message", equalTo("Something went wrong internally. Please consult server logs for further details."));
-
-        assertErrorIsLogged("Server encountered an unexpected error: Mandatory LevelOfAssurance field is missing in LightRequest!");
-        assertResponseCommunicationCacheIsEmpty();
-    }
-
-    @Test
-    void internalServerErrorWhen_RequestedLoANotSupported() throws Exception {
-
-        LightRequest request = LightRequest.builder()
-                .id(UUID.randomUUID().toString())
-                .citizenCountryCode(MOCK_CITIZEN_COUNTRY)
-                .issuer(MOCK_ISSUER_NAME)
-                .spType(MOCK_SP_TYPE)
-                .levelOfAssurance("INVALID_LOA")
-                .requestedAttributes(NATURAL_PERSON_MANDATORY_ATTRIBUTES).build();
-
-        BinaryLightToken mockBinaryLightToken = putRequest(request);
-
-        given()
-                .param(EidasParameterKeys.TOKEN.toString(), BinaryLightTokenHelper.encodeBinaryLightTokenBase64(mockBinaryLightToken))
-                .when()
-                .get(ENDPOINT_PROXY_SERVICE_REQUEST)
-                .then()
-                .assertThat()
-                .statusCode(500)
-                .body("error", equalTo("Internal Server Error"))
-                .body("errors", nullValue())
-                .body("incidentNumber", notNullValue())
-                .body("message", equalTo("Something went wrong internally. Please consult server logs for further details."));
-
-        assertErrorIsLogged("Server encountered an unexpected error: Invalid level of assurance value. Allowed values: http://eidas.europa.eu/LoA/low, " +
-                "http://eidas.europa.eu/LoA/substantial, http://eidas.europa.eu/LoA/high");
-        assertResponseCommunicationCacheIsEmpty();
     }
 
     @Test
@@ -297,7 +240,7 @@ public class ProxyServiceRequestLightRequestAcceptanceTests extends ControllerTe
                 .body("incidentNumber", notNullValue())
                 .body("message", equalTo("Something went wrong internally. Please consult server logs for further details."));
 
-        assertErrorIsLogged("Server encountered an unexpected error: Failed to unmarshal incoming request! citizenCountryCode cannot be null, empty or blank");
+        assertErrorIsLogged("Server encountered an unexpected error: citizenCountryCode cannot be null, empty or blank");
     }
 
     @Test
@@ -316,7 +259,7 @@ public class ProxyServiceRequestLightRequestAcceptanceTests extends ControllerTe
                 .body("incidentNumber", notNullValue())
                 .body("message", equalTo("Something went wrong internally. Please consult server logs for further details."));
 
-        assertErrorIsLogged("Server encountered an unexpected error: Failed to unmarshal incoming request! id cannot be null, empty or blank");
+        assertErrorIsLogged("Server encountered an unexpected error: id cannot be null, empty or blank");
     }
 
     @Test
@@ -335,7 +278,7 @@ public class ProxyServiceRequestLightRequestAcceptanceTests extends ControllerTe
                 .body("incidentNumber", notNullValue())
                 .body("message", equalTo("Something went wrong internally. Please consult server logs for further details."));
 
-        assertErrorIsLogged("Server encountered an unexpected error: Failed to unmarshal incoming request! issuer cannot be null, empty or blank");
+        assertErrorIsLogged("Server encountered an unexpected error: issuer cannot be null, empty or blank");
     }
 
     @Test
@@ -354,8 +297,8 @@ public class ProxyServiceRequestLightRequestAcceptanceTests extends ControllerTe
                 .body("incidentNumber", notNullValue())
                 .body("message", equalTo("Something went wrong internally. Please consult server logs for further details."));
 
-        assertErrorIsLogged("Server encountered an unexpected error: Failed to unmarshal incoming request! javax.xml.bind.UnmarshalException: " +
-                "unexpected element (uri:\"\", local:\"lightRequest1\"). Expected elements are <{}immutableAttributeMap>,<{}lightRequest>,<{}lightResponse>");
+        assertErrorIsLogged("Server encountered an unexpected error: Failed to unmarshal incoming request! unexpected " +
+                "element (uri:\"\", local:\"lightRequest1\"). Expected elements are <{http://cef.eidas.eu/LightRequest}lightRequest>");
     }
 
     @Test

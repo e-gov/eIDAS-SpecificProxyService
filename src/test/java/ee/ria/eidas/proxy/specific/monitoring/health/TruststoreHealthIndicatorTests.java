@@ -37,8 +37,8 @@ class TruststoreHealthIndicatorTests extends ApplicationHealthTest {
 
     @Test
     public void noTruststoreWarningsWhenWarningPeriodNotMet() {
-        Instant expectedTime = Instant.parse("2021-04-13T08:50:00Z");
-        Mockito.when(truststoreHealthIndicator.getSystemClock()).thenReturn(Clock.fixed(expectedTime, of("UTC")));
+        Instant mockSystemTime = Instant.parse("2031-04-07T14:22:10Z");
+        Mockito.when(truststoreHealthIndicator.getSystemClock()).thenReturn(Clock.fixed(mockSystemTime, of("UTC")));
         Response healthResponse = getHealthResponse();
 
         List<String> warnings = healthResponse.jsonPath().getList("warnings");
@@ -48,31 +48,31 @@ class TruststoreHealthIndicatorTests extends ApplicationHealthTest {
 
     @Test
     public void truststoreWarningWhenCertificateAboutToExpire() {
-        Instant expectedTime = Instant.parse("2021-04-14T08:50:00Z");
-        Mockito.when(truststoreHealthIndicator.getSystemClock()).thenReturn(Clock.fixed(expectedTime, of("UTC")));
+        Instant mockSystemTime = Instant.parse("2031-04-07T14:23:10Z");
+        Mockito.when(truststoreHealthIndicator.getSystemClock()).thenReturn(Clock.fixed(mockSystemTime, of("UTC")));
         Response healthResponse = getHealthResponse();
 
         List<String> warnings = healthResponse.jsonPath().getList("warnings");
         assertNotNull(warnings);
         Optional<String> authenticationService = warnings.stream()
-                .filter(w -> w.contains("1589359800"))
+                .filter(w -> w.contains("1620397330"))
                 .findFirst();
-        assertEquals("Truststore certificate 'CN=localhost, OU=test, O=test, L=test, ST=test, C=EE' with serial number '1589359800' is expiring at 2021-05-13T08:50:00Z", authenticationService.get());
+        assertEquals("Truststore certificate 'CN=localhost, OU=test, O=test, L=test, ST=test, C=EE' with serial number '1620397330' is expiring at 2031-05-07T14:22:10Z", authenticationService.get());
         assertDependenciesUp(healthResponse);
     }
 
     @Test
     public void truststoreWarningAndHealthStatusDownWhenCertificateExpired() {
-        Instant expectedTime = Instant.parse("2021-05-13T08:51:00Z");
-        Mockito.when(truststoreHealthIndicator.getSystemClock()).thenReturn(Clock.fixed(expectedTime, of("UTC")));
+        Instant mockSystemTime = Instant.parse("2031-05-07T14:23:10Z");
+        Mockito.when(truststoreHealthIndicator.getSystemClock()).thenReturn(Clock.fixed(mockSystemTime, of("UTC")));
         Response healthResponse = getHealthResponse();
 
         List<String> warnings = healthResponse.jsonPath().getList("warnings");
         assertNotNull(warnings);
         Optional<String> authenticationService = warnings.stream()
-                .filter(w -> w.contains("1589359800"))
+                .filter(w -> w.contains("1620397330"))
                 .findFirst();
-        assertEquals("Truststore certificate 'CN=localhost, OU=test, O=test, L=test, ST=test, C=EE' with serial number '1589359800' is expiring at 2021-05-13T08:50:00Z", authenticationService.get());
+        assertEquals("Truststore certificate 'CN=localhost, OU=test, O=test, L=test, ST=test, C=EE' with serial number '1620397330' is expiring at 2031-05-07T14:22:10Z", authenticationService.get());
         assertDependenciesDown(healthResponse, Dependencies.TRUSTSTORE);
     }
 }

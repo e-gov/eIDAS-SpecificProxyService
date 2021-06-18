@@ -1,3 +1,5 @@
+<img src='doc/img/eu_regional_development_fund_horizontal.jpg'>
+
 # EE specific eIDAS proxy service
 
 - [1. Building the SpecifcProxyService webapp](#build)

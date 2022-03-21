@@ -1,6 +1,5 @@
 HELP.md
 target/
-!.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**
 !**/src/test/**
 
@@ -31,7 +30,7 @@ build/
 .vscode/
 
 ### Maven ###
-.mvn
+.mvn/wrapper/maven-wrapper.jar
 
 ### Docker ###
 .dockerignore

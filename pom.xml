@@ -31,7 +31,10 @@
 		<awaitility.version>4.0.3</awaitility.version>
 		<oauth2-oidc-sdk.version>7.2</oauth2-oidc-sdk.version>
 		<sonar.jacoco.reportPath>target/jacoco.exec</sonar.jacoco.reportPath>
-		<spring-framework.version>5.2.19.RELEASE</spring-framework.version>
+
+		<!-- Using newer version than Spring Boot's default to fix vulnerability CVE-2022-22965.
+             TODO Remove this property after upgrading Spring Boot. -->
+		<spring-framework.version>5.2.20.RELEASE</spring-framework.version>
 		<spring-security.version>5.3.13.RELEASE</spring-security.version>
 		<!-- Using newer version than Spring Boot's default to fix vulnerability CVE-2020-36518.
              TODO Remove this property after upgrading Spring Boot. -->

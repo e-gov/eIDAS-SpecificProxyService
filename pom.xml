@@ -10,7 +10,7 @@
     </parent>
     <groupId>ee.ria.eidas.proxy.specific</groupId>
     <artifactId>ee-specific-proxy</artifactId>
-    <version>1.0.5</version>
+    <version>1.0.6</version>
     <packaging>war</packaging>
     <name>ee-specific-proxy</name>
     <description>EE specific eIDAS proxy service</description>

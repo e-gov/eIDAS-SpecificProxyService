@@ -24,8 +24,8 @@
     </licenses>
 
     <properties>
-        <java.version>1.8</java.version>
-        <eidas.node.version>2.5.0</eidas.node.version>
+        <java.version>11</java.version>
+        <eidas.node.version>2.6.0</eidas.node.version>
         <!-- TODO WireMock version 2.27.0 and later throws com.github.tomakehurst.wiremock.common.FatalStartupException: java.lang.RuntimeException: java.security.UnrecoverableKeyException: Cannot recover key -->
         <wiremock.version>2.26.3</wiremock.version>
         <sonar.jacoco.reportPath>target/jacoco.exec</sonar.jacoco.reportPath>
@@ -37,6 +37,7 @@
         <!-- Using newer version than Spring Boot's default to fix vulnerability CVE-2020-36518.
              TODO Remove this property after upgrading Spring Boot. -->
         <jackson-bom.version>2.15.2</jackson-bom.version>
+        <xml.bind.version>2.3.0</xml.bind.version>
     </properties>
 
     <dependencies>
@@ -120,6 +121,22 @@
             <groupId>eu.eidas</groupId>
             <artifactId>eidas-jcache-ignite-specific-communication</artifactId>
             <version>${eidas.node.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+            <version>${xml.bind.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.xml.bind</groupId>
+            <artifactId>jaxb-core</artifactId>
+            <version>${xml.bind.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.xml.bind</groupId>
+            <artifactId>jaxb-impl</artifactId>
+            <version>${xml.bind.version}</version>
         </dependency>
 
         <!-- OIDC request and response handling -->
@@ -213,7 +230,7 @@
         <dependency>
             <groupId>org.apache.ignite</groupId>
             <artifactId>ignite-core</artifactId>
-            <!-- eIDAS-Node 2.5.0 uses Apache Ignite 2.8.1 -->
+            <!-- eIDAS-Node 2.6.0 uses Apache Ignite 2.8.1 -->
             <version>2.8.1</version>
             <type>test-jar</type>
             <scope>test</scope>

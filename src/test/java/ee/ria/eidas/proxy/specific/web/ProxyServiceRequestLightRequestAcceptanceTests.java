@@ -208,7 +208,7 @@ public class ProxyServiceRequestLightRequestAcceptanceTests extends ControllerTe
                 .body("incidentNumber", notNullValue())
                 .body("message", equalTo("Something went wrong internally. Please consult server logs for further details."));
 
-        assertErrorIsLogged("Server encountered an unexpected error: Missing registry");
+        assertErrorIsLogged("Server encountered an unexpected error: Attribute http://eidas.europa.eu/attributes/naturalperson/UnknownAttribute not present in the registry");
         assertResponseCommunicationCacheIsEmpty();
     }
 

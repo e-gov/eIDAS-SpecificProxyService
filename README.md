@@ -28,7 +28,7 @@
 <a name="build"></a>
 ## 1. Building the SpecifcProxyService webapp
 
-First, make sure you have built [eIDAS-Node](https://ec.europa.eu/cefdigital/wiki/display/CEFDIGITAL/eIDAS-Node+version+2.5) artifacts and installed these to local Maven repository:
+First, make sure you have built [eIDAS-Node](https://ec.europa.eu/digital-building-blocks/wikis/display/DIGITAL/eIDAS-Node+version+2.6) artifacts and installed these to local Maven repository:
 ```
 cd EIDAS-Parent && mvn -DskipTests clean install -P NodeOnly,DemoToolsOnly -PnodeJcacheIgnite,specificCommunicationJcacheIgnite
 ```

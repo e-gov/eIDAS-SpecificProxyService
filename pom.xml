@@ -26,7 +26,7 @@
         <java.version>1.8</java.version>
         <eidas.node.version>2.5.0</eidas.node.version>
         <!-- TODO WireMock version 2.27.0 and later throws com.github.tomakehurst.wiremock.common.FatalStartupException: java.lang.RuntimeException: java.security.UnrecoverableKeyException: Cannot recover key -->
-        <wiremock.version>2.26.3</wiremock.version>
+        <wiremock.version>2.35.1</wiremock.version>
         <sonar.jacoco.reportPath>target/jacoco.exec</sonar.jacoco.reportPath>
 
         <spring-security.version>5.8.4</spring-security.version>

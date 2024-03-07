@@ -26,10 +26,10 @@
     <properties>
         <java.version>11</java.version>
         <asm.version>1.0.2</asm.version>
-        <bouncycastle.version>1.76</bouncycastle.version>
+        <bouncycastle.version>1.77</bouncycastle.version>
         <eidas.node.version>2.6.0</eidas.node.version>
         <encoder-jsp.version>1.2.3</encoder-jsp.version>
-        <guava.version>32.1.3-jre</guava.version>
+        <guava.version>33.0.0-jre</guava.version>
         <ignite.version>2.8.1</ignite.version><!-- eIDAS-Node 2.6.0 uses Apache Ignite 2.8.1 -->
         <jacoco-maven-plugin.version>0.8.11</jacoco-maven-plugin.version>
         <logstash-logback-encoder.version>7.3</logstash-logback-encoder.version><!-- TODO Upgrade to >= 7.4 after Spring Boot is upgraded to 3.x which includes Logback >= 1.3 -->
@@ -41,12 +41,12 @@
 
         <!-- Using newer version than Spring Boot's default to fix vulnerability CVE-2020-36518.
              TODO Remove this property after upgrading Spring Boot. -->
-        <jackson-bom.version>2.15.3</jackson-bom.version>
+        <jackson-bom.version>2.15.4</jackson-bom.version>
         <json-smart.version>2.5.0</json-smart.version>
         <!-- Using newer version than Spring Boot's default to fix vulnerability CVE-2022-22965.
              TODO Remove this property after upgrading Spring Boot. -->
-        <spring-framework.version>5.3.30</spring-framework.version>
-        <spring-security.version>5.8.8</spring-security.version>
+        <spring-framework.version>5.3.32</spring-framework.version>
+        <spring-security.version>5.8.10</spring-security.version>
     </properties>
 
     <dependencies>

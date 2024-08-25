@@ -3,6 +3,7 @@ package ee.ria.eidas.proxy.specific.web;
 import ee.ria.eidas.proxy.specific.storage.SpecificProxyServiceCommunication.CorrelatedRequestsHolder;
 import eu.eidas.auth.commons.light.ILightRequest;
 import io.restassured.RestAssured;
+import io.restassured.builder.ResponseSpecBuilder;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.http.HttpHeaders;
 import org.junit.jupiter.api.Test;
@@ -150,7 +151,19 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 
 	@Test
 	void invalidMethodsNotAllowed() {
-		assertHttpMethodsNotAllowed(ENDPOINT_IDP_RESPONSE, "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "PATCH", "CUSTOM", "HEAD", "TRACE");
+		assertHttpMethodsNotAllowed(ENDPOINT_IDP_RESPONSE, "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "CUSTOM", "HEAD", "TRACE");
+	}
+
+	@Test
+	void ConnectHttpMethodRespondsWith501() {
+		RestAssured.responseSpecification = new ResponseSpecBuilder().build();
+
+		given()
+				.when()
+				.request("CONNECT", ENDPOINT_IDP_RESPONSE)
+				.then()
+				.assertThat()
+				.statusCode(501);
 	}
 
 	@Test
@@ -230,7 +243,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 			.body("incidentNumber", notNullValue())
 			.body("message", equalTo("Something went wrong internally. Please consult server logs for further details."));
 
-		assertErrorIsLogged("Server encountered an unexpected error: Invalid OIDC token endpoint response! Token type must be Bearer");
+		assertErrorIsLogged("Server encountered an unexpected error: Invalid OIDC token endpoint response! Unsupported token_type: mac");
 		assertPendingIdpRequestCommunicationCacheIsEmpty();
 		assertResponseCommunicationCacheIsEmpty();
 	}
@@ -635,9 +648,8 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 						getSpecificProxyServiceProperties().getOidc().getClientId(),
 						getSpecificProxyServiceProperties().getOidc().getClientSecret())
 				.withHeader("Content-Type", containing("application/x-www-form-urlencoded"))
-				.withRequestBody(containing("code=" + code
-						+ "&redirect_uri=" + URLEncoder.encode(getSpecificProxyServiceProperties().getOidc().getRedirectUri(), StandardCharsets.UTF_8.name())
-						+ "&grant_type=authorization_code"))
+				.withRequestBody(containing("grant_type=authorization_code&code=" + code
+						+ "&redirect_uri=" + URLEncoder.encode(getSpecificProxyServiceProperties().getOidc().getRedirectUri(), StandardCharsets.UTF_8)))
 				.willReturn(aResponse()
 						.withStatus(200)
 						.withHeader("Content-Type", "application/json; charset=UTF-8")

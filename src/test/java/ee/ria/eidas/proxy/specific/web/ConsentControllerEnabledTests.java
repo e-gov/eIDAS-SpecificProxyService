@@ -4,21 +4,23 @@ import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceConfiguration;
 import eu.eidas.auth.commons.EidasParameterKeys;
 import eu.eidas.auth.commons.light.ILightResponse;
 import eu.eidas.specificcommunication.BinaryLightTokenHelper;
+import io.restassured.RestAssured;
+import io.restassured.builder.ResponseSpecBuilder;
 import org.apache.http.HttpHeaders;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ContextConfiguration;
 import org.w3c.dom.Element;
 
 import javax.cache.Cache;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static ee.ria.eidas.proxy.specific.util.LightRequestTestHelper.*;
 import static ee.ria.eidas.proxy.specific.web.ConsentController.ENDPOINT_USER_CONSENT;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.core.StringStartsWith.startsWith;
@@ -33,8 +35,24 @@ class ConsentControllerEnabledTests extends ControllerTest {
 
 	@Test
 	void methodNotAllowedWhenInvalidHttpMethod() {
-		assertHttpMethodsNotAllowed(ENDPOINT_USER_CONSENT, "PUT", "DELETE", "CONNECT", "OPTIONS", "PATCH", "CUSTOM", "HEAD", "TRACE");
+		assertHttpMethodsNotAllowed(ENDPOINT_USER_CONSENT, "PUT", "DELETE", "OPTIONS", "PATCH", "CUSTOM", "HEAD", "TRACE");
 	}
+
+	@Test
+	void ConnectHttpMethodRespondsWith501() {
+		RestAssured.responseSpecification = new ResponseSpecBuilder().build();
+
+		given()
+				.when()
+				.request("CONNECT", ENDPOINT_USER_CONSENT)
+				.then()
+				.assertThat()
+				.statusCode(501);
+	}
+
+	private static final Map<String, Object> EXPECTED_RESPONSE_HEADERS = new HashMap<String, Object>() {{
+		put("X-XSS-Protection", "wellwellwell");
+	}};
 
 	@Test
 	void badRequestWhenMissingRequiredParameters_token() {

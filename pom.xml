@@ -23,7 +23,7 @@
     </licenses>
 
     <properties>
-        <java.version>11</java.version>
+        <java.version>17</java.version>
         <asm.version>1.0.2</asm.version>
         <bouncycastle.version>1.77</bouncycastle.version>
         <eidas.node.version>2.6.0</eidas.node.version>
@@ -280,6 +280,90 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
+                    <environmentVariables>
+                        <ELASTIC_APM_ENABLED>false</ELASTIC_APM_ENABLED>
+                        <IGNITE_HOME>${project.build.directory}/ignite</IGNITE_HOME>
+                    </environmentVariables>
+                    <jvmArguments>
+                        -DIGNITE_NO_ASCII=true
+                        -DIGNITE_UPDATE_NOTIFIER=false
+                        <!-- Configuration according to chapter "3.1.4 JDK17" of "eIDAS-Node Installation and Configuration Guide v2.8"
+                             Ignite Shared Cache -->
+                        --add-opens=java.base/jdk.internal.access=ALL-UNNAMED
+                        --add-opens=java.base/jdk.internal.misc=ALL-UNNAMED
+                        --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
+                        --add-opens=java.base/sun.util.calendar=ALL-UNNAMED
+                        --add-opens=java.management/com.sun.jmx.mbeanserver=ALL-UNNAMED
+                        --add-opens=jdk.internal.jvmstat/sun.jvmstat.monitor=ALL-UNNAMED
+                        --add-opens=java.base/sun.reflect.generics.reflectiveObjects=ALL-UNNAMED
+                        --add-opens=jdk.management/com.sun.management.internal=ALL-UNNAMED
+                        --add-opens=java.base/java.io=ALL-UNNAMED
+                        --add-opens=java.base/java.nio=ALL-UNNAMED
+                        --add-opens=java.base/java.net=ALL-UNNAMED
+                        --add-opens=java.base/java.util=ALL-UNNAMED
+                        --add-opens=java.base/java.util.concurrent=ALL-UNNAMED
+                        --add-opens=java.base/java.util.concurrent.locks=ALL-UNNAMED
+                        --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED
+                        --add-opens=java.base/java.lang=ALL-UNNAMED
+                        --add-opens=java.base/java.lang.invoke=ALL-UNNAMED
+                        --add-opens=java.base/java.math=ALL-UNNAMED
+                        --add-opens=java.sql/java.sql=ALL-UNNAMED
+                        --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+                        --add-opens=java.base/java.time=ALL-UNNAMED
+                        --add-opens=java.base/java.text=ALL-UNNAMED
+                        --add-opens=java.management/sun.management=ALL-UNNAMED
+                        --add-opens java.desktop/java.awt.font=ALL-UNNAMED
+                        <!-- eIDAS Connector or Proxy -->
+                        --add-opens=java.xml/com.sun.org.apache.xalan.internal.xsltc.trax=ALL-UNNAMED
+                        --add-opens=java.base/sun.security.x509=ALL-UNNAMED
+                        --add-opens=java.base/java.security.cert=ALL-UNNAMED
+                        --add-opens=java.xml/javax.xml.namespace=ALL-UNNAMED
+                        <!-- Ignite aggregates all network interface addresses to form work directory name. When machine
+                             has many IPv6 network interfaces, work directory name length may exceed file name length
+                             limit. Disable IPv6 usage to mitigate this. -->
+                        -Djava.net.preferIPv4Stack=true
+                    </jvmArguments>
+                    <image>
+                        <env>
+                            <BPE_IGNITE_HOME>/tmp/ignite</BPE_IGNITE_HOME>
+                            <BPE_DELIM_JAVA_TOOL_OPTIONS xml:space="preserve"> </BPE_DELIM_JAVA_TOOL_OPTIONS>
+                            <BPE_APPEND_JAVA_TOOL_OPTIONS>
+                                -DIGNITE_NO_ASCII=true
+                                -DIGNITE_UPDATE_NOTIFIER=false
+                                <!-- Configuration according to chapter "3.1.4 JDK17" of "eIDAS-Node Installation and Configuration Guide v2.8"
+                             Ignite Shared Cache -->
+                                --add-opens=java.base/jdk.internal.access=ALL-UNNAMED
+                                --add-opens=java.base/jdk.internal.misc=ALL-UNNAMED
+                                --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
+                                --add-opens=java.base/sun.util.calendar=ALL-UNNAMED
+                                --add-opens=java.management/com.sun.jmx.mbeanserver=ALL-UNNAMED
+                                --add-opens=jdk.internal.jvmstat/sun.jvmstat.monitor=ALL-UNNAMED
+                                --add-opens=java.base/sun.reflect.generics.reflectiveObjects=ALL-UNNAMED
+                                --add-opens=jdk.management/com.sun.management.internal=ALL-UNNAMED
+                                --add-opens=java.base/java.io=ALL-UNNAMED
+                                --add-opens=java.base/java.nio=ALL-UNNAMED
+                                --add-opens=java.base/java.net=ALL-UNNAMED
+                                --add-opens=java.base/java.util=ALL-UNNAMED
+                                --add-opens=java.base/java.util.concurrent=ALL-UNNAMED
+                                --add-opens=java.base/java.util.concurrent.locks=ALL-UNNAMED
+                                --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED
+                                --add-opens=java.base/java.lang=ALL-UNNAMED
+                                --add-opens=java.base/java.lang.invoke=ALL-UNNAMED
+                                --add-opens=java.base/java.math=ALL-UNNAMED
+                                --add-opens=java.sql/java.sql=ALL-UNNAMED
+                                --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+                                --add-opens=java.base/java.time=ALL-UNNAMED
+                                --add-opens=java.base/java.text=ALL-UNNAMED
+                                --add-opens=java.management/sun.management=ALL-UNNAMED
+                                --add-opens java.desktop/java.awt.font=ALL-UNNAMED
+                                <!-- eIDAS Connector or Proxy -->
+                                --add-opens=java.xml/com.sun.org.apache.xalan.internal.xsltc.trax=ALL-UNNAMED
+                                --add-opens=java.base/sun.security.x509=ALL-UNNAMED
+                                --add-opens=java.base/java.security.cert=ALL-UNNAMED
+                                --add-opens=java.xml/javax.xml.namespace=ALL-UNNAMED
+                            </BPE_APPEND_JAVA_TOOL_OPTIONS>
+                        </env>
+                    </image>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>
@@ -301,6 +385,45 @@
                 <configuration>
                     <runOrder>random</runOrder>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                    <environmentVariables>
+                        <IGNITE_HOME>${project.build.directory}/ignite</IGNITE_HOME>
+                    </environmentVariables>
+                    <argLine>
+                        -DIGNITE_NO_ASCII=true
+                        -DIGNITE_UPDATE_NOTIFIER=false
+                        <!-- Configuration according to chapter "3.1.4 JDK17" of "eIDAS-Node Installation and Configuration Guide v2.8"
+                             Ignite Shared Cache -->
+                        --add-opens=java.base/jdk.internal.access=ALL-UNNAMED
+                        --add-opens=java.base/jdk.internal.misc=ALL-UNNAMED
+                        --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
+                        --add-opens=java.base/sun.util.calendar=ALL-UNNAMED
+                        --add-opens=java.management/com.sun.jmx.mbeanserver=ALL-UNNAMED
+                        --add-opens=jdk.internal.jvmstat/sun.jvmstat.monitor=ALL-UNNAMED
+                        --add-opens=java.base/sun.reflect.generics.reflectiveObjects=ALL-UNNAMED
+                        --add-opens=jdk.management/com.sun.management.internal=ALL-UNNAMED
+                        --add-opens=java.base/java.io=ALL-UNNAMED
+                        --add-opens=java.base/java.nio=ALL-UNNAMED
+                        --add-opens=java.base/java.net=ALL-UNNAMED
+                        --add-opens=java.base/java.util=ALL-UNNAMED
+                        --add-opens=java.base/java.util.concurrent=ALL-UNNAMED
+                        --add-opens=java.base/java.util.concurrent.locks=ALL-UNNAMED
+                        --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED
+                        --add-opens=java.base/java.lang=ALL-UNNAMED
+                        --add-opens=java.base/java.lang.invoke=ALL-UNNAMED
+                        --add-opens=java.base/java.math=ALL-UNNAMED
+                        --add-opens=java.sql/java.sql=ALL-UNNAMED
+                        --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+                        --add-opens=java.base/java.time=ALL-UNNAMED
+                        --add-opens=java.base/java.text=ALL-UNNAMED
+                        --add-opens=java.management/sun.management=ALL-UNNAMED
+                        --add-opens java.desktop/java.awt.font=ALL-UNNAMED
+                        <!-- eIDAS Connector or Proxy -->
+                        --add-opens=java.xml/com.sun.org.apache.xalan.internal.xsltc.trax=ALL-UNNAMED
+                        --add-opens=java.base/sun.security.x509=ALL-UNNAMED
+                        --add-opens=java.base/java.security.cert=ALL-UNNAMED
+                        --add-opens=java.xml/javax.xml.namespace=ALL-UNNAMED
+                        -Djava.net.preferIPv4Stack=true
+                    </argLine>
                 </configuration>
             </plugin>
             <plugin>

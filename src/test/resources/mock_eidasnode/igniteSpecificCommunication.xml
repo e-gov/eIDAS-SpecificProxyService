@@ -55,7 +55,7 @@
                 <property name="keyStorePassword" value="123456"/>
                 <property name="trustStoreFilePath" value="src/test/resources/mock_eidasnode/mock_keys/ignite-trust.jks"/>
                 <property name="trustStorePassword" value="123456"/>
-                <property name="protocol" value="TLS"/>
+                <property name="protocol" value="TLSv1.2"/>
             </bean>
         </property>
 

@@ -18,6 +18,8 @@ import eu.eidas.auth.commons.light.ILightResponse;
 import eu.eidas.auth.commons.tx.BinaryLightToken;
 import eu.eidas.specificcommunication.BinaryLightTokenHelper;
 import eu.eidas.specificcommunication.exception.SpecificCommunicationException;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
@@ -29,8 +31,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.Size;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;

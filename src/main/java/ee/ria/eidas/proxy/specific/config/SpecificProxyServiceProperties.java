@@ -1,6 +1,10 @@
 package ee.ria.eidas.proxy.specific.config;
 
 import eu.eidas.auth.commons.protocol.eidas.spec.EidasSpec;
+import jakarta.annotation.PostConstruct;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
@@ -10,10 +14,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.util.Assert;
 import org.springframework.validation.annotation.Validated;
 
-import javax.annotation.PostConstruct;
-import javax.validation.Valid;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;

@@ -8,13 +8,13 @@ import eu.eidas.specificcommunication.LightResponse;
 import eu.eidas.specificcommunication.exception.SpecificCommunicationException;
 import eu.eidas.specificcommunication.protocol.util.LightMessagesConverter;
 import eu.eidas.specificcommunication.protocol.util.SecurityUtils;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Marshaller;
+import jakarta.xml.bind.Unmarshaller;
 import lombok.extern.slf4j.Slf4j;
 import org.xml.sax.SAXException;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.sax.SAXSource;
 import java.io.StringWriter;
@@ -95,8 +95,8 @@ public class LightJAXBCodec {
         } else {
             marshaller = lightResponseJAXBCtx.createMarshaller();
         }
-        marshaller.setProperty(javax.xml.bind.Marshaller.JAXB_ENCODING, UTF_8.name()); // NOI18N
-        marshaller.setProperty(javax.xml.bind.Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+        marshaller.setProperty(Marshaller.JAXB_ENCODING, UTF_8.name()); // NOI18N
+        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
         return marshaller;
     }
 

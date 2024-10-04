@@ -1,5 +1,6 @@
 package ee.ria.eidas.proxy.specific.monitoring.health;
 
+import jakarta.annotation.PostConstruct;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.SneakyThrows;
@@ -9,7 +10,6 @@ import org.springframework.boot.actuate.health.AbstractHealthIndicator;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.io.FileInputStream;
 import java.security.KeyStore;
 import java.security.cert.Certificate;

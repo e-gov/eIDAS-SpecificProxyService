@@ -23,7 +23,7 @@ public class HtmlErrorPageTests extends ControllerTest {
     public static final String EXPECTED_ERROR_VALUE = "Bad Request";
     public static final String EXPECTED_MESSAGE_VALUE = "Validation failed for object='requestParameters'. Error count: 1";
     public static final String EXPECTED_ERRORS_VALUE = "Parameter 'token': must not be null";
-    public static final String EXPECTED_INCIDENT_ID_VALUE_PATTERN = "Eidas Proxyservice incident number: [a-z,0-9]{16}";
+    public static final String EXPECTED_INCIDENT_ID_VALUE_PATTERN = "Eidas Proxyservice incident number: [a-z,0-9]{32}";
 
     @Test
     void returnsHtmlWhen_AcceptContentTypeHtml() {
@@ -54,7 +54,7 @@ public class HtmlErrorPageTests extends ControllerTest {
         ValidatableResponse response = getValidatableResponse(ContentType.JSON);
         response.body("error", equalTo(EXPECTED_ERROR_VALUE))
                 .body("errors", equalTo(EXPECTED_ERRORS_VALUE))
-                .body("incidentNumber", matchesPattern("[a-z,0-9]{16}"))
+                .body("incidentNumber", matchesPattern("[a-z,0-9]{32}"))
                 .body("message", equalTo(EXPECTED_MESSAGE_VALUE));
     }
 

@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.Getter;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -23,10 +24,10 @@ public class AllowedHttpMethodsFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+    protected void doFilterInternal(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, @NotNull FilterChain filterChain)
             throws ServletException, IOException {
 
-        if (allowedMethods != null && !allowedMethods.contains(HttpMethod.resolve(request.getMethod()))) {
+        if (allowedMethods != null && !allowedMethods.contains(HttpMethod.valueOf(request.getMethod()))) {
             response.sendError(SC_METHOD_NOT_ALLOWED, String.format("Request method '%s' not supported", request.getMethod()));
         } else {
             filterChain.doFilter(request, response);

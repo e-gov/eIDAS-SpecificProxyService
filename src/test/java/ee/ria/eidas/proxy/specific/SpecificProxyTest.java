@@ -31,7 +31,7 @@ import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.info.GitProperties;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
-import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.test.context.ActiveProfiles;
@@ -83,6 +83,7 @@ public abstract class SpecificProxyTest {
                     .httpDisabled(true)
                     .keystorePath("src/test/resources/__files/mock_keys/idp-tls-keystore.jks")
                     .keystorePassword("changeit")
+                    .keyManagerPassword("changeit")
                     .httpsPort(8084)
             );
 
@@ -91,6 +92,7 @@ public abstract class SpecificProxyTest {
             .httpsPort(9877)
             .keystorePath("src/test/resources/__files/mock_keys/idp-tls-keystore.jks")
             .keystorePassword("changeit")
+            .keyManagerPassword("changeit")
     );
 
     protected static LightJAXBCodec codec = LightJAXBCodec.buildDefault();

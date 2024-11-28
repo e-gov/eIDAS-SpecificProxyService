@@ -4,6 +4,7 @@ import ee.ria.eidas.proxy.specific.monitoring.health.TruststoreHealthIndicator;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.TimeGauge;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.endpoint.Access;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
 import org.springframework.boot.actuate.health.HealthContributorRegistry;
@@ -32,7 +33,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
 
 @Component
-@Endpoint(id = "heartbeat", enableByDefault = false)
+@Endpoint(id = "heartbeat", defaultAccess = Access.READ_ONLY)
 public class ApplicationHealthEndpoint {
 
     @Autowired

@@ -188,30 +188,6 @@ public class ProxyServiceRequestLightRequestAcceptanceTests extends ControllerTe
         return attributes.getDefinitions().stream().map(AttributeDefinition::getFriendlyName).collect(Collectors.toList());
     }
 
-    @Test
-    void internalServerErrorWhen_RequestedAttributesNotSupported() throws Exception {
-        ImmutableAttributeMap customAttributes = new ImmutableAttributeMap.Builder()
-                .putAll(NATURAL_PERSON_MANDATORY_ATTRIBUTES)
-                .put(getCustomAttributeDefinition("UnknownAttribute"), new StringAttributeValue("")).build();
-
-        BinaryLightToken mockBinaryLightToken = putRequest(createLightRequest(customAttributes));
-
-        given()
-                .param(EidasParameterKeys.TOKEN.toString(), BinaryLightTokenHelper.encodeBinaryLightTokenBase64(mockBinaryLightToken))
-                .when()
-                .get(ENDPOINT_PROXY_SERVICE_REQUEST)
-                .then()
-                .assertThat()
-                .statusCode(500)
-                .body("error", equalTo("Internal Server Error"))
-                .body("errors", nullValue())
-                .body("incidentNumber", notNullValue())
-                .body("message", equalTo("Something went wrong internally. Please consult server logs for further details."));
-
-        assertErrorIsLogged("Server encountered an unexpected error: Attribute http://eidas.europa.eu/attributes/naturalperson/UnknownAttribute not present in the registry");
-        assertResponseCommunicationCacheIsEmpty();
-    }
-
     private AttributeDefinition<String> getCustomAttributeDefinition(String friendlyName) {
         return AttributeDefinition.<String>builder()
                 .nameUri(NaturalPersonSpec.Namespace.URI + "/UnknownAttribute")
@@ -348,6 +324,25 @@ public class ProxyServiceRequestLightRequestAcceptanceTests extends ControllerTe
                 .statusCode(302)
                 .header(HttpHeaders.LOCATION, startsWith("https://ee-eidas-proxy:8083/EidasNode/SpecificProxyServiceResponse?token=c3BlY2lmaW"));
         assertResponseCommunicationCacheContainsUserCancelResponse("Service provider type not supported. Allowed types: [public]", mockLightRequest.getId());
+    }
+
+    @Test
+    void redirectToIdpWhen_RequestedAttributesNotSupported() throws Exception {
+        ImmutableAttributeMap customAttributes = new ImmutableAttributeMap.Builder()
+                .putAll(NATURAL_PERSON_MANDATORY_ATTRIBUTES)
+                .put(getCustomAttributeDefinition("UnknownAttribute"), new StringAttributeValue("")).build();
+
+        BinaryLightToken mockBinaryLightToken = putRequest(createLightRequest(customAttributes));
+
+        given()
+                .param(EidasParameterKeys.TOKEN.toString(), BinaryLightTokenHelper.encodeBinaryLightTokenBase64(mockBinaryLightToken))
+                .when()
+                .get(ENDPOINT_PROXY_SERVICE_REQUEST)
+                .then()
+                .assertThat()
+                .statusCode(302)
+                .header(HttpHeaders.LOCATION, startsWith("https://localhost:9877/oidc/authorize"));
+        assertResponseCommunicationCacheIsEmpty();
     }
 
     @Test

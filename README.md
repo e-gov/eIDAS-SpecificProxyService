@@ -54,7 +54,7 @@ To set the same communication definitions, it is required that the `SpecificProx
 <a name="ignite_conf"></a>
 ### 2.2 Ignite configuration
 
-By default it is assumed that `EidasNode` and `SpecificProxyService` will share the same xml configuration file and that the Ignite configuration can be found at `$EIDAS_CONFIG_REPOSITORY/igniteSpecificCommunication.xml`. The configuration location can be overridden (see to [configuration parameters](#configuration_parameters_eidas) for further details).
+By default it is assumed that `EidasNode` and `SpecificProxyService` will share the same xml configuration file and that the Ignite configuration can be found at `EIDAS_PROXY_CONFIG_REPOSITORY/ignite/igniteSpecificCommunication.xml`. The configuration location can be overridden (see to [configuration parameters](#configuration_parameters_eidas) for further details).
 
 The `SpecificProxyService` webapp starts an Ignite node in client mode using EidasNode webapp's Ignite configuration. The ignite client is started lazily (initialized on the first query).
 
@@ -69,7 +69,7 @@ Note that `SpecificProxyService` requires access to four predefined maps in the 
 
 Table 1 - Required shared map's in SpecificProxyService webapp.
 
-An example of a configuration file is provided [here](src/test/resources/mock_eidasnode/igniteSpecificCommunication.xml).
+An example of a configuration file is provided [here](src/test/resources/mock_eidasnode/ignite/igniteSpecificCommunication.xml).
 
 <a name="integrate_with_idp"></a>
 ## 3. Integration with the IDP (OpenID Connect server)
@@ -297,7 +297,7 @@ Ignite configuration
 
 | Parameter        | Mandatory | Description, example |
 | :---------------- | :---------- | :----------------|
-| `eidas.proxy.communication-cache.ignite-configuration-file-location` | Yes | File path that references Ignite Spring context configuration. Defaults to `file:${EIDAS_CONFIG_REPOSITORY}/igniteSpecificCommunication.xml`, if not specified. |
+| `eidas.proxy.communication-cache.ignite-configuration-file-location` | Yes | File path that references Ignite Spring context configuration. Defaults to `file:${EIDAS_PROXY_CONFIG_REPOSITORY}/ignite/igniteSpecificCommunication.xml`, if not specified. |
 | `eidas.proxy.communication-cache.ignite-configuration-bean-name` | No | Ignite configuration ID (Spring bean ID). Defaults to `igniteSpecificCommunication.cfg`, if not specified. |
 
 

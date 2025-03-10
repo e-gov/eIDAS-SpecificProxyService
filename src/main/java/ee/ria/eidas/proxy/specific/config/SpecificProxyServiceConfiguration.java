@@ -70,7 +70,7 @@ public class SpecificProxyServiceConfiguration implements WebMvcConfigurer {
     public static PropertySourcesPlaceholderConfigurer properties(
             @Value("#{environment.SPECIFIC_PROXY_SERVICE_CONFIG_REPOSITORY}/specificCommunicationDefinitionProxyservice.xml")
                     String specificCommunicationConfig,
-            @Value("#{environment.EIDAS_CONFIG_REPOSITORY}/eidas.xml")
+            @Value("#{environment.EIDAS_PROXY_CONFIG_REPOSITORY}/eidas.xml")
                     String eidasConfig) throws MalformedURLException {
 
         Assert.isTrue(new File(specificCommunicationConfig).exists(), "Required configuration file not found: " + specificCommunicationConfig);

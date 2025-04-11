@@ -49,7 +49,7 @@ In order to enable communication between `EidasNode` and `SpecificProxyService` 
 ### 2.1 Configuring communication with EidasNode
 
 To set the same communication definitions, it is required that the `SpecificProxyService` has access to communication definitions provided in the following `EidasNode` configuration file:
-`$SPECIFIC_PROXY_SERVICE_CONFIG_REPOSITORY/specificCommunicationDefinitionProxyservice.xml`
+`$SPECIFIC_PROXY_SERVICE_CONFIG_REPOSITORY/specificCommunicationDefinition.xml`
 
 <a name="ignite_conf"></a>
 ### 2.2 Ignite configuration

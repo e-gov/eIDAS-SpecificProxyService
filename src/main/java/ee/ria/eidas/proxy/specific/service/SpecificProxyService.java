@@ -42,7 +42,7 @@ import eu.eidas.auth.commons.light.ILightRequest;
 import eu.eidas.auth.commons.light.ILightResponse;
 import eu.eidas.auth.commons.light.impl.LightResponse;
 import eu.eidas.auth.commons.light.impl.ResponseStatus;
-import eu.eidas.auth.commons.protocol.eidas.LevelOfAssurance;
+import eu.eidas.auth.commons.protocol.eidas.NotifiedLevelOfAssurance;
 import eu.eidas.auth.commons.protocol.impl.SamlNameIdFormat;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -118,7 +118,7 @@ public class SpecificProxyService {
 
             log.debug("LightResponse for eIDAS-Proxy service: " + lightResponse.toString());
 
-            if (LevelOfAssurance.fromString(lightResponse.getLevelOfAssurance()).numericValue() < LevelOfAssurance.fromString(originalLightRequest.getLevelOfAssurance()).numericValue()) {
+            if (NotifiedLevelOfAssurance.fromString(lightResponse.getLevelOfAssurance()).numericValue() < NotifiedLevelOfAssurance.fromString(originalLightRequest.getLevelOfAssurance()).numericValue()) {
                 throw new IllegalStateException(String.format("Invalid level of assurance in IDP response. Authentication was requested with level '%s', but IDP response level is '%s'.", originalLightRequest.getLevelOfAssurance(), lightResponse.getLevelOfAssurance()));
             }
 
@@ -220,7 +220,7 @@ public class SpecificProxyService {
         }
 
         String responseId = getAttributeValueFromClaims(claims, "responseId", mappingProperties.getId());
-        LevelOfAssurance loa = LevelOfAssurance.valueOf(StringUtils.upperCase(getAttributeValueFromClaims(claims, "loa", mappingProperties.getAcr())));
+        NotifiedLevelOfAssurance loa = NotifiedLevelOfAssurance.valueOf(StringUtils.upperCase(getAttributeValueFromClaims(claims, "loa", mappingProperties.getAcr())));
         String issuer = getAttributeValueFromClaims(claims, "issuer", mappingProperties.getIssuer());
         ImmutableAttributeMap attributes = getAttributes(originalLightRequest, claims, mappingProperties);
 
@@ -320,9 +320,9 @@ public class SpecificProxyService {
 
     private String getLevelOfAssurance(ILightRequest originalIlightRequest) {
         Assert.notNull(originalIlightRequest.getLevelOfAssurance(), "Mandatory LevelOfAssurance field is missing in LightRequest!");
-        LevelOfAssurance loa = LevelOfAssurance.fromString(originalIlightRequest.getLevelOfAssurance());
+        NotifiedLevelOfAssurance loa = NotifiedLevelOfAssurance.fromString(originalIlightRequest.getLevelOfAssurance());
         if (loa == null) {
-            throw new IllegalArgumentException("Invalid level of assurance value. Allowed values: " + Arrays.stream(LevelOfAssurance.values()).map(LevelOfAssurance::getValue).collect(Collectors.joining(", ")));
+            throw new IllegalArgumentException("Invalid level of assurance value. Allowed values: " + Arrays.stream(NotifiedLevelOfAssurance.values()).map(NotifiedLevelOfAssurance::getValue).collect(Collectors.joining(", ")));
         }
         return loa.name().toLowerCase();
     }

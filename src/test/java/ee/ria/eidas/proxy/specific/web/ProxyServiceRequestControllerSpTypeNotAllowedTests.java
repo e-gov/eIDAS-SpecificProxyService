@@ -4,7 +4,7 @@ import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceConfiguration;
 import eu.eidas.auth.commons.EidasParameterKeys;
 import eu.eidas.auth.commons.light.ILightRequest;
 import eu.eidas.auth.commons.light.impl.LightRequest;
-import eu.eidas.auth.commons.protocol.eidas.LevelOfAssurance;
+import eu.eidas.auth.commons.protocol.eidas.NotifiedLevelOfAssurance;
 import eu.eidas.auth.commons.tx.BinaryLightToken;
 import eu.eidas.specificcommunication.BinaryLightTokenHelper;
 import org.apache.http.HttpHeaders;
@@ -32,7 +32,7 @@ class ProxyServiceRequestControllerSpTypeNotAllowedTests extends ControllerTest 
 				.citizenCountryCode("CA")
 				.issuer("issuerName")
 				.spType("private")
-				.levelOfAssurance(LevelOfAssurance.HIGH.stringValue()).build();
+				.levelOfAssurance(NotifiedLevelOfAssurance.HIGH.stringValue()).build();
 
 		BinaryLightToken mockBinaryLightToken = putRequest(mockLightRequest);
 

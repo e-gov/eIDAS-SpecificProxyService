@@ -165,7 +165,7 @@ public class SpecificProxyService {
             httpRequest.setConnectTimeout(specificProxyServiceProperties.getOidc().getConnectTimeoutInMilliseconds());
             httpRequest.setReadTimeout(specificProxyServiceProperties.getOidc().getReadTimeoutInMilliseconds());
 
-            log.info(append(IDP_TOKEN_REQUEST_HTTP_QUERY_PARAMS, httpRequest.getQueryParameters())
+            log.info(append(IDP_TOKEN_REQUEST_HTTP_QUERY_PARAMS, httpRequest.getQueryStringParameters())
                             .and(append(IDP_TOKEN_REQUEST_HTTP_METHOD, httpRequest.getMethod()))
                             .and(append(IDP_TOKEN_REQUEST_HTTP_CONNECT_TIMEOUT, httpRequest.getConnectTimeout()))
                             .and(append(IDP_TOKEN_REQUEST_HTTP_READ_TIMEOUT, httpRequest.getReadTimeout()))

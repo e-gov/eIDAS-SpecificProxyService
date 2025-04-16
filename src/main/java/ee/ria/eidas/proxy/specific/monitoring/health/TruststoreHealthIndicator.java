@@ -90,7 +90,7 @@ public class TruststoreHealthIndicator extends AbstractHealthIndicator {
                     X509Certificate x509 = (X509Certificate) certificate;
                     trustStoreCertificates.put(alias, CertificateInfo.builder()
                             .validTo(x509.getNotAfter().toInstant())
-                            .subjectDN(x509.getSubjectDN().getName())
+                            .subjectDN(x509.getSubjectX500Principal().getName())
                             .serialNumber(x509.getSerialNumber().toString())
                             .build());
                 }

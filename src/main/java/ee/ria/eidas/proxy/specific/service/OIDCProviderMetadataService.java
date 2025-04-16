@@ -67,7 +67,7 @@ public class OIDCProviderMetadataService {
                 throw new IllegalStateException("Failed to fetch OpenID Connect provider metadata from issuer: "
                         + issuerUrl + ", Invalid response status: " + httpResponse.getStatusCode());
             }
-            OIDCProviderMetadata oidcProviderMetadata = OIDCProviderMetadata.parse(httpResponse.getContentAsJSONObject());
+            OIDCProviderMetadata oidcProviderMetadata = OIDCProviderMetadata.parse(httpResponse.getBodyAsJSONObject());
             log.info("Successfully updated OIDC metadata for issuer: {}", issuerUrl);
             return oidcProviderMetadata;
         } catch (IllegalStateException e) {

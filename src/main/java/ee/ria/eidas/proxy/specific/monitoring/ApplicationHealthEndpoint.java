@@ -1,6 +1,5 @@
 package ee.ria.eidas.proxy.specific.monitoring;
 
-import ee.ria.eidas.proxy.specific.monitoring.health.TruststoreHealthIndicator;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.TimeGauge;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,9 +47,6 @@ public class ApplicationHealthEndpoint {
     @Autowired
     private MeterRegistry meterRegistry;
 
-    @Autowired
-    private TruststoreHealthIndicator truststoreHealthIndicator;
-
     @ReadOperation(produces = "application/json")
     public ResponseEntity<Map<String, Object>> health() {
         HttpHeaders headers = new HttpHeaders();
@@ -70,14 +66,8 @@ public class ApplicationHealthEndpoint {
         details.put("currentTime", now());
         details.computeIfAbsent("startTime", v -> getServiceStartTime());
         details.computeIfAbsent("upTime", v -> getServiceUpTime());
-        details.computeIfAbsent("warnings", v -> getTrustStoreWarnings());
         details.put("dependencies", getFormatedStatuses(healthIndicatorStatuses));
         return details;
-    }
-
-    private List<String> getTrustStoreWarnings() {
-        List<String> certificateExpirationWarnings = truststoreHealthIndicator.getCertificateExpirationWarnings();
-        return certificateExpirationWarnings.isEmpty() ? null : certificateExpirationWarnings;
     }
 
     private String getServiceStartTime() {

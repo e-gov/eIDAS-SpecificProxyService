@@ -90,8 +90,7 @@ public abstract class ApplicationHealthTest extends SpecificProxyTest {
     public enum Dependencies {
         AUTHENTICATION_SERVICE("authenticationService"),
         IGNITE_CLUSTER("igniteCluster"),
-        PROXY_SERVICE_METADATA("proxyServiceMetadata"),
-        TRUSTSTORE("truststore");
+        PROXY_SERVICE_METADATA("proxyServiceMetadata");
         @Getter
         public final String name;
     }

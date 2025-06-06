@@ -6,12 +6,12 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ignite.events.CacheEvent;
 import org.apache.ignite.lang.IgnitePredicate;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ContextConfiguration;
 
 import javax.cache.Cache;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -28,48 +28,50 @@ public class IgniteCacheExpirationTests extends SpecificProxyTest {
     private static final long EVENT_TIMEOUT = 10_000;
 
     @Test
-    @Disabled
     void nodeSpecificProxyserviceRequestCacheEventExpires() {
         cacheEventExpires(eidasNodeRequestCommunicationCache);
     }
 
     @Test
-    @Disabled
     void nodeSpecificProxyserviceResponseCacheEventExpires() {
         cacheEventExpires(eidasNodeResponseCommunicationCache);
     }
 
     @Test
-    @Disabled
     void specificMSIdpRequestCorrelationMapEventExpires() {
         cacheEventExpires(idpRequestCommunicationCache);
     }
 
     @Test
-    @Disabled
     void specificMSIdpConsentCorrelationMapEventExpires() {
         cacheEventExpires(idpConsentCommunicationCache);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     void cacheEventExpires(Cache cache) {
+        String cacheEntryKey = "testKey-" + UUID.randomUUID();
         CountDownLatch objectExpiredLatch = new CountDownLatch(1);
         AtomicReference<CacheEvent> expiredEvent = new AtomicReference<>();
         IgnitePredicate<CacheEvent> localListener = evt -> {
             log.debug("Ignite client event: {}/{}/{}  Cache: {}", evt.type(), evt.key(), evt.oldValue(), evt.cacheName());
-            if (evt.type() == EVT_CACHE_OBJECT_EXPIRED) {
-                expiredEvent.set(evt);
-                objectExpiredLatch.countDown();
+            if (!evt.cacheName().equals(cache.getName())) {
+                return true;
             }
+            if (evt.type() != EVT_CACHE_OBJECT_EXPIRED) {
+                return true;
+            }
+            if (!evt.key().equals(cacheEntryKey)) {
+                return true;
+            }
+            expiredEvent.set(evt);
+            objectExpiredLatch.countDown();
             return true;
         };
 
         eidasNodeIgnite.events().localListen(localListener, EVT_CACHE_OBJECT_EXPIRED);
-        cache.put(cache.getName(), "testValue");
+        cache.put(cacheEntryKey, "testValue");
         assertExpirationEvent(objectExpiredLatch);
-        CacheEvent evt = expiredEvent.get();
-        assertEquals(cache.getName(), evt.key());
-        assertEquals("testValue", evt.oldValue());
+        assertEquals("testValue", expiredEvent.get().oldValue());
         eidasNodeIgnite.events().stopLocalListen(localListener);
     }
 

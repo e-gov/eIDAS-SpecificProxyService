@@ -10,8 +10,6 @@ import org.springframework.test.context.ContextConfiguration;
 
 import java.time.Instant;
 
-import static io.restassured.RestAssured.given;
-import static io.restassured.http.ContentType.JSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.when;

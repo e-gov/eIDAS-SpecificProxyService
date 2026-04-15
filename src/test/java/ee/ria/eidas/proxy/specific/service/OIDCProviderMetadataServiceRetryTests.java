@@ -1,7 +1,6 @@
 package ee.ria.eidas.proxy.specific.service;
 
 import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata;
-import ee.ria.eidas.proxy.specific.SpecificProxyTest;
 import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceConfiguration;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,9 +9,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.scheduling.annotation.ScheduledAnnotationBeanPostProcessor;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import java.net.SocketTimeoutException;
 
@@ -28,13 +27,13 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 @SpringBootTest(webEnvironment = RANDOM_PORT, properties = {"eidas.proxy.oidc.metadata.update-schedule=-",
         "eidas.proxy.oidc.metadata.max-attempts=3", "eidas.proxy.oidc.metadata.backoff-delay-in-milliseconds=500",
         "eidas.proxy.oidc.connect-timeout-in-milliseconds=500"})
-@ContextConfiguration(classes = SpecificProxyServiceConfiguration.class, initializers = OIDCProviderMetadataServiceRetryTests.TestContextInitializer.class)
-class OIDCProviderMetadataServiceRetryTests extends SpecificProxyTest {
+@ContextConfiguration(classes = SpecificProxyServiceConfiguration.class, initializers = OIDCProviderMetadataServiceTestContextInitializer.class)
+class OIDCProviderMetadataServiceRetryTests extends AbstractOidcProviderMetadataTest {
 
     @Value("${eidas.proxy.oidc.metadata.max-attempts}")
     private int maxAttempts;
 
-    @SpyBean
+    @MockitoSpyBean
     private OIDCProviderMetadataService oidcProviderMetadataService;
 
     @Autowired
@@ -79,7 +78,7 @@ class OIDCProviderMetadataServiceRetryTests extends SpecificProxyTest {
         IllegalStateException exception = assertThrows(IllegalStateException.class,
                 () -> oidcProviderMetadataService.updateMetadata());
         Throwable cause = exception.getCause();
-        assertTrue(cause instanceof SocketTimeoutException);
+        assertInstanceOf(SocketTimeoutException.class, cause);
         assertEquals("Read timed out", cause.getMessage());
 
         verify(oidcProviderMetadataService, times(maxAttempts)).updateMetadata();

@@ -1,7 +1,7 @@
 package ee.ria.eidas.proxy.specific;
 
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
+import org.springframework.boot.tomcat.servlet.TomcatServletWebServerFactory;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.context.annotation.Bean;
 

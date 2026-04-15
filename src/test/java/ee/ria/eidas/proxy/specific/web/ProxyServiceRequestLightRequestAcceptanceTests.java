@@ -48,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
 @SpringBootTest(webEnvironment = RANDOM_PORT)
-@TestMethodOrder(MethodOrderer.Alphanumeric.class)
+@TestMethodOrder(MethodOrderer.MethodName.class)
 @ContextConfiguration(classes = SpecificProxyServiceConfiguration.class, initializers = ProxyServiceRequestControllerTests.TestContextInitializer.class)
 public class ProxyServiceRequestLightRequestAcceptanceTests extends ControllerTest {
 

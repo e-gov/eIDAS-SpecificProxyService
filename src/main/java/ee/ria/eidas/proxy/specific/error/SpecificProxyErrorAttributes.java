@@ -21,6 +21,8 @@ import static java.lang.String.format;
 import static java.lang.String.join;
 import static org.springframework.boot.web.error.ErrorAttributeOptions.Include.BINDING_ERRORS;
 import static org.springframework.boot.web.error.ErrorAttributeOptions.Include.MESSAGE;
+import static org.springframework.web.context.request.RequestAttributes.SCOPE_REQUEST;
+import static ee.ria.eidas.proxy.specific.web.filter.RequestCorrelationAttributesTranslationFilter.REQUEST_ATTRIBUTE_NAME_REQUEST_ID;
 
 @Slf4j
 @Component
@@ -32,7 +34,7 @@ public class SpecificProxyErrorAttributes extends DefaultErrorAttributes {
     public Map<String, Object> getErrorAttributes(WebRequest webRequest, ErrorAttributeOptions options) {
         Map<String, Object> attr = super.getErrorAttributes(webRequest, options.including(MESSAGE, BINDING_ERRORS));
         attr.put("locale", webRequest.getLocale().toString());
-        attr.put("incidentNumber", MDC.get("traceId"));
+        attr.put("incidentNumber", getIncidentNumber(webRequest, attr));
 
         if (HttpStatus.valueOf((int) attr.get("status")).is5xxServerError()) {
             attr.replace("message", INTERNAL_EXCEPTION_MSG);
@@ -45,6 +47,22 @@ public class SpecificProxyErrorAttributes extends DefaultErrorAttributes {
             attr.replace("errors", formatBindingErrors(((MethodArgumentNotValidException) error).getBindingResult()));
         }
         return attr;
+    }
+
+    private String getIncidentNumber(WebRequest webRequest, Map<String, Object> attr) {
+        String traceId = MDC.get("traceId");
+        if (traceId != null) {
+            return traceId;
+        }
+        Object requestId = webRequest.getAttribute(REQUEST_ATTRIBUTE_NAME_REQUEST_ID, SCOPE_REQUEST);
+        if (requestId != null) {
+            return requestId.toString();
+        }
+        Object defaultRequestId = attr.get("requestId");
+        if (defaultRequestId != null) {
+            return defaultRequestId.toString();
+        }
+        return UUID.randomUUID().toString().replace("-", "");
     }
 
     private String formatBindingErrors(BindingResult bindingResult) {

@@ -18,7 +18,9 @@ import static io.restassured.http.ContentType.JSON;
 import static java.lang.Double.valueOf;
 import static java.time.Instant.ofEpochMilli;
 import static java.util.Arrays.asList;
+import static java.util.Arrays.stream;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.junit.jupiter.api.Assertions.*;
 

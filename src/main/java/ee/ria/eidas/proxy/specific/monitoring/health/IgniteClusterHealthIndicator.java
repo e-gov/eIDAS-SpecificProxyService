@@ -3,12 +3,10 @@ package ee.ria.eidas.proxy.specific.monitoring.health;
 import ee.ria.eidas.proxy.specific.storage.SpecificProxyServiceCommunication.CorrelatedRequestsHolder;
 import eu.eidas.auth.commons.light.ILightResponse;
 import org.apache.ignite.Ignite;
-import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-
-import org.springframework.boot.health.contributor.AbstractHealthIndicator;
-import org.springframework.boot.health.contributor.Health;
+import org.springframework.boot.actuate.health.AbstractHealthIndicator;
+import org.springframework.boot.actuate.health.Health;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
@@ -45,7 +43,7 @@ public class IgniteClusterHealthIndicator extends AbstractHealthIndicator {
     }
 
     @Override
-    protected void doHealthCheck(Health.@NonNull Builder builder) {
+    protected void doHealthCheck(Health.Builder builder) {
         if (igniteClient.cluster().active()
                 && isCacheHealthy(eidasNodeRequestCommunicationCache)
                 && isCacheHealthy(eidasNodeResponseCommunicationCache)

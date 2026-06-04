@@ -17,7 +17,7 @@ import static org.hamcrest.Matchers.matchesPattern;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
-@SpringBootTest(webEnvironment = RANDOM_PORT, properties = {"spring.web.error.whitelabel.enabled=false"})
+@SpringBootTest(webEnvironment = RANDOM_PORT, properties = {"server.error.whitelabel.enabled=false"})
 @ContextConfiguration(classes = SpecificProxyServiceConfiguration.class, initializers = HtmlErrorPageTests.TestContextInitializer.class)
 public class HtmlErrorPageTests extends ControllerTest {
     public static final String EXPECTED_ERROR_VALUE = "Bad Request";

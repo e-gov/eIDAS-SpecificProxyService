@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.0.5</version>
+        <version>3.5.11</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>ee.ria.eidas.proxy.specific</groupId>
@@ -26,22 +26,20 @@
         <java.version>17</java.version>
 
         <asm.version>1.0.2</asm.version>
-        <bouncycastle.version>1.84</bouncycastle.version>
+        <bouncycastle.version>1.83</bouncycastle.version>
         <eidas.node.version>2.8.2</eidas.node.version>
-        <elastic-apm.version>1.55.5</elastic-apm.version>
+        <elastic-apm.version>1.55.4</elastic-apm.version>
         <encoder-jsp.version>1.4.0</encoder-jsp.version>
         <guava.version>33.5.0-jre</guava.version>
         <ignite.version>2.8.1</ignite.version><!-- eIDAS-Node 2.8.2 uses Apache Ignite 2.8.1 -->
         <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
-        <logstash-logback-encoder.version>9.0</logstash-logback-encoder.version>
+        <logstash-logback-encoder.version>8.1</logstash-logback-encoder.version><!-- TODO Upgrade to logstash-logback-encoder 9.x with Spring Boot 4.x, both upgrade to Jackson 3 -->
         <wiremock.version>3.13.2</wiremock.version>
         <jakarta.xml.bind-api.version>2.3.3</jakarta.xml.bind-api.version><!-- Update to >= 3.x when eIDAS-Node switches to jakarta imports -->
         <jaxb-runtime.version>2.3.9</jaxb-runtime.version><!-- Versions >= 3.x throw JAXBException -->
         <sonar.jacoco.reportPath>target/jacoco.exec</sonar.jacoco.reportPath>
-        <nimbus-oauth2-oidc-sdk.version>11.37</nimbus-oauth2-oidc-sdk.version>
+        <nimbus-oauth2-oidc-sdk.version>11.33</nimbus-oauth2-oidc-sdk.version>
         <commons-io.version>2.21.0</commons-io.version><!-- Only needed to fix vulnerability CVE-2024-47554, can be removed when eIDAS-Node starts using version >= 2.14.0 -->
-        <spring-retry.version>2.0.12</spring-retry.version>
-        <rest-assured.version>6.0.0</rest-assured.version>
     </properties>
 
     <dependencies>
@@ -62,7 +60,7 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-webmvc</artifactId>
+            <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -74,7 +72,7 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-tomcat-runtime</artifactId>
+            <artifactId>spring-boot-starter-tomcat</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -99,12 +97,11 @@
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-aspectj</artifactId>
+            <artifactId>spring-boot-starter-aop</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.retry</groupId>
             <artifactId>spring-retry</artifactId>
-            <version>${spring-retry.version}</version>
         </dependency>
         <!-- jsp support for consent page -->
         <dependency>
@@ -213,7 +210,6 @@
         <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
-            <version>${rest-assured.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

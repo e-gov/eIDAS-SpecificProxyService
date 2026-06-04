@@ -40,7 +40,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 	void badRequestWhen_InvalidParameterSize(String paramName) {
 		given()
 			.param(paramName,
-					RandomStringUtils.insecure().nextAlphanumeric(1001))
+					RandomStringUtils.randomAlphanumeric(1001))
 		.when()
 			.get(ENDPOINT_IDP_RESPONSE)
 		.then()
@@ -637,12 +637,12 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 	Map.Entry<String, CorrelatedRequestsHolder> addMockRequestToPendingIdpRequestCommunicationCache(ILightRequest lightRequest) throws MalformedURLException {
 		String stateParameterValue = UUID.randomUUID().toString();
 		CorrelatedRequestsHolder requestsHolder = new CorrelatedRequestsHolder(lightRequest, Collections.singletonMap(stateParameterValue, new URL("http://oidAuthenticationRequest")));
-		Map.Entry<String, CorrelatedRequestsHolder> mapEntry = new AbstractMap.SimpleEntry<>(stateParameterValue, requestsHolder);
+		Map.Entry<String, CorrelatedRequestsHolder> mapEntry = new AbstractMap.SimpleEntry<String, CorrelatedRequestsHolder>(stateParameterValue, requestsHolder);
 		getIdpRequestCommunicationCache().put(stateParameterValue, requestsHolder);
 		return mapEntry;
 	}
 
-	void createMockOidcServerResponse_successfulAuthentication(String code, String responseFile) {
+	void createMockOidcServerResponse_successfulAuthentication(String code, String responseFile) throws UnsupportedEncodingException {
 		mockOidcServer.stubFor(post(urlEqualTo("/oidc/token"))
 				.withBasicAuth(
 						getSpecificProxyServiceProperties().getOidc().getClientId(),

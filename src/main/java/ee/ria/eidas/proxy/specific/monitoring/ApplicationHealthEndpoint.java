@@ -6,10 +6,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.endpoint.Access;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
-import org.springframework.boot.health.contributor.HealthContributors;
-import org.springframework.boot.health.contributor.HealthIndicator;
-import org.springframework.boot.health.contributor.Status;
-import org.springframework.boot.health.registry.HealthContributorRegistry;
+import org.springframework.boot.actuate.health.HealthContributorRegistry;
+import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.boot.actuate.health.NamedContributor;
+import org.springframework.boot.actuate.health.Status;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.info.GitProperties;
 import org.springframework.http.HttpHeaders;
@@ -17,7 +17,10 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static java.lang.Double.valueOf;
@@ -31,7 +34,6 @@ import static java.util.stream.Collectors.toList;
 @Component
 @Endpoint(id = "heartbeat", defaultAccess = Access.READ_ONLY)
 public class ApplicationHealthEndpoint {
-    private static final String HEALTH_INDICATOR_SUFFIX = "HealthIndicator";
 
     @Autowired
     private HealthContributorRegistry healthContributorRegistry;
@@ -80,18 +82,10 @@ public class ApplicationHealthEndpoint {
 
     private Map<String, Status> getHealthIndicatorStatuses() {
         return healthContributorRegistry.stream()
-                .filter(entry -> entry.contributor() instanceof HealthIndicator)
-                .collect(Collectors.toMap(
-                        entry -> formatDependencyName(entry.name()),
-                        entry -> Objects.requireNonNull(((HealthIndicator) entry.contributor()).health()).getStatus()
-                ));
-    }
-
-    private String formatDependencyName(String contributorName) {
-        if (contributorName.endsWith(HEALTH_INDICATOR_SUFFIX)) {
-            return contributorName.substring(0, contributorName.length() - HEALTH_INDICATOR_SUFFIX.length());
-        }
-        return contributorName;
+                .filter(hc -> hc.getContributor() instanceof HealthIndicator)
+                .collect(Collectors.toMap(NamedContributor::getName,
+                        healthContributorNamedContributor -> ((HealthIndicator) healthContributorNamedContributor
+                                .getContributor()).health().getStatus()));
     }
 
     private Status getAggregatedStatus(Map<String, Status> healthIndicatorStatuses) {

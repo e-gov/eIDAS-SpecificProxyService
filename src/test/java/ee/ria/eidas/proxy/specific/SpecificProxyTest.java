@@ -23,18 +23,18 @@ import org.apache.ignite.Ignition;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matcher;
-import jakarta.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.info.GitProperties;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import javax.cache.Cache;
 import java.io.InputStream;
@@ -68,7 +68,7 @@ public abstract class SpecificProxyTest {
         System.setProperty("javax.net.ssl.trustStoreType", "jks");
     }
 
-    private static final Map<String, Object> EXPECTED_RESPONSE_HEADERS = new HashMap<>() {{
+    private static final Map<String, Object> EXPECTED_RESPONSE_HEADERS = new HashMap<String, Object>() {{
         put("X-XSS-Protection", "1; mode=block");
         put("X-Content-Type-Options", "nosniff");
         put("X-Frame-Options", "DENY");
@@ -104,29 +104,29 @@ public abstract class SpecificProxyTest {
     @Autowired
     protected SpecificProxyService specificProxyService;
 
-    @MockitoBean
+    @MockBean
     protected BuildProperties buildProperties;
 
-    @MockitoBean
+    @MockBean
     protected GitProperties gitProperties;
 
-    @MockitoSpyBean
+    @SpyBean
     protected MeterRegistry meterRegistry;
 
-    @MockitoSpyBean
+    @SpyBean
     protected Ignite igniteClient;
 
-    @MockitoSpyBean
+    @SpyBean
     protected Cache<String, SpecificProxyServiceCommunication.CorrelatedRequestsHolder> idpRequestCommunicationCache;
 
-    @MockitoSpyBean
+    @SpyBean
     protected Cache<String, ILightResponse> idpConsentCommunicationCache;
 
-    @MockitoSpyBean
+    @SpyBean
     @Qualifier("nodeSpecificProxyserviceRequestCache")
     protected Cache<String, String> eidasNodeRequestCommunicationCache;
 
-    @MockitoSpyBean
+    @SpyBean
     @Qualifier("nodeSpecificProxyserviceResponseCache")
     protected Cache<String, String> eidasNodeResponseCommunicationCache;
 
@@ -263,7 +263,7 @@ public abstract class SpecificProxyTest {
 
     public static class TestContextInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
         @Override
-        public void initialize(@Nonnull ConfigurableApplicationContext configurableApplicationContext) {
+        public void initialize(@NotNull ConfigurableApplicationContext configurableApplicationContext) {
             String currentDirectory = System.getProperty("user.dir");
             System.setProperty("SPECIFIC_PROXY_SERVICE_CONFIG_REPOSITORY", currentDirectory + "/src/test/resources/mock_eidasnode");
             System.setProperty("EIDAS_PROXY_CONFIG_REPOSITORY", currentDirectory + "/src/test/resources/mock_eidasnode");

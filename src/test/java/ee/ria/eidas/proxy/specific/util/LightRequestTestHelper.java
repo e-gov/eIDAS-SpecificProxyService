@@ -29,9 +29,6 @@ import eu.eidas.auth.commons.protocol.eidas.impl.PostalAddress;
 import eu.eidas.auth.commons.protocol.eidas.impl.PostalAddressAttributeValue;
 import eu.eidas.auth.commons.protocol.eidas.spec.EidasSpec;
 import eu.eidas.auth.commons.protocol.impl.SamlNameIdFormat;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.joda.time.format.DateTimeFormat;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
@@ -40,6 +37,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
@@ -60,10 +58,6 @@ public class LightRequestTestHelper {
 
     private LightRequestTestHelper() {}
 
-    static {
-        DateTimeZone.setDefault(DateTimeZone.UTC);
-    }
-
     private static final PostalAddress pa = new PostalAddress.Builder()
             .adminUnitFirstLine("adminUnitFirstLine").adminUnitSecondLine("adminUnitSecondLine")
             .cvAddressArea("cvAddressArea").locatorDesignator("locatorDesignator")
@@ -75,8 +69,7 @@ public class LightRequestTestHelper {
             .put(EidasSpec.Definitions.PERSON_IDENTIFIER, new StringAttributeValue("60001019906"))
             .put(EidasSpec.Definitions.CURRENT_FAMILY_NAME, new StringAttributeValue("O’CONNEŽ-ŠUSLIK TESTNUMBER"))
             .put(EidasSpec.Definitions.CURRENT_GIVEN_NAME, new StringAttributeValue("MARY ÄNN"))
-            .put(EidasSpec.Definitions.DATE_OF_BIRTH, new DateTimeAttributeValue(DateTime.parse("2000-01-01",
-                    DateTimeFormat.forPattern("yyyy-MM-dd"))))
+            .put(EidasSpec.Definitions.DATE_OF_BIRTH, new DateTimeAttributeValue(LocalDate.parse("2000-01-01")))
             .build();
 
     public static final ImmutableAttributeMap NATURAL_PERSON_OPTIONAL_ATTRIBUTES = new ImmutableAttributeMap.Builder()

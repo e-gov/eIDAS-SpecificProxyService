@@ -15,7 +15,6 @@
 
 package ee.ria.eidas.proxy.specific.service;
 
-import com.google.common.collect.ImmutableSortedSet;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.PathNotFoundException;
 import com.nimbusds.jose.JOSEException;
@@ -302,7 +301,7 @@ public class SpecificProxyService {
     }
 
     private void putAttribute(ImmutableAttributeMap.Builder builder, String friendlyName, String value) {
-        final ImmutableSortedSet<AttributeDefinition<?>> byFriendlyName = eidasAttributeRegistry.getByFriendlyName(friendlyName);
+        final SortedSet<AttributeDefinition<?>> byFriendlyName = eidasAttributeRegistry.getByFriendlyName(friendlyName);
         final AttributeDefinition<?> attributeDefinition = byFriendlyName.first();
         builder.put(attributeDefinition, value);
     }

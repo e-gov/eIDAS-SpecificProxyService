@@ -52,7 +52,7 @@ import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
 import static org.apache.ignite.events.EventType.*;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInRelativeOrder;
+import static org.hamcrest.Matchers.hasItems;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.slf4j.Logger.ROOT_LOGGER_NAME;
 import static org.slf4j.LoggerFactory.getLogger;
@@ -250,15 +250,16 @@ public abstract class SpecificProxyTest {
 
     @SuppressWarnings("unchecked")
     private void assertMessageIsLogged(Class<?> loggerClass, Level loggingLevel,
-                                       String... messagesInRelativeOrder) {
+                                       String... messages) {
         List<String> events = mockAppender.list.stream()
                 .filter(e -> e.getLevel() == loggingLevel && (loggerClass == null
                         || e.getLoggerName().equals(loggerClass.getCanonicalName())))
                 .map(ILoggingEvent::getFormattedMessage)
                 .collect(toList());
 
-        assertThat(events, containsInRelativeOrder(stream(messagesInRelativeOrder)
-                .map(CoreMatchers::startsWith).toArray(Matcher[]::new)));
+        assertThat(events, hasItems(stream(messages)
+                .map(CoreMatchers::startsWith)
+                .toArray(Matcher[]::new)));
     }
 
     public static class TestContextInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {

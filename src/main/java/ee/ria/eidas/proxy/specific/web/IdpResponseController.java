@@ -1,7 +1,5 @@
 package ee.ria.eidas.proxy.specific.web;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceProperties;
 import ee.ria.eidas.proxy.specific.error.BadRequestException;
 import ee.ria.eidas.proxy.specific.error.RequestDeniedException;
@@ -35,6 +33,8 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static ee.ria.eidas.proxy.specific.error.SpecificProxyServiceExceptionHandler.MULTIPLE_INSTANCES_OF_PARAMETER_IS_NOT_ALLOWED;
 import static ee.ria.eidas.proxy.specific.web.filter.HttpRequestHelper.getStringParameterValue;
@@ -118,7 +118,7 @@ public class IdpResponseController {
 	}
 
 	private ModelAndView getConsentModelAndView(Model model, ILightRequest originalLightRequest, ILightResponse lightResponse) throws SpecificCommunicationException {
-		ImmutableMap<AttributeDefinition<?>, ImmutableSet<? extends AttributeValue<?>>> attributes = prepareAttributesToAskConsent(lightResponse);
+		Map<AttributeDefinition<?>, Set<? extends AttributeValue<?>>> attributes = prepareAttributesToAskConsent(lightResponse);
 
 		String base64Token = BinaryLightTokenHelper.encodeBinaryLightTokenBase64(specificProxyServiceCommunication.putPendingLightResponse(lightResponse));
 
@@ -132,9 +132,9 @@ public class IdpResponseController {
 		return new ModelAndView("citizenConsentResponse");
 	}
 
-	private ImmutableMap<AttributeDefinition<?>, ImmutableSet<? extends AttributeValue<?>>> prepareAttributesToAskConsent(ILightResponse lightResponse) {
+	private Map<AttributeDefinition<?>, Set<? extends AttributeValue<?>>> prepareAttributesToAskConsent(ILightResponse lightResponse) {
 		ImmutableAttributeMap responseImmutableAttributeMap = lightResponse.getAttributes();
-		ImmutableMap<AttributeDefinition<?>, ImmutableSet<? extends AttributeValue<?>>> responseImmutableMap = responseImmutableAttributeMap.getAttributeMap();
+		Map<AttributeDefinition<?>, Set<? extends AttributeValue<?>>> responseImmutableMap = responseImmutableAttributeMap.getAttributeMap();
 		ImmutableAttributeMap.Builder filteredAttrMapBuilder = ImmutableAttributeMap.builder();
 
 		for (AttributeDefinition attrDef : responseImmutableMap.keySet()) {

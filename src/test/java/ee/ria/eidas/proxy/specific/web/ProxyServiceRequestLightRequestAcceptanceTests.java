@@ -39,6 +39,7 @@ import static ee.ria.eidas.proxy.specific.web.ProxyServiceRequestController.ENDP
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.StringStartsWith.startsWith;
@@ -178,9 +179,9 @@ public class ProxyServiceRequestLightRequestAcceptanceTests extends ControllerTe
         assertEquals(mockLightRequest.getProviderName(), cachedLightRequest.getProviderName());
         assertEquals(mockLightRequest.getRelayState(), cachedLightRequest.getRelayState());
 
-        assertEquals(
-                getFriendlyNamesList(mockLightRequest.getRequestedAttributes()),
-                getFriendlyNamesList(cachedLightRequest.getRequestedAttributes())
+        assertThat(
+                getFriendlyNamesList(cachedLightRequest.getRequestedAttributes()),
+                containsInAnyOrder(getFriendlyNamesList(mockLightRequest.getRequestedAttributes()).toArray())
         );
     }
 

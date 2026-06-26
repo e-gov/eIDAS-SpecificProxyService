@@ -58,9 +58,9 @@ public class SpecificProxyErrorAttributes extends DefaultErrorAttributes {
         if (requestId != null) {
             return requestId.toString();
         }
-        Object defaultRequestId = attr.get("requestId");
-        if (defaultRequestId != null) {
-            return defaultRequestId.toString();
+        Object fallbackRequestId = attr.get("requestId");
+        if (fallbackRequestId != null) {
+            return fallbackRequestId.toString();
         }
         return UUID.randomUUID().toString().replace("-", "");
     }

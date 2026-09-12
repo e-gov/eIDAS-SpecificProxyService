@@ -27,7 +27,7 @@
 
         <asm.version>1.0.2</asm.version>
         <bouncycastle.version>1.83</bouncycastle.version>
-        <eidas.node.version>2.9.0</eidas.node.version>
+        <eidas.node.version>3.0.0</eidas.node.version>
         <elastic-apm.version>1.55.4</elastic-apm.version>
         <encoder-jsp.version>1.4.0</encoder-jsp.version>
         <guava.version>33.5.0-jre</guava.version>
@@ -273,7 +273,7 @@
                     <jvmArguments>
                         -DIGNITE_NO_ASCII=true
                         -DIGNITE_UPDATE_NOTIFIER=false
-                        <!-- Configuration according to chapter "3.1.4 JDK17" of "eIDAS-Node Installation and Configuration Guide v2.9"
+                        <!-- Configuration according to the JDK 17 section of "eIDAS-Node Migration Guide v3.0.0"
                              Ignite Shared Cache -->
                         --add-opens=java.base/jdk.internal.access=ALL-UNNAMED
                         --add-opens=java.base/jdk.internal.misc=ALL-UNNAMED
@@ -316,7 +316,7 @@
                             <BPE_APPEND_JAVA_TOOL_OPTIONS>
                                 -DIGNITE_NO_ASCII=true
                                 -DIGNITE_UPDATE_NOTIFIER=false
-                                <!-- Configuration according to chapter "3.1.4 JDK17" of "eIDAS-Node Installation and Configuration Guide v2.9"
+                                <!-- Configuration according to the JDK 17 section of "eIDAS-Node Migration Guide v3.0.0"
                              Ignite Shared Cache -->
                                 --add-opens=java.base/jdk.internal.access=ALL-UNNAMED
                                 --add-opens=java.base/jdk.internal.misc=ALL-UNNAMED
@@ -377,7 +377,7 @@
                     <argLine>
                         -DIGNITE_NO_ASCII=true
                         -DIGNITE_UPDATE_NOTIFIER=false
-                        <!-- Configuration according to chapter "3.1.4 JDK17" of "eIDAS-Node Installation and Configuration Guide v2.9"
+                        <!-- Configuration according to the JDK 17 section of "eIDAS-Node Migration Guide v3.0.0"
                              Ignite Shared Cache -->
                         --add-opens=java.base/jdk.internal.access=ALL-UNNAMED
                         --add-opens=java.base/jdk.internal.misc=ALL-UNNAMED

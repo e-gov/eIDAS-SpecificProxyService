@@ -35,8 +35,8 @@
         <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
         <logstash-logback-encoder.version>8.1</logstash-logback-encoder.version><!-- TODO Upgrade to logstash-logback-encoder 9.x with Spring Boot 4.x, both upgrade to Jackson 3 -->
         <wiremock.version>3.13.2</wiremock.version>
-        <jakarta.xml.bind-api.version>2.3.3</jakarta.xml.bind-api.version><!-- Update to >= 3.x when eIDAS-Node switches to jakarta imports -->
-        <jaxb-runtime.version>2.3.9</jaxb-runtime.version><!-- Versions >= 3.x throw JAXBException -->
+        <jakarta.xml.bind-api.version>4.0.2</jakarta.xml.bind-api.version>
+        <jaxb-runtime.version>4.0.5</jaxb-runtime.version>
         <sonar.jacoco.reportPath>target/jacoco.exec</sonar.jacoco.reportPath>
         <nimbus-oauth2-oidc-sdk.version>11.33</nimbus-oauth2-oidc-sdk.version>
         <commons-io.version>2.21.0</commons-io.version><!-- Only needed to fix vulnerability CVE-2024-47554, can be removed when eIDAS-Node starts using version >= 2.14.0 -->

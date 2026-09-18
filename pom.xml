@@ -27,11 +27,13 @@
 
         <asm.version>1.0.2</asm.version>
         <bouncycastle.version>1.83</bouncycastle.version>
-        <eidas.node.version>3.0.0</eidas.node.version>
+        <eidas.node.version>3.1.0</eidas.node.version>
         <elastic-apm.version>1.55.4</elastic-apm.version>
         <encoder-jsp.version>1.4.0</encoder-jsp.version>
         <guava.version>33.5.0-jre</guava.version>
-        <ignite.version>2.17.0</ignite.version><!-- eIDAS-Node 3.0.0 uses Apache Ignite 2.17.0 -->
+        <!-- Keep aligned with eIDAS Node:
+             https://ec.europa.eu/digital-building-blocks/code/projects/EID/repos/eidasnode-pub/browse/EIDAS-JCache-Ignite/pom.xml?at=refs%2Ftags%2Feidasnode-3.1.0&lines=36 -->
+        <ignite.version>2.17.0</ignite.version>
         <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
         <logstash-logback-encoder.version>8.1</logstash-logback-encoder.version><!-- TODO Upgrade to logstash-logback-encoder 9.x with Spring Boot 4.x, both upgrade to Jackson 3 -->
         <wiremock.version>3.13.2</wiremock.version>

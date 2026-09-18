@@ -1,7 +1,6 @@
-## eIDAS-Node 3.0 enables the Ignite 2.17 deserialization whitelist (Migration Guide 4.7.14).
-## Source: https://ec.europa.eu/digital-building-blocks/code/projects/EID/repos/eidasnode-pub/browse/EIDAS-JCache-Ignite/src/main/java/eu/eidas/ignite/utils/IgniteUtils.java?at=refs%2Ftags%2Feidasnode-3.0.0&lines=53
-## The following entries are copied from the eIDAS-Node 3.0 default whitelist:
-## https://ec.europa.eu/digital-building-blocks/code/projects/EID/repos/eidasnode-pub/browse/EIDAS-JCache-Ignite/src/main/resources/ignite-whitelist.txt?at=refs%2Ftags%2Feidasnode-3.0.0
+## eIDAS-Node 3.1 supports an operator-defined Ignite 2.17 deserialization whitelist (EIDINT-8625).
+## The following entries are copied from the eIDAS-Node 3.1 default whitelist:
+## https://ec.europa.eu/digital-building-blocks/code/projects/EID/repos/eidasnode-pub/browse/EIDAS-JCache-Ignite/src/main/resources/ignite-whitelist.txt?at=refs%2Ftags%2Feidasnode-3.1.0
 eu.eidas.auth.engine.metadata.impl.EidasMetadataParameters
 java.time.Ser
 eu.eidas.auth.engine.metadata.OrganizationData
@@ -22,6 +21,9 @@ eu.eidas.auth.commons.attribute.PersonType
 javax.xml.namespace.QName
 eu.eidas.auth.commons.tx.StoredLightRequest
 eu.eidas.auth.commons.attribute.impl.LiteralStringAttributeValue
+eu.eidas.logging.AuthenticationExchangeFlow
+eu.eidas.auth.engine.metadata.contacts.TypedContactData
+org.opensaml.saml.saml2.metadata.ContactPersonTypeEnumeration
 
 ## Include the RIA CorrelatedRequestsHolder because SpecificProxyService stores it in the shared Ignite cache.
 ee.ria.eidas.proxy.specific.storage.SpecificProxyServiceCommunication$CorrelatedRequestsHolder

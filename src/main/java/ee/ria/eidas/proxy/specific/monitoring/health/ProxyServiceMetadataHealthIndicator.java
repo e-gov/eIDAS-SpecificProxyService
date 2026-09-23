@@ -1,8 +1,9 @@
 package ee.ria.eidas.proxy.specific.monitoring.health;
 
+import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.actuate.health.AbstractHealthIndicator;
-import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.health.contributor.AbstractHealthIndicator;
+import org.springframework.boot.health.contributor.Health;
 import org.springframework.stereotype.Component;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -26,7 +27,7 @@ public class ProxyServiceMetadataHealthIndicator extends AbstractHealthIndicator
     }
 
     @Override
-    protected void doHealthCheck(Health.Builder builder) throws Exception {
+    protected void doHealthCheck(Health.@NonNull Builder builder) throws Exception {
         URL url = new URL(serviceMetadataUrl);
         HttpsURLConnection con = (HttpsURLConnection) url.openConnection();
         con.setConnectTimeout(toIntExact(connectTimeout.toMillis()));

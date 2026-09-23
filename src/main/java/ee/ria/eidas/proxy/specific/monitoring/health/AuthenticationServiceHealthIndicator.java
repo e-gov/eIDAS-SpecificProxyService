@@ -1,10 +1,11 @@
 package ee.ria.eidas.proxy.specific.monitoring.health;
 
 import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceProperties;
+import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.actuate.health.AbstractHealthIndicator;
-import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.health.contributor.AbstractHealthIndicator;
+import org.springframework.boot.health.contributor.Health;
 import org.springframework.stereotype.Component;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -31,7 +32,7 @@ public class AuthenticationServiceHealthIndicator extends AbstractHealthIndicato
     }
 
     @Override
-    protected void doHealthCheck(Health.Builder builder) throws Exception {
+    protected void doHealthCheck(Health.@NonNull Builder builder) throws Exception {
         URI uri = create(removeTrailingSlash(create(specificProxyServiceProperties.getOidc().getIssuerUrl()))
                 + OPENID_PROVIDER_WELL_KNOWN_PATH);
         HttpsURLConnection con = (HttpsURLConnection) uri.toURL().openConnection();

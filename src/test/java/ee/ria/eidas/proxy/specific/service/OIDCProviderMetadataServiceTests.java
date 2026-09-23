@@ -1,14 +1,13 @@
 package ee.ria.eidas.proxy.specific.service;
 
 import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata;
-import ee.ria.eidas.proxy.specific.SpecificProxyTest;
 import ee.ria.eidas.proxy.specific.config.SpecificProxyServiceConfiguration;
 import lombok.extern.slf4j.Slf4j;
 import org.awaitility.Durations;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.nimbusds.openid.connect.sdk.op.OIDCProviderConfigurationRequest.OPENID_PROVIDER_WELL_KNOWN_PATH;
@@ -20,10 +19,10 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 @SpringBootTest(webEnvironment = RANDOM_PORT, properties = {"eidas.proxy.oidc.metadata.update-schedule=0/1 * * * * ?",
         "eidas.proxy.oidc.metadata.max-attempts=3", "eidas.proxy.oidc.metadata.backoff-delay-in-milliseconds=500",
         "eidas.proxy.oidc.connect-timeout-in-milliseconds=500"})
-@ContextConfiguration(classes = SpecificProxyServiceConfiguration.class, initializers = OIDCProviderMetadataServiceTests.TestContextInitializer.class)
-class OIDCProviderMetadataServiceTests extends SpecificProxyTest {
+@ContextConfiguration(classes = SpecificProxyServiceConfiguration.class, initializers = OIDCProviderMetadataServiceTestContextInitializer.class)
+class OIDCProviderMetadataServiceTests extends AbstractOidcProviderMetadataTest {
 
-    @SpyBean
+    @MockitoSpyBean
     private OIDCProviderMetadataService oidcProviderMetadataService;
 
     @Test
@@ -39,10 +38,8 @@ class OIDCProviderMetadataServiceTests extends SpecificProxyTest {
         String updatedJWKSetURI = "https://localhost:9999/oidc/jwks";
         await()
                 .atMost(Durations.FIVE_SECONDS)
-                .untilAsserted(() -> {
-                    assertEquals(updatedJWKSetURI,
-                            oidcProviderMetadataService.getOidcProviderMetadata().getJWKSetURI().toString());
-                });
+                .untilAsserted(() -> assertEquals(updatedJWKSetURI,
+                        oidcProviderMetadataService.getOidcProviderMetadata().getJWKSetURI().toString()));
         assertInfoIsLogged(OIDCProviderMetadataService.class,
                 "Updating OIDC metadata for issuer: https://localhost:9877",
                 "Successfully updated OIDC metadata for issuer: https://localhost:9877",

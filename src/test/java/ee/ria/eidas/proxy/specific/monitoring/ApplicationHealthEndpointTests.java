@@ -9,6 +9,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ContextConfiguration;
 
 import java.time.Instant;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -47,6 +48,8 @@ public class ApplicationHealthEndpointTests extends ApplicationHealthTest {
         assertNull(healthResponse.jsonPath().get("warnings"));
         assertStartAndUptime(healthResponse);
         assertAllDependenciesUp(healthResponse);
+        assertEquals(List.of("authenticationService", "igniteCluster", "proxyServiceMetadata"),
+                healthResponse.jsonPath().getList("dependencies.name"));
     }
 
     @Test

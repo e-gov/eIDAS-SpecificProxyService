@@ -32,6 +32,11 @@ import static java.util.stream.Collectors.toList;
 @Endpoint(id = "heartbeat", defaultAccess = Access.READ_ONLY)
 public class ApplicationHealthEndpoint {
     private static final String HEALTH_INDICATOR_SUFFIX = "HealthIndicator";
+    private static final List<String> DEPENDENCY_NAMES = List.of(
+            "authenticationService",
+            "igniteCluster",
+            "proxyServiceMetadata"
+    );
 
     @Autowired
     private HealthContributorRegistry healthContributorRegistry;
@@ -81,6 +86,7 @@ public class ApplicationHealthEndpoint {
     private Map<String, Status> getHealthIndicatorStatuses() {
         return healthContributorRegistry.stream()
                 .filter(entry -> entry.contributor() instanceof HealthIndicator)
+                .filter(entry -> DEPENDENCY_NAMES.contains(formatDependencyName(entry.name())))
                 .collect(Collectors.toMap(
                         entry -> formatDependencyName(entry.name()),
                         entry -> Objects.requireNonNull(((HealthIndicator) entry.contributor()).health()).getStatus()
@@ -102,10 +108,11 @@ public class ApplicationHealthEndpoint {
     }
 
     private List<HashMap<String, String>> getFormatedStatuses(Map<String, Status> healthIndicatorStatuses) {
-        return healthIndicatorStatuses.entrySet().stream()
-                .map(healthIndicator -> new HashMap<String, String>() {{
-                    put("name", healthIndicator.getKey());
-                    put("status", healthIndicator.getValue().getCode());
+        return DEPENDENCY_NAMES.stream()
+                .filter(healthIndicatorStatuses::containsKey)
+                .map(dependencyName -> new HashMap<String, String>() {{
+                    put("name", dependencyName);
+                    put("status", healthIndicatorStatuses.get(dependencyName).getCode());
                 }}).collect(toList());
     }
 }

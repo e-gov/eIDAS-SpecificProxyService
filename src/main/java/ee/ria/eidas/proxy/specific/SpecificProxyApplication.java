@@ -24,6 +24,6 @@ public class SpecificProxyApplication extends SpringBootServletInitializer {
     @Override
     protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
         ElasticApmAttacher.attach();
-        return application.sources(SpecificProxyApplication.class).properties("server.error.whitelabel.enabled=false");
+        return application.sources(SpecificProxyApplication.class).properties("spring.web.error.whitelabel.enabled=false");
     }
 }

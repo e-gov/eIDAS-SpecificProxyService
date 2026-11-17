@@ -16,15 +16,18 @@ import eu.eidas.auth.commons.light.ILightResponse;
 import eu.eidas.auth.commons.tx.BinaryLightToken;
 import eu.eidas.specificcommunication.BinaryLightTokenHelper;
 import eu.eidas.specificcommunication.exception.SpecificCommunicationException;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -66,6 +69,8 @@ public class IdpResponseController {
 	@GetMapping(value = ENDPOINT_IDP_RESPONSE)
 	public ModelAndView processIdpResponse (
 				@Validated IdpCallbackRequest idpCallbackRequest,
+				@CookieValue(name = IdpStateCookie.NAME, required = false) String stateCookie,
+				HttpServletResponse response,
 				Model model) throws SpecificCommunicationException, MalformedURLException {
 
 		String state = getStringParameterValue(idpCallbackRequest.getState());
@@ -81,10 +86,16 @@ public class IdpResponseController {
 			throw new BadRequestException("Either error or code parameter can be present in a callback request. Both code and error parameters found");
 		}
 
-		ILightRequest originalLightRequest = specificProxyServiceCommunication.getAndRemoveIdpRequest(state);
-		if (originalLightRequest == null) {
+		SpecificProxyServiceCommunication.CorrelatedRequestsHolder correlatedRequestsHolder = specificProxyServiceCommunication.getAndRemoveIdpRequest(state);
+		if (correlatedRequestsHolder == null) {
 			throw new BadRequestException("Invalid state");
 		}
+		response.addHeader(HttpHeaders.SET_COOKIE, IdpStateCookie.expire());
+		if (!IdpStateCookie.matches(stateCookie, correlatedRequestsHolder.getStateCookieHash())) {
+			log.warn("State cookie is missing or does not match the authentication request state");
+			throw new BadRequestException("Invalid state");
+		}
+		ILightRequest originalLightRequest = correlatedRequestsHolder.getLightRequest();
 
 		if ( errorCode != null ) {
 			if (isAuthenticationCancelled(errorCode)) {

@@ -32,6 +32,8 @@ import static org.hamcrest.core.StringStartsWith.startsWith;
 
 abstract class IdpResponseControllerTests extends ControllerTest {
 
+	static final String STATE_COOKIE_VALUE = "test-state-cookie-value";
+
 	@Value("${lightToken.proxyservice.response.issuer.name}")
 	private String lightTokenResponseIssuerName;
 
@@ -133,6 +135,51 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 	}
 
 	@Test
+	void badRequestWhen_StateCookieMissing() throws Exception {
+		Map.Entry<String, CorrelatedRequestsHolder> mapEntry = addMockRequestToPendingIdpRequestCommunicationCache();
+
+		given()
+			.param("state", mapEntry.getKey())
+			.param("code", "1234567890abcdefghij")
+		.when()
+			.get(ENDPOINT_IDP_RESPONSE)
+		.then()
+			.assertThat()
+			.statusCode(400)
+			.header("Set-Cookie", startsWith(IdpStateCookie.NAME + "=;"))
+			.body("error", equalTo("Bad Request"))
+			.body("errors", nullValue())
+			.body("incidentNumber", notNullValue())
+			.body("message", equalTo("Invalid state"));
+
+		assertPendingIdpRequestCommunicationCacheIsEmpty();
+		assertResponseCommunicationCacheIsEmpty();
+	}
+
+	@Test
+	void badRequestWhen_StateCookieDoesNotMatch() throws Exception {
+		Map.Entry<String, CorrelatedRequestsHolder> mapEntry = addMockRequestToPendingIdpRequestCommunicationCache();
+
+		given()
+			.param("state", mapEntry.getKey())
+			.param("code", "1234567890abcdefghij")
+			.cookie(IdpStateCookie.NAME, "other-user-agent-state-cookie-value")
+		.when()
+			.get(ENDPOINT_IDP_RESPONSE)
+		.then()
+			.assertThat()
+			.statusCode(400)
+			.header("Set-Cookie", startsWith(IdpStateCookie.NAME + "=;"))
+			.body("error", equalTo("Bad Request"))
+			.body("errors", nullValue())
+			.body("incidentNumber", notNullValue())
+			.body("message", equalTo("Invalid state"));
+
+		assertPendingIdpRequestCommunicationCacheIsEmpty();
+		assertResponseCommunicationCacheIsEmpty();
+	}
+
+	@Test
 	void badRequestWhen_InvalidOrNonxistingState_errorResponse() {
 		given()
 			.param("state", "invalidState")
@@ -174,6 +221,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		given()
 			.param("error", "invalid_request")
 			.param("state", mapEntry.getKey())
+			.cookie(IdpStateCookie.NAME, STATE_COOKIE_VALUE)
 			.config(RestAssured.config().redirect(redirectConfig().followRedirects(false)))
 		.when()
 			.get(ENDPOINT_IDP_RESPONSE)
@@ -204,6 +252,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		given()
 			.param("code", "123...")
 			.param("state", mapEntry.getKey())
+			.cookie(IdpStateCookie.NAME, STATE_COOKIE_VALUE)
 		.when()
 			.get(ENDPOINT_IDP_RESPONSE)
 		.then()
@@ -233,6 +282,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		given()
 			.param("code", "123...")
 			.param("state", mapEntry.getKey())
+			.cookie(IdpStateCookie.NAME, STATE_COOKIE_VALUE)
 		.when()
 			.get(ENDPOINT_IDP_RESPONSE)
 		.then()
@@ -262,6 +312,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		given()
 			.param("code", "123...")
 			.param("state", mapEntry.getKey())
+			.cookie(IdpStateCookie.NAME, STATE_COOKIE_VALUE)
 		.when()
 			.get(ENDPOINT_IDP_RESPONSE)
 		.then()
@@ -291,6 +342,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		given()
 			.param("code", "123...")
 			.param("state", mapEntry.getKey())
+			.cookie(IdpStateCookie.NAME, STATE_COOKIE_VALUE)
 		.when()
 			.get(ENDPOINT_IDP_RESPONSE)
 		.then()
@@ -320,6 +372,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		given()
 			.param("code", "123...")
 			.param("state", mapEntry.getKey())
+			.cookie(IdpStateCookie.NAME, STATE_COOKIE_VALUE)
 		.when()
 			.get(ENDPOINT_IDP_RESPONSE)
 		.then()
@@ -351,6 +404,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		given()
 			.param("code", "123...")
 			.param("state", mapEntry.getKey())
+			.cookie(IdpStateCookie.NAME, STATE_COOKIE_VALUE)
 		.when()
 			.get(ENDPOINT_IDP_RESPONSE)
 		.then()
@@ -382,6 +436,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		given()
 			.param("code", "123...")
 			.param("state", mapEntry.getKey())
+			.cookie(IdpStateCookie.NAME, STATE_COOKIE_VALUE)
 		.when()
 			.get(ENDPOINT_IDP_RESPONSE)
 		.then()
@@ -411,6 +466,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		given()
 			.param("code", "123...")
 			.param("state", mapEntry.getKey())
+			.cookie(IdpStateCookie.NAME, STATE_COOKIE_VALUE)
 		.when()
 			.get(ENDPOINT_IDP_RESPONSE)
 		.then()
@@ -439,6 +495,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		given()
 			.param("code", "123...")
 			.param("state", mapEntry.getKey())
+			.cookie(IdpStateCookie.NAME, STATE_COOKIE_VALUE)
 		.when()
 			.get(ENDPOINT_IDP_RESPONSE)
 		.then()
@@ -470,6 +527,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		given()
 			.param("code", "123...")
 			.param("state", mapEntry.getKey())
+			.cookie(IdpStateCookie.NAME, STATE_COOKIE_VALUE)
 		.when()
 			.get(ENDPOINT_IDP_RESPONSE)
 		.then()
@@ -501,6 +559,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		given()
 			.param("code", "123...")
 			.param("state", mapEntry.getKey())
+			.cookie(IdpStateCookie.NAME, STATE_COOKIE_VALUE)
 		.when()
 			.get(ENDPOINT_IDP_RESPONSE)
 		.then()
@@ -532,6 +591,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		given()
 			.param("code", "123...")
 			.param("state", mapEntry.getKey())
+			.cookie(IdpStateCookie.NAME, STATE_COOKIE_VALUE)
 		.when()
 			.get(ENDPOINT_IDP_RESPONSE)
 		.then()
@@ -563,6 +623,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		given()
 			.param("code", "123...")
 			.param("state", mapEntry.getKey())
+			.cookie(IdpStateCookie.NAME, STATE_COOKIE_VALUE)
 		.when()
 			.get(ENDPOINT_IDP_RESPONSE)
 		.then()
@@ -594,6 +655,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		given()
 			.param("code", "123...")
 			.param("state", mapEntry.getKey())
+			.cookie(IdpStateCookie.NAME, STATE_COOKIE_VALUE)
 		.when()
 			.get(ENDPOINT_IDP_RESPONSE)
 		.then()
@@ -617,6 +679,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 		given()
 			.param("error", "user_cancel")
 			.param("state", mapEntry.getKey())
+			.cookie(IdpStateCookie.NAME, STATE_COOKIE_VALUE)
 			.config(RestAssured.config().redirect(redirectConfig().followRedirects(false)))
 		.when()
 			.get(ENDPOINT_IDP_RESPONSE)
@@ -636,7 +699,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 
 	Map.Entry<String, CorrelatedRequestsHolder> addMockRequestToPendingIdpRequestCommunicationCache(ILightRequest lightRequest) throws MalformedURLException {
 		String stateParameterValue = UUID.randomUUID().toString();
-		CorrelatedRequestsHolder requestsHolder = new CorrelatedRequestsHolder(lightRequest, Collections.singletonMap(stateParameterValue, new URL("http://oidAuthenticationRequest")));
+		CorrelatedRequestsHolder requestsHolder = new CorrelatedRequestsHolder(lightRequest, Collections.singletonMap(stateParameterValue, new URL("http://oidAuthenticationRequest")), IdpStateCookie.hash(STATE_COOKIE_VALUE));
 		Map.Entry<String, CorrelatedRequestsHolder> mapEntry = new AbstractMap.SimpleEntry<>(stateParameterValue, requestsHolder);
 		getIdpRequestCommunicationCache().put(stateParameterValue, requestsHolder);
 		return mapEntry;

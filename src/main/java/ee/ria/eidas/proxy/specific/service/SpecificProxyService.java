@@ -81,7 +81,7 @@ public class SpecificProxyService {
     private final AttributeRegistry eidasAttributeRegistry;
 
     @SneakyThrows
-    public SpecificProxyServiceCommunication.CorrelatedRequestsHolder createOidcAuthenticationRequest(ILightRequest originalIlightRequest) {
+    public SpecificProxyServiceCommunication.CorrelatedRequestsHolder createOidcAuthenticationRequest(ILightRequest originalIlightRequest, String stateCookieHash) {
         final String state = UUID.randomUUID().toString();
 
         URI oidAuthenticationRequest =
@@ -95,7 +95,7 @@ public class SpecificProxyService {
                         .queryParam("state", state)
                         .encode(StandardCharsets.UTF_8).build().toUri();
 
-        return createCorrelatedRequestsHolder(originalIlightRequest, oidAuthenticationRequest.toURL(), state);
+        return createCorrelatedRequestsHolder(originalIlightRequest, oidAuthenticationRequest.toURL(), state, stateCookieHash);
     }
 
     @SneakyThrows
@@ -310,10 +310,11 @@ public class SpecificProxyService {
         return InetAddress.getByName(new URL(issuerUrl).getHost()).getHostAddress();
     }
 
-    private SpecificProxyServiceCommunication.CorrelatedRequestsHolder createCorrelatedRequestsHolder(ILightRequest incomingLightRequest, URL redirectUrl, String state) {
+    private SpecificProxyServiceCommunication.CorrelatedRequestsHolder createCorrelatedRequestsHolder(ILightRequest incomingLightRequest, URL redirectUrl, String state, String stateCookieHash) {
         return new SpecificProxyServiceCommunication.CorrelatedRequestsHolder(
                 incomingLightRequest,
-                Collections.singletonMap(state, redirectUrl)
+                Collections.singletonMap(state, redirectUrl),
+                stateCookieHash
         );
     }
 

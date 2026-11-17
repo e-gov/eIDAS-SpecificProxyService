@@ -11,12 +11,14 @@ import eu.eidas.auth.commons.attribute.AttributeDefinition;
 import eu.eidas.auth.commons.light.ILightRequest;
 import eu.eidas.auth.commons.protocol.impl.SamlNameIdFormat;
 import eu.eidas.specificcommunication.exception.SpecificCommunicationException;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -53,23 +55,25 @@ public class ProxyServiceRequestController {
     private SpecificProxyServiceCommunication specificProxyServiceCommunication;
 
     @GetMapping(value = ENDPOINT_PROXY_SERVICE_REQUEST)
-    public ModelAndView get(@Validated RequestParameters request) throws SpecificCommunicationException {
-        return execute(request);
+    public ModelAndView get(@Validated RequestParameters request, HttpServletResponse response) throws SpecificCommunicationException {
+        return execute(request, response);
     }
 
     @PostMapping(value = ENDPOINT_PROXY_SERVICE_REQUEST)
-    public ModelAndView post(@Validated RequestParameters request) throws SpecificCommunicationException {
-        return execute(request);
+    public ModelAndView post(@Validated RequestParameters request, HttpServletResponse response) throws SpecificCommunicationException {
+        return execute(request, response);
     }
 
-    private ModelAndView execute(RequestParameters request) throws SpecificCommunicationException {
+    private ModelAndView execute(RequestParameters request, HttpServletResponse response) throws SpecificCommunicationException {
         String tokenBase64 = getStringParameterValue(request.getToken());
 
         ILightRequest incomingLightRequest = eidasNodeCommunication.getAndRemoveRequest(tokenBase64);
         validateLightRequest(incomingLightRequest);
 
-        CorrelatedRequestsHolder correlatedRequestsHolder = specificProxyService.createOidcAuthenticationRequest(incomingLightRequest);
+        String stateCookieValue = IdpStateCookie.generateValue();
+        CorrelatedRequestsHolder correlatedRequestsHolder = specificProxyService.createOidcAuthenticationRequest(incomingLightRequest, IdpStateCookie.hash(stateCookieValue));
         specificProxyServiceCommunication.putIdpRequest(correlatedRequestsHolder.getIdpAuthenticationRequestState(), correlatedRequestsHolder);
+        response.addHeader(HttpHeaders.SET_COOKIE, IdpStateCookie.create(stateCookieValue));
 
         return new ModelAndView("redirect:" + correlatedRequestsHolder.getIdpAuthenticationRequest());
     }

@@ -35,6 +35,7 @@ class IdpResponseControllerConsentRequiredTests extends IdpResponseControllerTes
 		Response response = given()
 			.param("code", code)
 			.param("state", mapEntry.getKey())
+			.cookie(IdpStateCookie.NAME, STATE_COOKIE_VALUE)
 		.when()
 			.get(ENDPOINT_IDP_RESPONSE)
 		.then()

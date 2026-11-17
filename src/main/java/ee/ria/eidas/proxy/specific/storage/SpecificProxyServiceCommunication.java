@@ -116,17 +116,15 @@ public class SpecificProxyServiceCommunication {
         }
     }
 
-    public ILightRequest getAndRemoveIdpRequest(String inResponseToId) {
+    public CorrelatedRequestsHolder getAndRemoveIdpRequest(String inResponseToId) {
         CorrelatedRequestsHolder correlatedRequestsHolder = idpRequestCommunicationCache.getAndRemove(inResponseToId);
 
         if (correlatedRequestsHolder != null) {
-            ILightRequest originalLightRequest = correlatedRequestsHolder.getLightRequest();
-
             if (log.isInfoEnabled())
                 log.info(append(IGNITE_CACHE_NAME, idpRequestCommunicationCache.getName()),
                         "Pending IDP request retrieved from cache for id: '{}'",
                         value(IDP_REQUEST_LIGHT_TOKEN_ID, inResponseToId));
-            return originalLightRequest;
+            return correlatedRequestsHolder;
         } else {
 
             if (log.isWarnEnabled())
@@ -151,11 +149,16 @@ public class SpecificProxyServiceCommunication {
         @Getter
         private final Map<String, URL> authenticationRequest;
 
-        public CorrelatedRequestsHolder(ILightRequest lightRequest, Map<String, URL> authenticationRequest) {
+        @Getter
+        private final String stateCookieHash;
+
+        public CorrelatedRequestsHolder(ILightRequest lightRequest, Map<String, URL> authenticationRequest, String stateCookieHash) {
             Assert.notNull(lightRequest, "Original LightRequest missing!");
             Assert.notNull(authenticationRequest, "IDP authentication request missing!");
+            Assert.hasText(stateCookieHash, "State cookie hash missing!");
             this.lightRequest = lightRequest;
             this.authenticationRequest = authenticationRequest;
+            this.stateCookieHash = stateCookieHash;
         }
 
         public String getIdpAuthenticationRequestState() {

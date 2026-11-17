@@ -39,7 +39,9 @@ import static ee.ria.eidas.proxy.specific.web.ProxyServiceRequestController.ENDP
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.StringStartsWith.startsWith;
@@ -467,6 +469,34 @@ public class ProxyServiceRequestLightRequestAcceptanceTests extends ControllerTe
         // assert request communication cache
         assertRequestInIdpCommunicationCache(mockLightRequest);
         assertResponseCommunicationCacheIsEmpty();
+    }
+
+    @Test
+    void redirectToIdpWhenValidRequest_StateCookieSetAndBoundToState() throws Exception {
+        ILightRequest mockLightRequest = createLightRequest(NATURAL_PERSON_MANDATORY_ATTRIBUTES);
+        BinaryLightToken mockBinaryLightToken = putRequest(mockLightRequest);
+
+        Response response = given()
+                .param(EidasParameterKeys.TOKEN.toString(), BinaryLightTokenHelper.encodeBinaryLightTokenBase64(mockBinaryLightToken))
+                .when()
+                .get(ENDPOINT_PROXY_SERVICE_REQUEST)
+                .then()
+                .assertThat()
+                .statusCode(302)
+                .header("Set-Cookie", allOf(
+                        startsWith(IdpStateCookie.NAME + "="),
+                        containsString("Path=/"),
+                        containsString("Secure"),
+                        containsString("HttpOnly"),
+                        containsString("SameSite=Lax")))
+                .extract().response();
+
+        String stateCookieValue = response.getCookie(IdpStateCookie.NAME);
+        assertThat(stateCookieValue, matchesPattern("^[A-Za-z0-9_-]{43}$"));
+
+        List<Cache.Entry<String, SpecificProxyServiceCommunication.CorrelatedRequestsHolder>> list = getListFromIterator(getIdpRequestCommunicationCache().iterator());
+        assertEquals(1, list.size());
+        assertEquals(IdpStateCookie.hash(stateCookieValue), list.get(0).getValue().getStateCookieHash());
     }
 
     @Test

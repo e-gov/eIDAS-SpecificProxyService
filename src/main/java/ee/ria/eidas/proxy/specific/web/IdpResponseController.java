@@ -86,12 +86,15 @@ public class IdpResponseController {
 			throw new BadRequestException("Either error or code parameter can be present in a callback request. Both code and error parameters found");
 		}
 
-		SpecificProxyServiceCommunication.CorrelatedRequestsHolder correlatedRequestsHolder = specificProxyServiceCommunication.getAndRemoveIdpRequest(state);
+		SpecificProxyServiceCommunication.CorrelatedRequestsHolder correlatedRequestsHolder = specificProxyServiceCommunication.getIdpRequest(state);
 		if (correlatedRequestsHolder == null) {
 			throw new BadRequestException("Invalid state");
 		}
 		if (!IdpStateCookie.matches(stateCookie, correlatedRequestsHolder.getStateCookieHash())) {
 			log.warn("State cookie is missing or does not match the authentication request state");
+			throw new BadRequestException("Invalid state");
+		}
+		if (!specificProxyServiceCommunication.removeIdpRequest(state)) {
 			throw new BadRequestException("Invalid state");
 		}
 		response.addHeader(HttpHeaders.SET_COOKIE, IdpStateCookie.expire());

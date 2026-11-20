@@ -74,6 +74,40 @@ class IdpResponseControllerConsentNotRequiredTests extends IdpResponseController
 	}
 
 	@Test
+	void redirectToEidasnodeWhenValidResponseAfterRequestWithMismatchingStateCookie() throws Exception {
+
+		String code = UUID.randomUUID().toString();
+		createMockOidcServerResponse_successfulAuthentication(code, "mock_responses/idp/token-response-ok.json");
+		Map.Entry<String, CorrelatedRequestsHolder> mapEntry = addMockRequestToPendingIdpRequestCommunicationCache();
+
+		given()
+			.param("code", code)
+			.param("state", mapEntry.getKey())
+			.cookie(IdpStateCookie.NAME, "other-user-agent-state-cookie-value")
+		.when()
+			.get(ENDPOINT_IDP_RESPONSE)
+		.then()
+			.assertThat()
+			.statusCode(400);
+
+		given()
+			.param("code", code)
+			.param("state", mapEntry.getKey())
+			.cookie(IdpStateCookie.NAME, STATE_COOKIE_VALUE)
+			.config(RestAssured.config().redirect(redirectConfig().followRedirects(false)))
+		.when()
+			.get(ENDPOINT_IDP_RESPONSE)
+		.then()
+			.assertThat()
+			.statusCode(302)
+			.header("Set-Cookie", startsWith(IdpStateCookie.NAME + "=;"))
+			.header(HttpHeaders.LOCATION, startsWith("https://ee-eidas-proxy:8083/EidasNode/SpecificProxyServiceResponse" +
+					"?token=c3BlY2lmaWNDb21t"));
+
+		assertPendingIdpRequestCommunicationCacheIsEmpty();
+	}
+
+	@Test
 	void redirectToEidasnodeWhenValidResponseAndConsentNotRequired_NameIdSpecified() throws Exception {
 
 		String code = UUID.randomUUID().toString();

@@ -29,6 +29,7 @@ import static io.restassured.config.RedirectConfig.redirectConfig;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.core.StringStartsWith.startsWith;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 abstract class IdpResponseControllerTests extends ControllerTest {
 
@@ -152,7 +153,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 			.body("incidentNumber", notNullValue())
 			.body("message", equalTo("Invalid state"));
 
-		assertPendingIdpRequestCommunicationCacheIsEmpty();
+		assertNotNull(getIdpRequestCommunicationCache().get(mapEntry.getKey()));
 		assertResponseCommunicationCacheIsEmpty();
 	}
 
@@ -175,7 +176,7 @@ abstract class IdpResponseControllerTests extends ControllerTest {
 			.body("incidentNumber", notNullValue())
 			.body("message", equalTo("Invalid state"));
 
-		assertPendingIdpRequestCommunicationCacheIsEmpty();
+		assertNotNull(getIdpRequestCommunicationCache().get(mapEntry.getKey()));
 		assertResponseCommunicationCacheIsEmpty();
 	}
 

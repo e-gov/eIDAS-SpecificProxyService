@@ -116,8 +116,8 @@ public class SpecificProxyServiceCommunication {
         }
     }
 
-    public CorrelatedRequestsHolder getAndRemoveIdpRequest(String inResponseToId) {
-        CorrelatedRequestsHolder correlatedRequestsHolder = idpRequestCommunicationCache.getAndRemove(inResponseToId);
+    public CorrelatedRequestsHolder getIdpRequest(String inResponseToId) {
+        CorrelatedRequestsHolder correlatedRequestsHolder = idpRequestCommunicationCache.get(inResponseToId);
 
         if (correlatedRequestsHolder != null) {
             if (log.isInfoEnabled())
@@ -134,6 +134,17 @@ public class SpecificProxyServiceCommunication {
 
             return null;
         }
+    }
+
+    public boolean removeIdpRequest(String inResponseToId) {
+        boolean removedByThisCall = idpRequestCommunicationCache.remove(inResponseToId);
+
+        if (!removedByThisCall && log.isWarnEnabled())
+            log.warn(append(IGNITE_CACHE_NAME, idpRequestCommunicationCache.getName()),
+                    "Pending IDP request already removed from cache for id: '{}'",
+                    value(IDP_REQUEST_LIGHT_TOKEN_ID, inResponseToId));
+
+        return removedByThisCall;
     }
 
     /**

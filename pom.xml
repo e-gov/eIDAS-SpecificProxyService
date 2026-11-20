@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.0.5</version>
+        <version>4.1.2</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>ee.ria.eidas.proxy.specific</groupId>
@@ -26,24 +26,24 @@
         <java.version>17</java.version>
 
         <asm.version>1.0.2</asm.version>
-        <bouncycastle.version>1.86</bouncycastle.version>
+        <bouncycastle.version>1.87</bouncycastle.version>
         <eidas.node.version>3.1.0</eidas.node.version>
-        <elastic-apm.version>1.57.0</elastic-apm.version>
-        <encoder-jsp.version>1.4.1</encoder-jsp.version>
-        <guava.version>33.7.1-jre</guava.version>
+        <elastic-apm.version>1.57.1</elastic-apm.version>
+        <encoder-jsp.version>1.6.0</encoder-jsp.version>
+        <guava.version>33.8.0-jre</guava.version>
         <!-- Keep aligned with eIDAS Node:
              https://ec.europa.eu/digital-building-blocks/code/projects/EID/repos/eidasnode-pub/browse/EIDAS-JCache-Ignite/pom.xml?at=refs%2Ftags%2Feidasnode-3.1.0&lines=36 -->
         <ignite.version>2.17.0</ignite.version>
-        <jacoco-maven-plugin.version>0.8.15</jacoco-maven-plugin.version>
+        <jacoco-maven-plugin.version>0.8.16</jacoco-maven-plugin.version>
         <logstash-logback-encoder.version>9.0</logstash-logback-encoder.version>
         <wiremock.version>3.13.2</wiremock.version>
         <!-- Keep aligned with eIDAS-Node 3.1.0 (EIDAS-Parent: jakarta.xml.bind-api, jakarta.xml.bind.glassfish-runtime) -->
         <jakarta.xml.bind-api.version>4.0.2</jakarta.xml.bind-api.version>
         <jaxb-runtime.version>4.0.5</jaxb-runtime.version>
         <sonar.jacoco.reportPath>target/jacoco.exec</sonar.jacoco.reportPath>
-        <nimbus-oauth2-oidc-sdk.version>11.38.2</nimbus-oauth2-oidc-sdk.version>
+        <nimbus-oauth2-oidc-sdk.version>11.39</nimbus-oauth2-oidc-sdk.version>
         <spring-retry.version>2.0.13</spring-retry.version>
-        <rest-assured.version>6.0.1</rest-assured.version>
+        <rest-assured.version>6.3.0</rest-assured.version>
     </properties>
 
     <dependencies>

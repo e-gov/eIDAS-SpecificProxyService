@@ -60,6 +60,7 @@ class IdpResponseControllerConsentNotRequiredTests extends IdpResponseController
 		.then()
 			.assertThat()
 			.statusCode(302)
+			.header("Set-Cookie", startsWith(IdpStateCookie.NAME + "=;"))
 			.header(HttpHeaders.LOCATION, startsWith("https://ee-eidas-proxy:8083/EidasNode/SpecificProxyServiceResponse" +
 					"?token=c3BlY2lmaWNDb21t"));
 

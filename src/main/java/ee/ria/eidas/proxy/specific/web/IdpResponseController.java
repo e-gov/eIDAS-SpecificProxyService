@@ -90,11 +90,11 @@ public class IdpResponseController {
 		if (correlatedRequestsHolder == null) {
 			throw new BadRequestException("Invalid state");
 		}
-		response.addHeader(HttpHeaders.SET_COOKIE, IdpStateCookie.expire());
 		if (!IdpStateCookie.matches(stateCookie, correlatedRequestsHolder.getStateCookieHash())) {
 			log.warn("State cookie is missing or does not match the authentication request state");
 			throw new BadRequestException("Invalid state");
 		}
+		response.addHeader(HttpHeaders.SET_COOKIE, IdpStateCookie.expire());
 		ILightRequest originalLightRequest = correlatedRequestsHolder.getLightRequest();
 
 		if ( errorCode != null ) {
